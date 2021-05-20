@@ -23,7 +23,7 @@ void main() {
           err: (err) => print(err));
     });
 
-    test('test currentPrice with Tron with is not in the _defaultSymbolToId', () async {
+    test('test currentPrice with Tron witch is not in the _defaultSymbolToId', () async {
       final result1 = await service.currentPrice(from: 'trx', to: 'usd');
       result1.when(
           ok: (price) {
@@ -39,9 +39,8 @@ void main() {
       result.when(ok: (success) => expect(success, isTrue), err: (err) => print(err));
     }, skip: 'api is broken');
 
-    // Count of all transactions on the address
-    // int txCount
-    test('test coins list - calls https://api.coingecko.com/api/v3/coins/list', () async {
+    // Future<Result<Map<String, String>, String>> list();
+    test('test supported coins list - calls https://api.coingecko.com/api/v3/coins/list', () async {
       final result = await service.list();
       result.when(
           ok: (map) {
