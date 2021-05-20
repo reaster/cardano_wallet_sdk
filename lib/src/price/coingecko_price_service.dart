@@ -1,0 +1,93 @@
+import 'package:coingecko_dart/dataClasses/coins/Coin.dart';
+import 'package:coingecko_dart/dataClasses/coins/PricedCoin.dart';
+
+import 'price_service.dart';
+import 'package:coingecko_dart/coingecko_dart.dart';
+
+import 'package:oxidized/oxidized.dart';
+
+class CoingeckoPriceService extends PriceService {
+  static Map<String, String> _defaultSymbolToId = {
+    'btc': 'bitcoin',
+    'eth': 'ethereum',
+    'bnb': 'binancecoin',
+    'xrp': 'ripple',
+    'ada': 'cardano',
+    'doge': 'dogecoin',
+    'usdt': 'tether',
+    'dot': 'polkadot',
+    'bch': 'bitcoin-cash',
+    'ltc': 'litecoin',
+    'uni': 'uniswap',
+    'link': 'chainlink',
+    'usdc': 'usd-coin',
+    'xlm': 'stellar',
+    'sol': 'solana',
+    'aave': 'aave',
+    'dai': 'dai',
+    'cel': 'celsius-degree-token',
+    'nexo': 'nexo',
+    'tusd': 'true-usd',
+    'gusd': 'gemini-dollar',
+  };
+
+  final CoinGeckoApi coingecko;
+  Map<String, String> _symbolToId = _defaultSymbolToId;
+
+  CoingeckoPriceService() : coingecko = CoinGeckoApi();
+
+  @override
+  Future<Result<Price, String>> currentPrice({String from = 'ada', String to = 'usd'}) async {
+    final fromId = await _toId(from);
+    if (fromId == null) {
+      return Err("can't convert symbol($from) to ID");
+    }
+    final CoinGeckoResult<List<PricedCoin>> list = await coingecko.simplePrice(ids: [fromId], vs_currencies: [to]);
+    if (list.isError) {
+      return Err(list.errorMessage);
+    } else if (list.data.isEmpty || list.data.first.data[to] == null) {
+      return Err("no data");
+    } else {
+      PricedCoin pricedCoin = list.data.first;
+      final timestamp = DateTime.now().millisecondsSinceEpoch; // pricedCoin.lastUpdatedAtTimeStamp.millisecondsSinceEpoch;
+      Map<String, double> pair = pricedCoin.data;
+      return Ok(Price(fromTicker: from, toTicker: to, timestamp: timestamp, value: pair[to]!));
+    }
+  }
+
+  @override
+  Future<Result<bool, String>> ping() async {
+    final CoinGeckoResult<bool> result = await coingecko.ping();
+    if (result.isError) {
+      return Err(result.errorMessage);
+    } else {
+      return Ok(result.data);
+    }
+  }
+
+  @override
+  Future<Result<Map<String, String>, String>> list() async {
+    final CoinGeckoResult<List<Coin>> result = await coingecko.listCoins();
+    if (result.isError) {
+      return Err(result.errorMessage);
+    } else {
+      Map<String, String> map = Map.fromIterable(result.data, key: (c) => c.symbol, value: (c) => c.id);
+      return Ok(map);
+    }
+  }
+
+  Future<String?> _toId(String symbol) async {
+    String? id = _symbolToId[symbol];
+    if (id == null && _symbolToId == _defaultSymbolToId) {
+      //can't find it in default list, then load the full list
+      final result = await list();
+      result.when(ok: (fullList) {
+        _symbolToId = fullList;
+        id = _symbolToId[symbol];
+      }, err: (err) {
+        print(err);
+      });
+    }
+    return id;
+  }
+}

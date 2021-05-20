@@ -1,0 +1,55 @@
+import 'package:test/test.dart';
+import 'package:cardano_wallet_sdk/src/price/price_service.dart';
+import 'package:cardano_wallet_sdk/src/price/coingecko_price_service.dart';
+
+void main() {
+  PriceService service = CoingeckoPriceService();
+  group('test CoingeckoPriceService', () {
+    // Future<Result<double, String>> currentPrice({String from, String to});
+    test('test currentPrice - calls https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=USD', () async {
+      final result1 = await service.currentPrice(from: 'ada', to: 'usd');
+      result1.when(
+          ok: (price) {
+            print(price);
+            expect(price.value, isNotNull);
+          },
+          err: (err) => print(err));
+      final result2 = await service.currentPrice(from: 'nexo', to: 'usd');
+      result2.when(
+          ok: (price) {
+            print(price);
+            expect(price.value, isNotNull);
+          },
+          err: (err) => print(err));
+    });
+
+    test('test currentPrice with Tron with is not in the _defaultSymbolToId', () async {
+      final result1 = await service.currentPrice(from: 'trx', to: 'usd');
+      result1.when(
+          ok: (price) {
+            print(price);
+            expect(price.value, isNotNull);
+          },
+          err: (err) => print(err));
+    }, skip: 'reduce network usage');
+
+    // Future<Result<bool, String>> ping();
+    test('test ping - calls https://api.coingecko.com/api/v3/ping', () async {
+      final result = await service.ping();
+      result.when(ok: (success) => expect(success, isTrue), err: (err) => print(err));
+    }, skip: 'api is broken');
+
+    // Count of all transactions on the address
+    // int txCount
+    test('test coins list - calls https://api.coingecko.com/api/v3/coins/list', () async {
+      final result = await service.list();
+      result.when(
+          ok: (map) {
+            print("cardano: ${map['ada']}");
+            print("bitcoin: ${map['btc']}");
+            expect(map['ada'], isNotNull);
+          },
+          err: (err) => print(err));
+    });
+  });
+}
