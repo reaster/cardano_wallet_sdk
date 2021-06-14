@@ -28,7 +28,7 @@ abstract class PriceService {
   Future<Result<bool, String>> ping();
 
   ///
-  /// list coins
-  ///
+  /// list all coins supported by price service
+  /// returns map where the key is the ticker and the value is the crypto's name
   Future<Result<Map<String, String>, String>> list();
 }

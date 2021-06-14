@@ -9,18 +9,28 @@ This project is a Cardano blockchain on-ramp for Flutter/Dart mobile app develop
 
 It powers a live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
 
-## Current Features
+### Current Features
 * pricing service powered by [Coin Gecko](https://www.coingecko.com/)
-* Cardano blockchain access via a seperate [BlockFrost API package](https://github.com/reaster/blockfrost_api).
+* Cardano blockchain access via a seperate [BlockFrost API package](https://github.com/reaster/blockfrost_api)
+* public wallet creation via a stakeAddress
 
-## Features In Active Development
+### Features In Active Development
 * create, submit or track transactions and their fees
 * sign and validate messages
 * manage private and public keys
 * list, create, update or remove wallets
 
-## Planned Features
+### Planned Features
 * staking
 * native tokens
 * token exchange
-* smart contracts support
+* smart contracts
+
+### Usage
+In the same parent directory place the following assets:
+* git clone git@github.com:reaster/blockfrost_api.git
+* git clone git@github.com:reaster/cardano_wallet_sdk.git
+* register for a free [blockfrost](https://blockfrost.io/) policy-id key.
+* paste the policy-id key into a text file named: blockfrost_api_key.txt
+
+The unit tests in both projects should now pass.
