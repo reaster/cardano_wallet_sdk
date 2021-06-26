@@ -5,6 +5,21 @@ import 'price_service.dart';
 import 'package:coingecko_dart/coingecko_dart.dart';
 
 import 'package:oxidized/oxidized.dart';
+import 'package:dio/dio.dart';
+
+class CoinGeckoApiFix extends CoinGeckoApi {
+  ///
+  ///* Coingecko API ( **GET** /ping )
+  ///
+  ///used to check Coingecko Server API status
+  ///
+  @override
+  Future<CoinGeckoResult<bool>> ping() async {
+    Response response = await dio!.get("/ping", options: Options(contentType: 'application/json'));
+    return CoinGeckoResult(response.statusCode == 200,
+        errorCode: response.statusCode ?? -1, errorMessage: (response.statusMessage ?? ""), isError: response.statusCode != 200);
+  }
+}
 
 class CoingeckoPriceService extends PriceService {
   static Map<String, String> _defaultSymbolToId = {
@@ -34,7 +49,7 @@ class CoingeckoPriceService extends PriceService {
   final CoinGeckoApi coingecko;
   Map<String, String> _symbolToId = _defaultSymbolToId;
 
-  CoingeckoPriceService() : coingecko = CoinGeckoApi();
+  CoingeckoPriceService() : coingecko = CoinGeckoApiFix(); //CoinGeckoApi
 
   @override
   Future<Result<Price, String>> currentPrice({String from = 'ada', String to = 'usd'}) async {

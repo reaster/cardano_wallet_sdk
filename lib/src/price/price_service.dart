@@ -8,13 +8,31 @@ class Price {
 
   Price({this.fromTicker = 'ADA', this.toTicker = 'USD', this.timestamp = 0, this.value = 0.0});
 
-  DateTime dateTime() => DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+  DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+
   @override
   String toString() {
-    return 'Price(from: $fromTicker, to: $toTicker, value: $value, timestamp: ${dateTime()}';
+    return 'Price(from: $fromTicker, to: $toTicker, value: $value, timestamp: ${dateTime}';
+  }
+
+  Duration get lastUpdated => DateTime.now().difference(dateTime);
+
+  String get briefLastUpdated {
+    final update = lastUpdated;
+    if (update.inDays > 1) {
+      return "${update.inDays}d ago";
+    } else if (update.inHours > 1) {
+      return "${update.inHours}h ago";
+    } else if (update.inMinutes > 1) {
+      return "${update.inMinutes}m ago";
+    } else {
+      return "${update.inSeconds}s ago";
+    }
   }
 }
 
+/// not being used at the moment. see price_polling_service
+///
 abstract class PriceService {
   ///
   /// retrieve current ratio of to currency to from currency.
