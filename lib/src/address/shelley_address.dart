@@ -1,5 +1,5 @@
 import 'package:bip32_ed25519/api.dart';
-import 'package:bip32_ed25519/cardano.dart';
+// import 'package:bip32_ed25519/cardano.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 //import 'package:pinenacl/digests.dart';
 
@@ -193,44 +193,44 @@ class RewardAddress extends ShelleyAddress {
   AddressType get addressType => AddressType.Reward;
 }
 
-void main() {
-  const seed = '475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097';
-  const addressPath = "m/1852'/1815'/0'/0/0";
-  const rewardAddressPath = "m/1852'/1815'/0'/2/0";
+// void main() {
+//   const seed = '475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097';
+//   const addressPath = "m/1852'/1815'/0'/0/0";
+//   const rewardAddressPath = "m/1852'/1815'/0'/2/0";
 
-  final icarusKeyTree = CardanoKeyIcarus.seed(seed);
+//   final icarusKeyTree = CardanoKeyIcarus.seed(seed);
 
-  // final Bip32Key addressKey = icarusKeyTree.forPath(addressPath);
-  // print(addressKey);
-  // final Bip32Key rewardKey = icarusKeyTree.forPath(rewardAddressPath);
-  // print(rewardKey);
+//   // final Bip32Key addressKey = icarusKeyTree.forPath(addressPath);
+//   // print(addressKey);
+//   // final Bip32Key rewardKey = icarusKeyTree.forPath(rewardAddressPath);
+//   // print(rewardKey);
 
-  final addressKey = icarusKeyTree.pathToKey(addressPath);
-  print(addressKey);
-  final rewardKey = icarusKeyTree.pathToKey(rewardAddressPath);
-  print(rewardKey);
-  final addr1 = BaseAddress.fromKeys(NetworkId.testnet, addressKey, rewardKey);
-  print(addr1);
+//   final addressKey = icarusKeyTree.pathToKey(addressPath);
+//   print(addressKey);
+//   final rewardKey = icarusKeyTree.pathToKey(rewardAddressPath);
+//   print(rewardKey);
+//   final addr1 = BaseAddress.fromKeys(NetworkId.testnet, addressKey, rewardKey);
+//   print(addr1);
 
-  var address = ShelleyAddress.fromBech32(
-      'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp');
-  print(address);
+//   var address = ShelleyAddress.fromBech32(
+//       'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp');
+//   print(address);
 
-  address =
-      ShelleyAddress.fromBech32('addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwqfjkjv7');
-  print(address);
+//   address =
+//       ShelleyAddress.fromBech32('addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwqfjkjv7');
+//   print(address);
 
-  address = ShelleyAddress.fromBech32('addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz');
-  print(address);
+//   address = ShelleyAddress.fromBech32('addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz');
+//   print(address);
 
-  address = ShelleyAddress.fromBech32('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8');
-  print(address);
+//   address = ShelleyAddress.fromBech32('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8');
+//   print(address);
 
-  address = ShelleyAddress.fromBech32(
-      'addr_test1qpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qum8x5w');
-  print(address);
+//   address = ShelleyAddress.fromBech32(
+//       'addr_test1qpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qum8x5w');
+//   print(address);
 
-  address =
-      ShelleyAddress.fromBech32('addr1q9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qld6xc3');
-  print(address);
-}
+//   address =
+//       ShelleyAddress.fromBech32('addr1q9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qld6xc3');
+//   print(address);
+// }

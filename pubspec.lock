@@ -32,10 +32,12 @@ packages:
   bip32_ed25519:
     dependency: "direct main"
     description:
-      path: "../bip32-ed25519-dart"
-      relative: true
-    source: path
-    version: "0.2.1"
+      path: "."
+      ref: HEAD
+      resolved-ref: "28b62e21a3f022a1ede9f87ca2392dbabfc332ff"
+      url: "git@github.com:ilap/bip32-ed25519-dart.git"
+    source: git
+    version: "0.3.0"
   bip39:
     dependency: "direct main"
     description:
@@ -46,9 +48,11 @@ packages:
   blockfrost:
     dependency: "direct main"
     description:
-      path: "../blockfrost_api"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: b82baa420d9ad0e94afe72092f3ee4c4e35ae0c2
+      url: "git@github.com:reaster/blockfrost_api.git"
+    source: git
     version: "1.0.0"
   boolean_selector:
     dependency: transitive
@@ -555,4 +559,4 @@ packages:
     source: hosted
     version: "3.1.0"
 sdks:
-  dart: ">=2.12.0 <3.0.0"
+  dart: ">=2.13.0-0 <3.0.0"
