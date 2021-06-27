@@ -1,7 +1,6 @@
 name: cardano_wallet_sdk
 description: Cardano Wallet SDK.
-version: 0.1.0
-author: richard@OutsourceCafe.com
+version: 0.1.0-alpha.1
 homepage: https://github.com/reaster/cardano_wallet_sdk
 
 environment:
@@ -12,12 +11,14 @@ dependencies:
   # pointycastle: ^3.0.1
   # base58check: ^2.0.0
   convert: ^3.0.0
-  bip32_ed25519: #^0.2.1
-    git: git@github.com:ilap/bip32-ed25519-dart.git
-    # path: ../bip32-ed25519-dart
-  blockfrost: #^0.2.1
-    git: git@github.com:reaster/blockfrost_api.git
+  # bip32_ed25519: #^0.2.1
+  #   git: git@github.com:ilap/bip32-ed25519-dart.git
+  # path: ../bip32-ed25519-dart
+  blockfrost:
+    ^1.0.0-dev.1
+    # git: git@github.com:reaster/blockfrost_api.git
     # path: ../blockfrost_api
+  pinenacl: ^0.3.1
   bip39: ^1.0.6
   cryptography: ^2.0.1
   pedantic: ^1.11.0

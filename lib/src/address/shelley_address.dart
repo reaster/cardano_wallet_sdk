@@ -1,7 +1,6 @@
-import 'package:bip32_ed25519/api.dart';
-// import 'package:bip32_ed25519/cardano.dart';
+import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
-//import 'package:pinenacl/digests.dart';
+import 'package:pinenacl/api.dart';
 
 ///
 /// Address format
