@@ -23,6 +23,11 @@ dependencies:
   cryptography: ^2.0.1
   pedantic: ^1.11.0
   oxidized: ^4.2.0
+  intl: ^0.17.0
+  dio: ^4.0.0
+  built_collection: ^5.1.0
+  built_value: ^8.1.0
+  hex: ^0.2.0
 
   # bitcoin_bip44: ^0.1.0
 
