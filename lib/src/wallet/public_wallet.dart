@@ -2,22 +2,39 @@ import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
+import 'package:quiver/strings.dart';
 
 enum TransactionQueryType { all, used, unused }
 
+///
+/// public Cardano wallet holding stakingAddress and associated public tranaction addresses.
+///
 abstract class PublicWallet {
+  /// networkId is either mainnet or nestnet
   NetworkId get networkId;
+
+  /// name of wallet
   String get name;
+
+  /// balance of wallet in lovelace
   int get balance;
+
+  /// balances of native tokens indexed by assetId
   Map<String, int> get currencies;
+
+  /// assets present in this wallet indexed by assetId
   Map<String, CurrencyAsset> get assets;
   List<WalletTransaction> get transactions;
+  List<WalletTransaction> filterTransactions({required String assetId});
   List<ShelleyAddress> addresses({TransactionQueryType type = TransactionQueryType.all});
   bool refresh(
       {required int balance,
       required List<Transaction> transactions,
       required List<ShelleyAddress> usedAddresses,
       required Map<String, CurrencyAsset> assets});
+
+  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher);
+  CurrencyAsset? findAssetByTicker(String ticker);
 }
 
 class PublicWalletImpl implements PublicWallet {
@@ -78,4 +95,14 @@ class PublicWalletImpl implements PublicWallet {
   List<WalletTransaction> get transactions => _transactions;
   @override
   Map<String, CurrencyAsset> get assets => _assets;
+
+  @override
+  List<WalletTransaction> filterTransactions({required String assetId}) =>
+      transactions.where((t) => t.containsCurrency(assetId: assetId)).toList();
+
+  @override
+  CurrencyAsset? findAssetByTicker(String ticker) => findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
+
+  @override
+  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) => _assets.values.firstWhere(matcher);
 }
