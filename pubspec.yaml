@@ -29,6 +29,7 @@ dependencies:
   built_value: ^8.1.0
   hex: ^0.2.0
   cbor: ^4.0.2
+  quiver: ^3.0.1
 
   # bitcoin_bip44: ^0.1.0
 
