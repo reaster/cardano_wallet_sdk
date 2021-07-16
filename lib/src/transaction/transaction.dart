@@ -1,5 +1,9 @@
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:cardano_wallet_sdk/src/asset/asset.dart';
+
 enum TransactionType { deposit, withdrawal }
 enum TransactionStatus { pending, confirmed }
+enum TemperalSortOrder { ascending, descending }
 
 /// Amounts in lovelace.
 abstract class Transaction {
@@ -9,15 +13,18 @@ abstract class Transaction {
   DateTime get time;
   List<TransactionIO> get inputs;
   List<TransactionIO> get outputs;
-  Set<String> get assetPolicyIds;
-  Map<String, int> sumCurrencies({required Set<String> addressSet});
 }
 
-/// Transaction from owning wallet perspective (i.e. deposit or withdrawal).
+///
+/// Transaction from owning wallet perspective (i.e. deposit or withdrawal specific to owned addresses).
+///
 abstract class WalletTransaction extends Transaction {
   TransactionType get type;
   int get amount;
   Map<String, int> get currencies;
+  int currencyAmount({required String assetId});
+  bool containsCurrency({required String assetId});
+  Set<String> get ownedAddresses;
 }
 
 class TransactionAmount {
@@ -39,35 +46,46 @@ class TransactionIO {
 class WalletTransactionImpl implements WalletTransaction {
   final Transaction baseTransaction;
   final Map<String, int> currencies;
+  final Set<String> ownedAddresses;
   WalletTransactionImpl({required this.baseTransaction, required Set<String> addressSet})
-      : currencies = baseTransaction.sumCurrencies(addressSet: addressSet);
+      : currencies = baseTransaction.sumCurrencies(addressSet: addressSet),
+        ownedAddresses = baseTransaction.filterAddresses(addressSet: addressSet);
 
   @override
   String get txId => baseTransaction.txId;
   @override
   TransactionStatus get status => baseTransaction.status;
   @override
-  int get fees => baseTransaction.fees;
+  int get fees => payedFees ? baseTransaction.fees : 0;
   @override
   DateTime get time => baseTransaction.time;
   @override
   List<TransactionIO> get inputs => baseTransaction.inputs;
   @override
   List<TransactionIO> get outputs => baseTransaction.outputs;
-  @override
-  Map<String, int> sumCurrencies({required Set<String> addressSet}) => baseTransaction.sumCurrencies(addressSet: addressSet);
+
+  String currencyBalancesByTicker({required Map<String, CurrencyAsset> assetByAssetId, String? filterAssetId}) => currencies.entries
+      .where((e) => filterAssetId == null || e.key != filterAssetId || assetByAssetId[e.key] != null)
+      .map((e) => MapEntry(assetByAssetId[e.key]!, e.value))
+      .map((e) => "${e.key.symbol}:${e.value}")
+      .join(', ');
 
   @override
-  int get amount => currencies['lovelace'] ?? 0;
+  int get amount => currencies[lovelaceHex] ?? 0;
 
   @override
   TransactionType get type => amount >= 0 ? TransactionType.deposit : TransactionType.withdrawal;
 
   @override
-  Set<String> get assetPolicyIds => baseTransaction.assetPolicyIds;
+  String toString() => "Transaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
 
   @override
-  String toString() => "Transaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
+  bool containsCurrency({required String assetId}) => currencies[assetId] != null;
+
+  @override
+  int currencyAmount({required String assetId}) => currencies[assetId] ?? 0;
+
+  bool get payedFees => type == TransactionType.withdrawal;
 }
 
 class TransactionImpl implements Transaction {
@@ -77,6 +95,8 @@ class TransactionImpl implements Transaction {
   final List<TransactionIO> inputs;
   final List<TransactionIO> outputs;
   final DateTime time;
+  Set<String>? _assetPolicyIds;
+  Map<String, int> _cachedSums = {};
   TransactionImpl({
     required this.txId,
     required this.status,
@@ -88,10 +108,15 @@ class TransactionImpl implements Transaction {
 
   @override
   String toString() => "Transaction(fees: $fees status: $status id: $txId)";
+}
 
-  @override
-  Set<String> get assetPolicyIds {
-    Set<String> result = {'lovelace'};
+///
+/// Transaction extension -  wallet attribute collection methods
+///
+extension TransactionScanner on Transaction {
+  /// assetIds found in transactioins. TODO confirm unit == assetId
+  Set<String> get assetIds {
+    Set<String> result = {lovelaceHex};
     inputs.forEach((tranIO) => tranIO.amounts.forEach((amount) {
           if (amount.unit.isNotEmpty) result.add(amount.unit);
         }));
@@ -101,23 +126,51 @@ class TransactionImpl implements Transaction {
     return result;
   }
 
-  //return a map of all currencies with their net quantity change for a given set of
-  //addresses (i.e. a specific wallet).
-  @override
+  ///
+  ///return a map of all currencies with their net quantity change for a given set of
+  ///addresses (i.e. a specific wallet).
+  ///
   Map<String, int> sumCurrencies({required Set<String> addressSet}) {
-    Map<String, int> result = {'lovelace': 0};
+    //if (_cachedSums.isEmpty) {
+    Map<String, int> result = {lovelaceHex: 0};
     for (var tranIO in inputs) {
-      if (addressSet.contains(tranIO.address)) {
+      final bool myMoney = addressSet.contains(tranIO.address);
+      if (myMoney) {
         for (var amount in tranIO.amounts) {
-          result[amount.unit] = (result[amount.unit] ?? 0) - amount.quantity;
+          final int beginning = result[amount.unit] ?? 0;
+          result[amount.unit] = beginning - amount.quantity;
+          print(
+              "${time} tx: ${txId.substring(0, 5)}.. innput: ${tranIO.address.substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
         }
       }
     }
     for (var tranIO in outputs) {
-      if (addressSet.contains(tranIO.address)) {
+      final bool myMoney = addressSet.contains(tranIO.address);
+      if (myMoney) {
         for (var amount in tranIO.amounts) {
-          result[amount.unit] = (result[amount.unit] ?? 0) + amount.quantity;
+          final int beginning = result[amount.unit] ?? 0;
+          result[amount.unit] = beginning + amount.quantity;
+          print(
+              "${time} tx: ${txId.substring(0, 5)}.. output: ${tranIO.address.substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
         }
+      }
+    }
+    return result;
+  }
+
+  ///
+  ///filter addresses to those found in this transaction
+  ///
+  Set<String> filterAddresses({required Set<String> addressSet}) {
+    Set<String> result = {};
+    for (var tranIO in inputs) {
+      if (addressSet.contains(tranIO.address)) {
+        result.add(tranIO.address);
+      }
+    }
+    for (var tranIO in outputs) {
+      if (addressSet.contains(tranIO.address)) {
+        result.add(tranIO.address);
       }
     }
     return result;
