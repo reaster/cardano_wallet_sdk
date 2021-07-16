@@ -1,9 +1,10 @@
-import 'package:blockfrost/blockfrost.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_formatter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/public_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
 import 'package:test/test.dart';
+import './my_api_key_auth.dart';
+import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 
 void main() {
   final wallet1 = 'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
@@ -25,9 +26,9 @@ void main() {
               print("$tx");
             });
             wallet.currencies.forEach((key, value) {
-              print("$key: ${key == 'lovelace' ? formatter.format(value) : value}");
+              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
             });
-            expect(wallet.balance, equals(wallet.currencies['lovelace']));
+            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
           },
           err: (err) => print(err));
       final wallet = walletFactory.byStakeAddress(wallet1);
@@ -46,9 +47,9 @@ void main() {
               print("$tx");
             });
             wallet.currencies.forEach((key, value) {
-              print("$key: ${key == 'lovelace' ? formatter.format(value) : value}");
+              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
             });
-            expect(wallet.balance, equals(wallet.currencies['lovelace']));
+            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
           },
           err: (err) => print(err));
     });
@@ -60,14 +61,21 @@ void main() {
             wallet.addresses().forEach((addr) {
               print(addr.toBech32());
             });
-            wallet.transactions.forEach((tx) {
-              print("$tx");
-            });
             wallet.currencies.forEach((key, value) {
               final asset = wallet.assets[key];
               print("Currency: ${asset?.symbol ?? key}: ${asset?.isADA ?? false ? formatter.format(value) : value}");
             });
-            expect(wallet.balance, equals(wallet.currencies['lovelace']));
+            // wallet.transactions.forEach((tx) {
+            //   print("$tx");
+            // });
+            wallet.currencies.keys.forEach((key) {
+              final asset = wallet.assets[key];
+              print('${asset?.symbol} transactions:');
+              wallet.filterTransactions(assetId: key).forEach((tx) {
+                print("$tx");
+              });
+            });
+            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
           },
           err: (err) => print(err));
     });
@@ -83,9 +91,9 @@ void main() {
               print("$tx");
             });
             wallet.currencies.forEach((key, value) {
-              print("$key: ${key == 'lovelace' ? formatter.format(value) : value}");
+              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
             });
-            expect(wallet.balance, equals(wallet.currencies['lovelace']));
+            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
           },
           err: (err) => print(err));
     }, skip: 'TODO: add staking rewards to balance');

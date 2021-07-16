@@ -15,9 +15,9 @@ dependencies:
   #   git: git@github.com:ilap/bip32-ed25519-dart.git
   # path: ../bip32-ed25519-dart
   blockfrost:
-    ^1.0.0-dev.1
+    # ^1.0.0-dev.2
     # git: git@github.com:reaster/blockfrost_api.git
-    # path: ../blockfrost_api
+    path: ../blockfrost_api
   pinenacl: ^0.3.1
   bip39: ^1.0.6
   cryptography: ^2.0.1
@@ -28,10 +28,12 @@ dependencies:
   built_collection: ^5.1.0
   built_value: ^8.1.0
   hex: ^0.2.0
+  cbor: ^4.0.2
 
   # bitcoin_bip44: ^0.1.0
 
 dev_dependencies:
   test: any
   build_runner: ^2.0.3
+  mockito: ^5.0.10
 #  pedantic: ^1.11.0

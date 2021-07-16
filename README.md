@@ -28,9 +28,8 @@ It powers a live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.w
 
 ### Usage
 In the same parent directory place the following assets:
-* git clone git@github.com:reaster/blockfrost_api.git
 * git clone git@github.com:reaster/cardano_wallet_sdk.git
 * register for a free [blockfrost](https://blockfrost.io/) policy-id key.
-* paste the policy-id key into a text file named: blockfrost_api_key.txt
+* paste the policy-id key into a text file named: blockfrost_project_id.txt
 
-The unit tests in both projects should now pass.
+The unit tests should now pass.
