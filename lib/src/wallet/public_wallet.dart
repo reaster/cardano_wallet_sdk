@@ -1,6 +1,7 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:quiver/strings.dart';
 
@@ -14,13 +15,19 @@ abstract class PublicWallet {
   NetworkId get networkId;
 
   /// name of wallet
-  String get name;
+  String get walletName;
 
   /// balance of wallet in lovelace
   int get balance;
 
+  /// calculate balance from transactions and rewards
+  int get calculatedBalance;
+
   /// balances of native tokens indexed by assetId
   Map<String, int> get currencies;
+
+  /// optional stake pool details
+  List<StakeAccount> get stakeAccounts;
 
   /// assets present in this wallet indexed by assetId
   Map<String, CurrencyAsset> get assets;
@@ -31,7 +38,8 @@ abstract class PublicWallet {
       {required int balance,
       required List<Transaction> transactions,
       required List<ShelleyAddress> usedAddresses,
-      required Map<String, CurrencyAsset> assets});
+      required Map<String, CurrencyAsset> assets,
+      required List<StakeAccount> stakeAccounts});
 
   CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher);
   CurrencyAsset? findAssetByTicker(String ticker);
@@ -39,15 +47,17 @@ abstract class PublicWallet {
 
 class PublicWalletImpl implements PublicWallet {
   final NetworkId networkId;
-  final String stakingAddress;
-  final String name;
+  final String stakeAddress;
+  final String walletName;
   int _balance = 0;
   List<WalletTransaction> _transactions = [];
   List<ShelleyAddress> _usedAddresses = [];
   Map<String, CurrencyAsset> _assets = {};
+  List<StakeAccount> _stakeAccounts = [];
 
-  PublicWalletImpl({required this.networkId, required this.stakingAddress, required this.name});
+  PublicWalletImpl({required this.networkId, required this.stakeAddress, required this.walletName});
 
+  @override
   Map<String, int> get currencies {
     return transactions
         .map((t) => t.currencies)
@@ -56,11 +66,21 @@ class PublicWalletImpl implements PublicWallet {
   }
 
   @override
-  bool refresh(
-      {required int balance,
-      required List<ShelleyAddress> usedAddresses,
-      required List<Transaction> transactions,
-      required Map<String, CurrencyAsset> assets}) {
+  int get calculatedBalance {
+    final int rewardsSum = stakeAccounts.map((s) => s.withdrawalsSum).fold(0, (p, c) => p + c); //TODO figure out the math
+    final int lovelaceSum = currencies[lovelaceHex] as int;
+    final result = lovelaceSum + rewardsSum;
+    return result;
+  }
+
+  @override
+  bool refresh({
+    required int balance,
+    required List<ShelleyAddress> usedAddresses,
+    required List<Transaction> transactions,
+    required Map<String, CurrencyAsset> assets,
+    required List<StakeAccount> stakeAccounts,
+  }) {
     bool change = false;
     if (this._assets.length != assets.length) {
       change = true;
@@ -79,6 +99,10 @@ class PublicWalletImpl implements PublicWallet {
       final Set<String> addressSet = usedAddresses.map((a) => a.toBech32()).toSet();
       this._transactions = transactions.map((t) => WalletTransactionImpl(baseTransaction: t, addressSet: addressSet)).toList();
     }
+    if (this._stakeAccounts.length != stakeAccounts.length) {
+      change = true;
+      this._stakeAccounts = stakeAccounts;
+    }
     return change;
   }
 
@@ -93,8 +117,12 @@ class PublicWalletImpl implements PublicWallet {
 
   @override
   List<WalletTransaction> get transactions => _transactions;
+
   @override
   Map<String, CurrencyAsset> get assets => _assets;
+
+  @override
+  List<StakeAccount> get stakeAccounts => _stakeAccounts;
 
   @override
   List<WalletTransaction> filterTransactions({required String assetId}) =>

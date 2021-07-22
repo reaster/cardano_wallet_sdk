@@ -42,8 +42,11 @@ const asset1 = '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7';
 final accountContent = Response(
     requestOptions: RequestOptions(path: ''),
     statusCode: 200,
-    data: serializers.fromJson(AccountContent.serializer,
-        '["active",false,"controlled_amount","199228617","rewards_sum","0","withdrawals_sum","0","reserves_sum","0","treasury_sum","0","withdrawable_amount","0"]')!);
+    data: serializers.fromJson(
+      AccountContent.serializer,
+      '["active",false,"controlled_amount","199228617","rewards_sum","0","withdrawals_sum","0","reserves_sum","0","treasury_sum","0","withdrawable_amount","0"]',
+      // '["active",true,"active_epoch",135,"controlled_amount","398515694","rewards_sum","690831","withdrawals_sum","0","reserves_sum","0","treasury_sum","0","withdrawable_amount","690831","pool_id","pool14pdhhugxlqp9vta49pyfu5e2d5s82zmtukcy9x5ylukpkekqk8l"]',
+    )!);
 
 Response<TxContent> txContent(String txId) {
   String json = '';
@@ -221,13 +224,17 @@ void main() {
 
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
-      final wallet = PublicWalletImpl(networkId: NetworkId.testnet, stakingAddress: stakeAddr2, name: 'mock wallet');
-      final updateResult = await mockWalletAdapter.updatePublicWallet(stakingAddress: stakeAddr2);
+      final wallet = PublicWalletImpl(networkId: NetworkId.testnet, stakeAddress: stakeAddr2, name: 'mock wallet');
+      final updateResult = await mockWalletAdapter.updatePublicWallet(stakeAddress: stakeAddr2);
       updateResult.when(
           ok: (update) {
             print("Wallet(balance: ${update.balance}, formatted: ${formatter.format(update.balance)})");
             wallet.refresh(
-                balance: update.balance, usedAddresses: update.addresses, transactions: update.transactions, assets: update.assets);
+                balance: update.balance,
+                usedAddresses: update.addresses,
+                transactions: update.transactions,
+                assets: update.assets,
+                stakeAccounts: []);
 
             //addresses
             update.addresses.forEach((addr) => print(addr.toBech32()));

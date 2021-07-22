@@ -1,5 +1,8 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
+import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
+import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
@@ -19,13 +22,13 @@ import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 ///
 abstract class WalletFactory {
   ///create Cardano wallet given a stakeAddress, networkId and optional wallet name.
-  Future<Result<PublicWallet, String>> createPublicWallet({required NetworkId networkId, required String stakeAddress, String? name});
+  Future<Result<PublicWallet, String>> createPublicWallet({required String stakeAddress, String? walletName});
 
   ///update existing wallet
   Future<Result<bool, String>> updatePublicWallet({required PublicWalletImpl wallet});
 
   ///lookup cached wallet by stakingAddress
-  PublicWallet? byStakeAddress(String stakingAddress);
+  PublicWallet? byStakeAddress(String stakeAddress);
 
   ///lookup CardanoNetwork metadata given NetworkId.
   Map<NetworkId, CardanoNetwork> get networkMap;
@@ -49,14 +52,14 @@ class ShelleyWalletFactory implements WalletFactory {
       ShelleyWalletFactory(authInterceptor: BlockfrostApiKeyAuthInterceptor(projectId: key));
 
   @override
-  Future<Result<PublicWallet, String>> createPublicWallet(
-      {required NetworkId networkId, required String stakeAddress, String? name}) async {
+  Future<Result<PublicWallet, String>> createPublicWallet({required String stakeAddress, String? walletName}) async {
     PublicWalletImpl? wallet = _walletCache[stakeAddress];
     if (wallet != null) {
       return Err("wallet already exists: '${wallet.name}'");
     }
-    final String walletName = name ?? "Wallet #${++_walletIndex}";
-    wallet = PublicWalletImpl(networkId: networkId, stakingAddress: stakeAddress, name: walletName);
+    final String name = walletName ?? "Wallet #${++_walletIndex}";
+    final networkId = stakeAddress.startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet,
+        wallet = PublicWalletImpl(networkId: networkId, stakeAddress: stakeAddress, name: name);
     final result = await updatePublicWallet(wallet: wallet);
     if (result.isErr()) {
       return Err(result.unwrapErr());
@@ -69,11 +72,15 @@ class ShelleyWalletFactory implements WalletFactory {
   Future<Result<bool, String>> updatePublicWallet({required PublicWalletImpl wallet}) async {
     bool changed = false;
     final adapter = _adapter(wallet.networkId);
-    final result = await adapter.updatePublicWallet(stakingAddress: wallet.stakingAddress);
+    final result = await adapter.updatePublicWallet(stakeAddress: wallet.stakeAddress);
     result.when(
       ok: (update) {
         changed = wallet.refresh(
-            balance: update.balance, transactions: update.transactions, usedAddresses: update.addresses, assets: update.assets);
+            balance: update.balance,
+            transactions: update.transactions,
+            usedAddresses: update.addresses,
+            assets: update.assets,
+            stakeAccounts: update.stakeAccounts);
       },
       err: (err) => Err(result.unwrapErr()),
     );
@@ -81,7 +88,7 @@ class ShelleyWalletFactory implements WalletFactory {
   }
 
   @override
-  PublicWallet? byStakeAddress(String stakingAddress) => _walletCache[stakingAddress];
+  PublicWallet? byStakeAddress(String stakeAddress) => _walletCache[stakeAddress];
 
   WalletServiceAdapter _adapter(NetworkId networkId) {
     BlockfrostWalletAdapter? adapter = _adapterCache[networkId];
@@ -95,8 +102,10 @@ class ShelleyWalletFactory implements WalletFactory {
   Blockfrost _blockfrost(NetworkId networkId) {
     Blockfrost? blockfrost = _blockfrostCache[networkId];
     if (blockfrost == null) {
+      final url = _networkMap[networkId]!.blockfrostUrl;
+      print("new Blockfrost($url)");
       blockfrost = Blockfrost(
-        basePathOverride: _networkMap[networkId]!.blockfrostUrl,
+        basePathOverride: url,
         interceptors: [authInterceptor],
       );
       _blockfrostCache[networkId] = blockfrost;
@@ -116,14 +125,21 @@ class WalletUpdate {
   final List<Transaction> transactions;
   final List<ShelleyAddress> addresses;
   final Map<String, CurrencyAsset> assets;
-  WalletUpdate({required this.balance, required this.transactions, required this.addresses, required this.assets});
+  final List<StakeAccount> stakeAccounts;
+  WalletUpdate({
+    required this.balance,
+    required this.transactions,
+    required this.addresses,
+    required this.assets,
+    required this.stakeAccounts,
+  });
 }
 
 ///
 /// Binds a data API to wallet model
 ///
 abstract class WalletServiceAdapter {
-  Future<Result<WalletUpdate, String>> updatePublicWallet({required String stakingAddress});
+  Future<Result<WalletUpdate, String>> updatePublicWallet({required String stakeAddress});
 }
 
 ///
@@ -144,12 +160,21 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
 
   @override
   Future<Result<WalletUpdate, String>> updatePublicWallet(
-      {required String stakingAddress, TemperalSortOrder sortOrder = TemperalSortOrder.descending}) async {
-    final content = await _loadAccountContent(stakeAddress: stakingAddress);
+      {required String stakeAddress, TemperalSortOrder sortOrder = TemperalSortOrder.descending}) async {
+    final content = await _loadAccountContent(stakeAddress: stakeAddress);
     final controlledAmount = content.isOk() ? int.tryParse(content.unwrap().controlledAmount) ?? 0 : 0;
-    final addresses = await _addresses(stakeAddress: stakingAddress);
+    final addresses = await _addresses(stakeAddress: stakeAddress);
     if (addresses.isErr()) {
       return Err(addresses.unwrapErr());
+    }
+    final account = content.unwrap();
+    List<StakeAccount> stakeAccounts = []; //TODO should be a list, just show current staked pool for now
+    if (account.poolId != null && account.active) {
+      final stakeAccountResponse = await _stakeAccount(poolId: account.poolId!, stakeAddress: stakeAddress);
+      if (stakeAccountResponse.isErr()) {
+        return Err(stakeAccountResponse.unwrapErr());
+      }
+      stakeAccounts = stakeAccountResponse.unwrap();
     }
     List<Transaction> transactions = [];
     Set<String> duplicateTxHashes = {}; //track and skip duplicates
@@ -173,7 +198,100 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
         return Err(asset.unwrapErr());
       }
     }
-    return Ok(WalletUpdate(balance: controlledAmount, transactions: transactions, addresses: addresses.unwrap(), assets: assets));
+    return Ok(WalletUpdate(
+        balance: controlledAmount,
+        transactions: transactions,
+        addresses: addresses.unwrap(),
+        assets: assets,
+        stakeAccounts: stakeAccounts));
+  }
+
+  Future<Result<List<StakeAccount>, String>> _stakeAccount({required String poolId, required String stakeAddress}) async {
+    StakePool stakePool;
+    final Response<Pool> poolResponse = await blockfrost.getCardanoPoolsApi().poolsPoolIdGet(poolId: poolId);
+    if (poolResponse.statusCode == 200 && poolResponse.data != null) {
+      final p = poolResponse.data!;
+      stakePool = StakePool(
+        activeSize: p.activeSize,
+        vrfKey: p.vrfKey,
+        blocksMinted: p.blocksMinted,
+        declaredPledge: p.declaredPledge,
+        liveDelegators: p.liveDelegators,
+        livePledge: p.livePledge,
+        liveSize: p.liveSize,
+        liveSaturation: p.liveSaturation,
+        liveStake: p.liveStake,
+        rewardAccount: p.rewardAccount,
+        fixedCost: p.fixedCost,
+        marginCost: p.marginCost,
+        activeStake: p.activeStake,
+        retirement: p.retirement.map((e) => e).toList(),
+        owners: p.owners.map((e) => e).toList(),
+        registration: p.registration.map((e) => e).toList(),
+      );
+    } else {
+      return poolResponse.statusMessage != null
+          ? Err("${poolResponse.statusMessage}, code: ${poolResponse.statusCode}")
+          : Err('problem loading stake pool: ${poolId}');
+    }
+    StakePoolMetadata stakePoolMetadata;
+    final Response<AnyOfpoolMetadataobject> metadataResponse = await blockfrost.getCardanoPoolsApi().poolsPoolIdMetadataGet(poolId: poolId);
+    if (metadataResponse.statusCode == 200 && metadataResponse.data != null) {
+      final m = metadataResponse.data!;
+      stakePoolMetadata = StakePoolMetadata(
+        name: m.name,
+        hash: m.hash,
+        url: m.url,
+        ticker: m.ticker,
+        description: m.description,
+        homepage: m.homepage,
+      );
+    } else {
+      return metadataResponse.statusMessage != null
+          ? Err("${metadataResponse.statusMessage}, code: ${metadataResponse.statusCode}")
+          : Err('problem loading stake pool metadata: ${poolId}');
+    }
+    List<StakeReward> rewards = [];
+    final Response<BuiltList<JsonObject>> rewardResponse =
+        await blockfrost.getCardanoAccountsApi().accountsStakeAddressRewardsGet(stakeAddress: stakeAddress, count: 100);
+    if (rewardResponse.statusCode == 200 && rewardResponse.data != null) {
+      rewardResponse.data!.forEach((reward) {
+        if (reward.isMap) {
+          final map = reward.asMap;
+          rewards.add(StakeReward(epoch: map['epoch'], amount: int.tryParse(map['amount']) ?? 0, poolId: map['pool_id'] ?? ''));
+          print("amount: ${map['amount']}, epoch: ${map['epoch']}, pool_id: ${map['pool_id']}");
+        }
+      });
+    } else {
+      return rewardResponse.statusMessage != null
+          ? Err("${rewardResponse.statusMessage}, code: ${rewardResponse.statusCode}")
+          : Err('problem loading staking rewards: ${stakeAddress}');
+    }
+    StakeAccount stakeAccount;
+    final Response<AccountContent> accountResponse =
+        await blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress);
+    if (accountResponse.statusCode == 200 && accountResponse.data != null) {
+      final a = accountResponse.data!;
+      stakeAccount = StakeAccount(
+        active: a.active,
+        activeEpoch: a.activeEpoch,
+        controlledAmount: int.tryParse(a.controlledAmount) ?? 0,
+        reservesSum: int.tryParse(a.reservesSum) ?? 0,
+        withdrawableAmount: int.tryParse(a.withdrawableAmount) ?? 0,
+        rewardsSum: int.tryParse(a.reservesSum) ?? 0,
+        treasurySum: int.tryParse(a.treasurySum) ?? 0,
+        poolId: a.poolId,
+        withdrawalsSum: int.tryParse(a.withdrawableAmount) ?? 0,
+        stakePool: stakePool,
+        poolMetadata: stakePoolMetadata,
+        rewards: rewards,
+      );
+    } else {
+      return accountResponse.statusMessage != null
+          ? Err("${accountResponse.statusMessage}, code: ${accountResponse.statusCode}")
+          : Err('problem loading staking account: ${stakeAddress}');
+    }
+    return Ok([stakeAccount]);
   }
 
   Future<Result<List<ShelleyAddress>, String>> _addresses({
