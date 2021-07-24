@@ -1,3 +1,9 @@
+## [0.1.0-alpha.3] - 2021-07-22
+
+* initial stake take pool and rewards support
+* epoch and slot to timestamp functions
+* bech32 validation
+
 ## [0.1.0-alpha.2] - 2021-07-16
 
 * Asset support and transaction code improvements

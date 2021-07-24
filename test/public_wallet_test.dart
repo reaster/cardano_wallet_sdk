@@ -11,91 +11,56 @@ void main() {
   final wallet2 = 'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
   final wallet3 = 'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
   final wallet4 = 'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
-  final formatter = AdaFormattter.compactCurrency();
+
   final walletFactory = ShelleyWalletFactory(authInterceptor: MyApiKeyAuthInterceptor());
+
   group('PublicWallet -', () {
     test('test create testnet wallet 1', () async {
-      final result = await walletFactory.createPublicWallet(networkId: NetworkId.testnet, stakeAddress: wallet1);
-      result.when(
-          ok: (wallet) {
-            print("Wallet(name: ${wallet.name}, balance: ${formatter.format(wallet.balance)})");
-            wallet.addresses().forEach((addr) {
-              print(addr.toBech32());
-            });
-            wallet.transactions.forEach((tx) {
-              print("$tx");
-            });
-            wallet.currencies.forEach((key, value) {
-              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
-            });
-            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
-          },
-          err: (err) => print(err));
-      final wallet = walletFactory.byStakeAddress(wallet1);
-      final update = await walletFactory.updatePublicWallet(wallet: wallet as PublicWalletImpl);
-      expect(false, update.unwrap());
+      await testWallet(stakeAddress: wallet1, walletFactory: walletFactory);
     });
     test('create testnet wallet 2', () async {
-      final result2 = await walletFactory.createPublicWallet(networkId: NetworkId.testnet, stakeAddress: wallet2, name: 'Wallet 2');
-      result2.when(
-          ok: (wallet) {
-            print("Wallet(name: ${wallet.name}, balance: ${formatter.format(wallet.balance)})");
-            wallet.addresses().forEach((addr) {
-              print(addr.toBech32());
-            });
-            wallet.transactions.forEach((tx) {
-              print("$tx");
-            });
-            wallet.currencies.forEach((key, value) {
-              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
-            });
-            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
-          },
-          err: (err) => print(err));
+      await testWallet(stakeAddress: wallet2, walletFactory: walletFactory, walletName: 'Wallet 2');
     });
     test('create testnet wallet 3', () async {
-      final result3 = await walletFactory.createPublicWallet(networkId: NetworkId.testnet, stakeAddress: wallet3, name: 'Wallet 3');
-      result3.when(
-          ok: (wallet) {
-            print("Wallet(name: ${wallet.name}, balance: ${formatter.format(wallet.balance)})");
-            wallet.addresses().forEach((addr) {
-              print(addr.toBech32());
-            });
-            wallet.currencies.forEach((key, value) {
-              final asset = wallet.assets[key];
-              print("Currency: ${asset?.symbol ?? key}: ${asset?.isADA ?? false ? formatter.format(value) : value}");
-            });
-            // wallet.transactions.forEach((tx) {
-            //   print("$tx");
-            // });
-            wallet.currencies.keys.forEach((key) {
-              final asset = wallet.assets[key];
-              print('${asset?.symbol} transactions:');
-              wallet.filterTransactions(assetId: key).forEach((tx) {
-                print("$tx");
-              });
-            });
-            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
-          },
-          err: (err) => print(err));
+      await testWallet(stakeAddress: wallet3, walletFactory: walletFactory, walletName: 'Wallet 3');
     });
     test('create testnet wallet 4', () async {
-      final result4 = await walletFactory.createPublicWallet(networkId: NetworkId.testnet, stakeAddress: wallet4, name: 'Wallet 4');
-      result4.when(
-          ok: (wallet) {
-            print("Wallet(name: ${wallet.name}, balance: ${formatter.format(wallet.balance)})");
-            wallet.addresses().forEach((addr) {
-              print(addr.toBech32());
-            });
-            wallet.transactions.forEach((tx) {
-              print("$tx");
-            });
-            wallet.currencies.forEach((key, value) {
-              print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
-            });
-            expect(wallet.balance, equals(wallet.currencies[lovelaceHex]));
-          },
-          err: (err) => print(err));
-    }, skip: 'TODO: add staking rewards to balance');
+      await testWallet(stakeAddress: wallet4, walletFactory: walletFactory, walletName: 'Wallet 4');
+    });
+    test('create mainnet wallet 8', () async {
+      final wallet8 = 'stake1uy88uenysztnswv6u3cssgpamztc25q5wea703rnp50s4qq0ddctn';
+      await testWallet(stakeAddress: wallet8, walletFactory: walletFactory, walletName: 'Fat Cat 8');
+    }, skip: 'mainnet auth not working');
   });
+}
+
+final formatter = AdaFormattter.compactCurrency();
+
+Future<void> testWallet({required String stakeAddress, required WalletFactory walletFactory, String? walletName}) async {
+  final result = await walletFactory.createPublicWallet(stakeAddress: stakeAddress, walletName: walletName);
+  result.when(
+      ok: (wallet) {
+        print("Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
+        wallet.addresses().forEach((addr) {
+          print(addr.toBech32());
+        });
+        wallet.transactions.forEach((tx) {
+          print("$tx");
+        });
+        wallet.currencies.forEach((key, value) {
+          print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
+        });
+        wallet.stakeAccounts.forEach((acct) {
+          final ticker = acct.poolMetadata?.ticker ?? acct.poolMetadata?.name ?? acct.poolId!;
+          acct.rewards.forEach((reward) {
+            print("epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
+          });
+        });
+        final int calculatSum = wallet.calculatedBalance; //TODO figure out the math
+        expect(wallet.balance, equals(calculatSum));
+      },
+      err: (err) => print(err));
+  final wallet = walletFactory.byStakeAddress(stakeAddress);
+  final update = await walletFactory.updatePublicWallet(wallet: wallet as PublicWalletImpl);
+  expect(false, update.unwrap());
 }
