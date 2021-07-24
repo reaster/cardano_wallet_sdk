@@ -55,7 +55,8 @@ class PublicWalletImpl implements PublicWallet {
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
-  PublicWalletImpl({required this.networkId, required this.stakeAddress, required this.walletName});
+  PublicWalletImpl({required this.stakeAddress, required this.walletName})
+      : this.networkId = stakeAddress.startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet;
 
   @override
   Map<String, int> get currencies {
@@ -110,7 +111,7 @@ class PublicWalletImpl implements PublicWallet {
   List<ShelleyAddress> addresses({TransactionQueryType type = TransactionQueryType.all}) => _usedAddresses;
 
   @override
-  String toString() => "Wallet(name: $name, balance: $balance lovelace)";
+  String toString() => "Wallet(name: $walletName, balance: $balance lovelace)";
 
   @override
   int get balance => _balance;

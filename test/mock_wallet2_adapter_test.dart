@@ -224,7 +224,7 @@ void main() {
 
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
-      final wallet = PublicWalletImpl(networkId: NetworkId.testnet, stakeAddress: stakeAddr2, name: 'mock wallet');
+      final wallet = PublicWalletImpl(stakeAddress: stakeAddr2, walletName: 'mock wallet');
       final updateResult = await mockWalletAdapter.updatePublicWallet(stakeAddress: stakeAddr2);
       updateResult.when(
           ok: (update) {

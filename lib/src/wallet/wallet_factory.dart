@@ -55,11 +55,10 @@ class ShelleyWalletFactory implements WalletFactory {
   Future<Result<PublicWallet, String>> createPublicWallet({required String stakeAddress, String? walletName}) async {
     PublicWalletImpl? wallet = _walletCache[stakeAddress];
     if (wallet != null) {
-      return Err("wallet already exists: '${wallet.name}'");
+      return Err("wallet already exists: '${wallet.walletName}'");
     }
     final String name = walletName ?? "Wallet #${++_walletIndex}";
-    final networkId = stakeAddress.startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet,
-        wallet = PublicWalletImpl(networkId: networkId, stakeAddress: stakeAddress, name: name);
+    wallet = PublicWalletImpl(stakeAddress: stakeAddress, walletName: name);
     final result = await updatePublicWallet(wallet: wallet);
     if (result.isErr()) {
       return Err(result.unwrapErr());
