@@ -10,3 +10,4 @@ export './src/transaction/transaction.dart';
 export './src/network/cardano_network.dart';
 export './src/util/ada_formatter.dart';
 export './src/util/ada_time.dart';
+export './src/util/bech32_validation.dart';
