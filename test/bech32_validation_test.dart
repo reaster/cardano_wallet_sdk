@@ -12,6 +12,11 @@ void main() {
           validBech32(bech32: 'addr_test1234567890acdefghjklmnpqrstuvwxyz', hrpPrefixes: ['addr', 'addr_test'], dataPartRequiredLength: 32);
       expect(result.unwrap(), 'addr_test1234567890acdefghjklmnpqrstuvwxyz');
     });
+    test('fix range bug', () {
+      final result = validBech32(bech32: 'addr', hrpPrefixes: ['addr', 'addr_test'], dataPartRequiredLength: 32);
+      expect(result.isErr(), isTrue);
+      print(result.unwrapErr());
+    });
     test('return lower case alphas', () {
       final result =
           validBech32(bech32: 'addr_test1234567890ACDEFGHJKLMNPQRSTUVWXYZ', hrpPrefixes: ['addr_test', 'addr'], dataPartRequiredLength: 32);

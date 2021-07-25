@@ -9,19 +9,18 @@ Result<String, String> validBech32({required String bech32, required List<String
   if (hrpPrefixes.isEmpty) {
     throw Exception("validBech32 hrpPrefixes array must not be empty");
   }
-  if (isBlank(bech32)) return Err("bech32 is missing");
+  if (isBlank(bech32)) return Err("address missing");
   final lowerCase = bech32.toLowerCase();
   if (hrpPrefixes.length > 1) hrpPrefixes.sort((a, b) => b.compareTo(a)); //avoid matching 'addr' for 'addr_test'
   print(hrpPrefixes);
   final prefix = hrpPrefixes.firstWhere((prefix) => lowerCase.startsWith(prefix), orElse: () => '');
-  if (isBlank(prefix)) return Err("bech32 must start with ${hrpPrefixes.join(' or ')}");
-  if (lowerCase.length > prefix.length && lowerCase.codeUnitAt(prefix.length) != '1'.codeUnitAt(0))
-    return Err("invalid bech32 format, missing '1' after prefix");
-  final data = lowerCase.substring(prefix.length + 1);
-  if (dataPartRequiredLength != null && data.length != dataPartRequiredLength)
-    return Err("invalid bech32 data '$data' length, requires $dataPartRequiredLength but was ${data.length} characters long");
+  if (isBlank(prefix)) return Err("must start with ${hrpPrefixes.join(' or ')}");
+  if (lowerCase.length > prefix.length && lowerCase.codeUnitAt(prefix.length) != '1'.codeUnitAt(0)) return Err("missing '1' after prefix");
+  final data = lowerCase.length > prefix.length ? lowerCase.substring(prefix.length + 1) : '';
   int invalidCharIndex = _firstIllegalDataChar(data);
-  if (invalidCharIndex > -1) return Err("invalid bech32 data '$data' character: ${data.substring(invalidCharIndex, invalidCharIndex + 1)}");
+  if (invalidCharIndex > -1) return Err("invalid character: ${data.substring(invalidCharIndex, invalidCharIndex + 1)}");
+  if (dataPartRequiredLength != null && data.length != dataPartRequiredLength)
+    return Err("data length is ${data.length}, requires $dataPartRequiredLength");
   return Ok(lowerCase);
 }
 
