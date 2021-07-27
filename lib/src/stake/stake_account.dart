@@ -19,7 +19,7 @@ class StakeAccount {
   /// Sum of all the withdrawals for the account in Lovelaces
   final int withdrawalsSum;
 
-  /// Sum of all  funds from reserves for the account in the Lovelaces
+  /// Sum of all funds from reserves for the account in the Lovelaces
   final int reservesSum;
 
   /// Sum of all funds from treasury for the account in the Lovelaces

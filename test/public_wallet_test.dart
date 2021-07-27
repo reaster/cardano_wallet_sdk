@@ -1,10 +1,10 @@
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_formatter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/public_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
 import 'package:test/test.dart';
 import './my_api_key_auth.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
+import 'package:oxidized/oxidized.dart';
 
 void main() {
   final wallet1 = 'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
@@ -27,6 +27,11 @@ void main() {
     test('create testnet wallet 4', () async {
       await testWallet(stakeAddress: wallet4, walletFactory: walletFactory, walletName: 'Wallet 4');
     });
+    test('missing account', () async {
+      final result = await testWallet(stakeAddress: 'stake_test1uqnfXXXXXXXXXXX', walletFactory: walletFactory, walletName: 'MIA');
+      expect(true, result.isErr());
+      print("ERROR: ${result.unwrapErr()}");
+    });
     test('create mainnet wallet 8', () async {
       final wallet8 = 'stake1uy88uenysztnswv6u3cssgpamztc25q5wea703rnp50s4qq0ddctn';
       await testWallet(stakeAddress: wallet8, walletFactory: walletFactory, walletName: 'Fat Cat 8');
@@ -36,31 +41,42 @@ void main() {
 
 final formatter = AdaFormattter.compactCurrency();
 
-Future<void> testWallet({required String stakeAddress, required WalletFactory walletFactory, String? walletName}) async {
+Future<Result<PublicWallet, String>> testWallet(
+    {required String stakeAddress, required WalletFactory walletFactory, String? walletName}) async {
   final result = await walletFactory.createPublicWallet(stakeAddress: stakeAddress, walletName: walletName);
+  bool error = false;
   result.when(
-      ok: (wallet) {
-        print("Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
-        wallet.addresses().forEach((addr) {
-          print(addr.toBech32());
+    ok: (wallet) {
+      print("Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
+      wallet.addresses().forEach((addr) {
+        print(addr.toBech32());
+      });
+      wallet.transactions.forEach((tx) {
+        print("$tx");
+      });
+      wallet.currencies.forEach((key, value) {
+        print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
+      });
+      wallet.stakeAccounts.forEach((acct) {
+        final ticker = acct.poolMetadata?.ticker ?? acct.poolMetadata?.name ?? acct.poolId!;
+        acct.rewards.forEach((reward) {
+          print("epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
         });
-        wallet.transactions.forEach((tx) {
-          print("$tx");
-        });
-        wallet.currencies.forEach((key, value) {
-          print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
-        });
-        wallet.stakeAccounts.forEach((acct) {
-          final ticker = acct.poolMetadata?.ticker ?? acct.poolMetadata?.name ?? acct.poolId!;
-          acct.rewards.forEach((reward) {
-            print("epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
-          });
-        });
-        final int calculatSum = wallet.calculatedBalance; //TODO figure out the math
-        expect(wallet.balance, equals(calculatSum));
-      },
-      err: (err) => print(err));
+      });
+      final int calculatSum = wallet.calculatedBalance; //TODO figure out the math
+      expect(wallet.balance, equals(calculatSum));
+    },
+    err: (err) {
+      print(err);
+      error = true;
+      return Err(err);
+    },
+  );
+  if (error) {
+    return Err(result.unwrapErr());
+  }
   final wallet = walletFactory.byStakeAddress(stakeAddress);
   final update = await walletFactory.updatePublicWallet(wallet: wallet as PublicWalletImpl);
   expect(false, update.unwrap());
+  return Ok(result.unwrap());
 }

@@ -7,6 +7,7 @@ import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
 import 'package:cardano_wallet_sdk/src/util/blockfrost_api_key_auth.dart';
+import 'package:cardano_wallet_sdk/src/util/dio_call.dart';
 import 'package:cardano_wallet_sdk/src/wallet/public_wallet.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
@@ -59,9 +60,14 @@ class ShelleyWalletFactory implements WalletFactory {
     }
     final String name = walletName ?? "Wallet #${++_walletIndex}";
     wallet = PublicWalletImpl(stakeAddress: stakeAddress, walletName: name);
-    final result = await updatePublicWallet(wallet: wallet);
-    if (result.isErr()) {
-      return Err(result.unwrapErr());
+    try {
+      final result = await updatePublicWallet(wallet: wallet);
+      if (result.isErr()) {
+        return Err(result.unwrapErr());
+      }
+    } catch (e) {
+      print(e);
+      return Err(e.toString());
     }
     _walletCache[stakeAddress] = wallet;
     return Ok(wallet);
@@ -70,6 +76,7 @@ class ShelleyWalletFactory implements WalletFactory {
   @override
   Future<Result<bool, String>> updatePublicWallet({required PublicWalletImpl wallet}) async {
     bool changed = false;
+    bool error = false;
     final adapter = _adapter(wallet.networkId);
     final result = await adapter.updatePublicWallet(stakeAddress: wallet.stakeAddress);
     result.when(
@@ -81,9 +88,11 @@ class ShelleyWalletFactory implements WalletFactory {
             assets: update.assets,
             stakeAccounts: update.stakeAccounts);
       },
-      err: (err) => Err(result.unwrapErr()),
+      err: (err) {
+        error = true;
+      },
     );
-    return Ok(changed);
+    return error ? Err(result.unwrapErr()) : Ok(changed);
   }
 
   @override
@@ -161,6 +170,9 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
   Future<Result<WalletUpdate, String>> updatePublicWallet(
       {required String stakeAddress, TemperalSortOrder sortOrder = TemperalSortOrder.descending}) async {
     final content = await _loadAccountContent(stakeAddress: stakeAddress);
+    if (content.isErr()) {
+      return Err(content.unwrapErr());
+    }
     final controlledAmount = content.isOk() ? int.tryParse(content.unwrap().controlledAmount) ?? 0 : 0;
     final addresses = await _addresses(stakeAddress: stakeAddress);
     if (addresses.isErr()) {
@@ -234,7 +246,8 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
           : Err('problem loading stake pool: ${poolId}');
     }
     StakePoolMetadata stakePoolMetadata;
-    final Response<AnyOfpoolMetadataobject> metadataResponse = await blockfrost.getCardanoPoolsApi().poolsPoolIdMetadataGet(poolId: poolId);
+    final Response<AnyOfpoolMetadataobject> metadataResponse =
+        await blockfrost.getCardanoPoolsApi().poolsPoolIdMetadataGet(poolId: poolId); //TODO replace with dioCall
     if (metadataResponse.statusCode == 200 && metadataResponse.data != null) {
       final m = metadataResponse.data!;
       stakePoolMetadata = StakePoolMetadata(
@@ -251,8 +264,9 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
           : Err('problem loading stake pool metadata: ${poolId}');
     }
     List<StakeReward> rewards = [];
-    final Response<BuiltList<JsonObject>> rewardResponse =
-        await blockfrost.getCardanoAccountsApi().accountsStakeAddressRewardsGet(stakeAddress: stakeAddress, count: 100);
+    final Response<BuiltList<JsonObject>> rewardResponse = await blockfrost
+        .getCardanoAccountsApi()
+        .accountsStakeAddressRewardsGet(stakeAddress: stakeAddress, count: 100); //TODO replace with dioCall
     if (rewardResponse.statusCode == 200 && rewardResponse.data != null) {
       rewardResponse.data!.forEach((reward) {
         if (reward.isMap) {
@@ -268,7 +282,7 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     }
     StakeAccount stakeAccount;
     final Response<AccountContent> accountResponse =
-        await blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress);
+        await blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress); //TODO replace with dioCall
     if (accountResponse.statusCode == 200 && accountResponse.data != null) {
       final a = accountResponse.data!;
       stakeAccount = StakeAccount(
@@ -364,7 +378,8 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
   }
 
   Future<List<String>> _transactionsHashes({required String address}) async {
-    Response<BuiltList<String>> result = await blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address: address);
+    Response<BuiltList<String>> result =
+        await blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address: address); //TODO replace with dioCall
     final isData = result.statusCode == 200 && result.data != null && result.data!.isNotEmpty;
     final List<String> list = isData ? result.data!.map((tx) => tx).toList() : [];
     print("blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address:$address) -> ${list.join(',')}");
@@ -376,30 +391,44 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     if (cachedTx != null) {
       return Ok(cachedTx);
     }
-    Response<TxContent> txContent = await blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash);
-    if (txContent.statusCode != 200 || txContent.data == null) {
-      return Err("${txContent.statusCode}: ${txContent.statusMessage}");
-    }
-    print(
-        "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, txContent.data!)}");
-    final block = await _loadBlock(hashOrNumber: txContent.data!.block);
+    final txContentResult = await dioCall<TxContent>(
+      request: () => blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash),
+      onSuccess: (data) =>
+          print("blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, data)}"),
+      errorSubject: 'transaction content',
+    );
+    if (txContentResult.isErr()) return Err(txContentResult.unwrapErr());
+    // Response<TxContent> txContent = await blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash);
+    // if (txContent.statusCode != 200 || txContent.data == null) {
+    //   return Err("${txContent.statusCode}: ${txContent.statusMessage}");
+    // }
+    // print(
+    //     "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, txContent.data!)}");
+    final block = await _loadBlock(hashOrNumber: txContentResult.unwrap().block);
     if (block.isErr()) {
       return Err(block.unwrapErr());
     }
+    final txContentUtxoResult = await dioCall<TxContentUtxo>(
+      request: () => blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash),
+      onSuccess: (data) => print(
+          "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, data)}"),
+      errorSubject: 'UTXO',
+    );
+    if (txContentUtxoResult.isErr()) return Err(txContentUtxoResult.unwrapErr());
 
-    Response<TxContentUtxo> txUtxo = await blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash);
-    if (txUtxo.statusCode != 200 || txUtxo.data == null) {
-      return Err("${txUtxo.statusCode}: ${txUtxo.statusMessage}");
-    }
-    print(
-        "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, txUtxo.data!)}");
+    // Response<TxContentUtxo> txUtxo = await blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash);
+    // if (txUtxo.statusCode != 200 || txUtxo.data == null) {
+    //   return Err("${txUtxo.statusCode}: ${txUtxo.statusMessage}");
+    // }
+    // print(
+    //     "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, txUtxo.data!)}");
     final time = block.unwrap().time;
     //final deposit = int.tryParse(txContent.data?.deposit ?? '0') ?? 0;
-    final fees = int.tryParse(txContent.data?.fees ?? '0') ?? 0;
+    final fees = int.tryParse(txContentResult.unwrap().fees) ?? 0;
     //final withdrawalCount = txContent.data!.withdrawalCount;
-    final addrInputs = txUtxo.data!.inputs;
+    final addrInputs = txContentUtxoResult.unwrap().inputs;
     List<TransactionIO> inputs = _buildIputs(addrInputs);
-    final addrOutputs = txUtxo.data!.outputs;
+    final addrOutputs = txContentUtxoResult.unwrap().outputs;
     List<TransactionIO> outputs = _buildOutputs(addrOutputs);
     //print("deposit: $deposit, fees: $fees, withdrawalCount: $withdrawalCount inputs: ${inputs.length}, outputs: ${outputs.length}");
     //BuiltList<TxContentOutputAmount> amounts = txContent.data!.outputAmount;
@@ -425,7 +454,7 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
       return Ok(cachedAsset);
     }
     try {
-      final result = await blockfrost.getCardanoAssetsApi().assetsAssetGet(asset: assetId);
+      final result = await blockfrost.getCardanoAssetsApi().assetsAssetGet(asset: assetId); //TODO replace with dioCall
       if (result.statusCode != 200 || result.data == null) {
         return Err("${result.statusCode}: ${result.statusMessage}");
       }
@@ -451,19 +480,41 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     }
   }
 
+  // Future<Result<AccountContent, String>> _loadAccountContent({required String stakeAddress}) async {
+  //   final cachedAccountContent = _accountContentCache[stakeAddress];
+  //   if (cachedAccountContent != null) {
+  //     return Ok(cachedAccountContent);
+  //   }
+  //   try {
+  //     final result = await blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress);
+  //     if (result.statusCode != 200 || result.data == null) {
+  //       return Err("${result.statusCode}: ${result.statusMessage}");
+  //     }
+  //     _accountContentCache[stakeAddress] = result.data!;
+  //     print(
+  //         "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, result.data!)}");
+  //     return Ok(result.data!);
+  //   } on DioError catch (dioError) {
+  //     return Err(translateErrorMessage(dioError: dioError, subject: 'address'));
+  //   } catch (e) {
+  //     return Err("error loading wallet: '${e.toString}'");
+  //   }
+  // }
+
   Future<Result<AccountContent, String>> _loadAccountContent({required String stakeAddress}) async {
     final cachedAccountContent = _accountContentCache[stakeAddress];
     if (cachedAccountContent != null) {
       return Ok(cachedAccountContent);
     }
-    final result = await blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress);
-    if (result.statusCode != 200 || result.data == null) {
-      return Err("${result.statusCode}: ${result.statusMessage}");
-    }
-    _accountContentCache[stakeAddress] = result.data!;
-    print(
-        "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, result.data!)}");
-    return Ok(result.data!);
+    return dioCall<AccountContent>(
+      request: () => blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress),
+      onSuccess: (data) {
+        _accountContentCache[stakeAddress] = data;
+        print(
+            "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, data)}");
+      },
+      errorSubject: 'address',
+    );
   }
 
   Future<Result<Block, String>> _loadBlock({required String hashOrNumber}) async {
@@ -471,7 +522,8 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     if (cachedBlock != null) {
       return Ok(cachedBlock);
     }
-    Response<BlockContent> result = await blockfrost.getCardanoBlocksApi().blocksHashOrNumberGet(hashOrNumber: hashOrNumber);
+    Response<BlockContent> result =
+        await blockfrost.getCardanoBlocksApi().blocksHashOrNumberGet(hashOrNumber: hashOrNumber); //TODO replace with dioCall
     final isData = result.statusCode == 200 && result.data != null;
     if (isData) {
       print(
@@ -489,6 +541,7 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     _accountContentCache.clear();
   }
 }
+
 
 // void main() async {
 //   final wallet1 = 'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
