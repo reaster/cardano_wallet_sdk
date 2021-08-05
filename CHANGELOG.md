@@ -1,3 +1,7 @@
+## [0.1.0-alpha.4] - 2021-08-05
+
+* cbor encoding
+
 ## [0.1.0-alpha.3] - 2021-07-27
 
 * initial stake take pool and rewards support

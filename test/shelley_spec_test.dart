@@ -1,9 +1,38 @@
+import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:hex/hex.dart';
+import 'package:quiver/iterables.dart';
 import 'package:test/test.dart';
 import 'dart:convert';
 import 'package:cbor/cbor.dart' as cbor;
 
+///
+/// validate here: http://cbor.me
+///
 void main() {
+  test('encode Transaction', () {
+    final List<ShelleyTransactionInput> inputs = [];
+    final List<ShelleyTransactionOutput> outputs = [];
+    final int fee = 2 * 1000000;
+    final int? ttl = 666666; //Optional
+    final List<int>? metadataHash = [];
+    final int? validityStartInterval = 45678;
+    final List<ShelleyMultiAsset>? mint = [];
+    final body = ShelleyTransactionBody(
+      inputs: inputs,
+      outputs: outputs,
+      fee: fee,
+      ttl: ttl,
+      metadataHash: metadataHash,
+      validityStartInterval: validityStartInterval,
+      mint: mint,
+    );
+
+    final ShelleyTransactionWitnessSet? witnessSet = null;
+    final ShelleyMetadata? metadata = null;
+    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: witnessSet, metadata: metadata);
+    print(tx.toCborHex);
+  });
+
   test('exploreCborBasics', () {
     final codec = cbor.Cbor();
     final encoder = codec.encoder;
