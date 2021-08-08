@@ -6,34 +6,72 @@ import 'dart:convert';
 import 'package:cbor/cbor.dart' as cbor;
 
 ///
-/// validate here: http://cbor.me
+/// CBOR output can be validated here: http://cbor.me
+/// CBOR encoding reference: https://www.rfc-editor.org/rfc/rfc7049.html#appendix-B
+///
+/// Current CBOR spec is rfc8949: https://www.rfc-editor.org/rfc/rfc8949.html
+///
+/// Dart cbor package only supporst old spec, rfc7049 with map keys limited to integer
+/// and string types: https://pub.dev/packages/cbor
+///
+/// tests and results taken from: https://github.com/bloxbean/cardano-client-lib. Thank you!
 ///
 void main() {
-  test('encode Transaction', () {
-    final List<ShelleyTransactionInput> inputs = [];
-    final List<ShelleyTransactionOutput> outputs = [];
-    final int fee = 2 * 1000000;
-    final int? ttl = 666666; //Optional
-    final List<int>? metadataHash = [];
-    final int? validityStartInterval = 45678;
-    final List<ShelleyMultiAsset>? mint = [];
+  //
+  test('Serialize transaction hex to hex', () {
+    final transactionId = '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002';
+    final input = ShelleyTransactionInput(index: 7, transactionId: transactionId);
+    final listBuilder = input.toCborList();
+    final uint8buffer = listBuilder.getData();
+    print(uint8buffer.toString());
+  });
+
+  test('Serialize address to hex', () {
+    final addr = 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v';
+    final addrHexExpected =
+        '000916A5FED4589D910691B85ADDF608DCEEE4D9D60D4C9A4D2A925026C3229B212BA7EF8643CD8F7E38D6279336D61A40D228B036F40FEED6';
+    final addrHex = hexFromShelleyAddress(addr, uppercase: true);
+    print(addrHex);
+    expect(addrHex, addrHexExpected);
+  });
+
+  test('Serialize Transaction with Mint', () {
+    final List<ShelleyTransactionInput> inputs = [
+      ShelleyTransactionInput(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+    ];
+    final List<ShelleyTransactionOutput> outputs = [
+      ShelleyTransactionOutput(
+          address: 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
+          value: ShelleyValue(coin: 40000, multiAssets: [])),
+      ShelleyTransactionOutput(
+          address: 'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
+          value: ShelleyValue(coin: 340000, multiAssets: [
+            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
+              ShelleyAsset(name: '736174636f696e', value: 4000),
+            ]),
+            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
+              ShelleyAsset(name: '', value: 9000),
+            ]),
+          ])),
+    ];
     final body = ShelleyTransactionBody(
       inputs: inputs,
       outputs: outputs,
-      fee: fee,
-      ttl: ttl,
-      metadataHash: metadataHash,
-      validityStartInterval: validityStartInterval,
-      mint: mint,
+      fee: 367965,
+      ttl: 26194586,
+      metadataHash: null,
+      validityStartInterval: null,
+      mint: outputs[1].value.multiAssets,
     );
-
-    final ShelleyTransactionWitnessSet? witnessSet = null;
-    final ShelleyMetadata? metadata = null;
-    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: witnessSet, metadata: metadata);
-    print(tx.toCborHex);
+    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: null);
+    final txHex = tx.toCborHex;
+    print(txHex);
+    final expectedHex =
+        '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0f6';
+    //expect(txHex, expectedHex);
   });
 
-  test('exploreCborBasics', () {
+  test('exploreCborRoundTrip', () {
     final codec = cbor.Cbor();
     final encoder = codec.encoder;
     encoder.writeFloat(67.89);
@@ -50,7 +88,7 @@ void main() {
     expect(list[1] as int, 10);
   });
 
-  test('testCbor', () {
+  test('exploreCborSupportedTypes', () {
     // Get our cbor instance, always do this,it correctly
     // initialises the decoder.
     final codec = cbor.Cbor();
@@ -69,6 +107,8 @@ void main() {
     // Add some map entries to the list.
     // Entries are added as a key followed by a value, this ordering is enforced.
     // Map keys can be integers or strings only, this is also enforced.
+    // mapBuilder.writeBuff(uint8BufferFromHex('1fcf')); // key
+    // mapBuilder.writeEpoch(777);
     mapBuilder.writeString('a'); // key
     mapBuilder.writeURI('a/ur1');
     mapBuilder.writeString('b'); // key

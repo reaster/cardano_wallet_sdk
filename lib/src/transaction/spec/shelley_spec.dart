@@ -1,4 +1,332 @@
-// ; Shelley Types -  https://github.com/bloxbean/cardano-serialization-lib/blob/8c0f517ec39c333369462659b6c350223619973b/specs/shelley.cddl
+import 'package:cardano_wallet_sdk/src/address/addresses.dart';
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cbor/cbor.dart';
+import 'package:hex/hex.dart';
+import 'dart:convert';
+import 'package:typed_data/typed_data.dart'; // as typed;
+import 'package:cardano_wallet_sdk/src/util/codec.dart';
+
+///
+/// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
+///
+
+class ShelleyAsset {
+  final String name;
+  final int value;
+
+  ShelleyAsset({required this.name, required this.value});
+}
+
+class ShelleyMultiAsset {
+  final String policyId;
+  final List<ShelleyAsset> assets;
+
+  ShelleyMultiAsset({required this.policyId, required this.assets});
+
+  //
+  //    h'329728F73683FE04364631C27A7912538C116D802416CA1EAF2D7A96': {h'736174636F696E': 4000},
+  //
+  MapBuilder assetsToCborMap() {
+    final mapBuilder = MapBuilder.builder();
+    assets.forEach((asset) {
+      mapBuilder.writeString(asset.name);
+      // mapBuilder.writeBuff(uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
+      mapBuilder.writeInt(asset.value);
+    });
+    return mapBuilder;
+  }
+}
+
+class ShelleyTransactionInput {
+  final String transactionId;
+  final int index;
+
+  ShelleyTransactionInput({required this.transactionId, required this.index});
+
+  ListBuilder toCborList() {
+    final listBuilder = ListBuilder.builder();
+    listBuilder.writeBuff(uint8BufferFromHex(transactionId));
+    listBuilder.writeInt(index);
+    return listBuilder;
+  }
+}
+
+class ShelleyTransactionOutput {
+  final String address;
+  final ShelleyValue value;
+
+  ShelleyTransactionOutput({required this.address, required this.value});
+
+  ListBuilder toCborList() {
+    //length should always be 2
+    final listBuilder = ListBuilder.builder();
+    listBuilder.writeBuff(unit8BufferFromShelleyAddress(address));
+    if (value.multiAssets.isEmpty) {
+      //for pure ADA transactions, just write coin value
+      listBuilder.writeInt(value.coin);
+    } else {
+      //for multi-asset, write a list: [coin value, multi-asset map]
+      listBuilder.addBuilderOutput(value.multiAssetsToCborList().getData());
+    }
+    return listBuilder;
+  }
+}
+
+class ShelleyValue {
+  final int coin;
+  final List<ShelleyMultiAsset> multiAssets;
+
+  ShelleyValue({required this.coin, required this.multiAssets});
+
+  // idealy we'd generate byte strings for the keys, but this code generates string keys
+  // [
+  //  340000,
+  //  {
+  //    h'329728F73683FE04364631C27A7912538C116D802416CA1EAF2D7A96': {h'736174636F696E': 4000},
+  //    h'6B8D07D69639E9413DD637A1A815A7323C69C86ABBAFB66DBFDB1AA7': {h'': 9000}
+  //  }
+  // ]
+  //
+
+  ListBuilder multiAssetsToCborList() {
+    final listBuilder = ListBuilder.builder();
+    listBuilder.writeInt(coin);
+    final mapBuilder = MapBuilder.builder();
+    multiAssets.forEach((multiAsset) {
+      // mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+      mapBuilder.writeString(multiAsset.policyId);
+      mapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
+    });
+    listBuilder.addBuilderOutput(mapBuilder.getData());
+    return listBuilder;
+  }
+}
+
+class ShelleyTransactionBody {
+  final List<ShelleyTransactionInput> inputs;
+  final List<ShelleyTransactionOutput> outputs;
+  final int fee;
+  final int? ttl; //Optional
+  final List<int>? metadataHash;
+  final int? validityStartInterval;
+  final List<ShelleyMultiAsset>? mint;
+
+  ShelleyTransactionBody({
+    required this.inputs,
+    required this.outputs,
+    required this.fee,
+    this.ttl,
+    this.metadataHash,
+    this.validityStartInterval,
+    this.mint,
+  });
+
+  MapBuilder toCborMap() {
+    final mapBuilder = MapBuilder.builder();
+    //0:inputs
+    mapBuilder.writeInt(0);
+    final inListBuilder = ListBuilder.builder();
+    inputs.forEach((input) => inListBuilder.addBuilderOutput(input.toCborList().getData()));
+    mapBuilder.addBuilderOutput(inListBuilder.getData());
+    //1:outputs
+    mapBuilder.writeInt(1);
+    final outListBuilder = ListBuilder.builder();
+    outputs.forEach((output) => outListBuilder.addBuilderOutput(output.toCborList().getData()));
+    mapBuilder.addBuilderOutput(outListBuilder.getData());
+    //2:fee
+    mapBuilder.writeInt(2);
+    mapBuilder.writeInt(fee);
+    //3:ttl (optional)
+    if (ttl != null) {
+      mapBuilder.writeInt(3);
+      mapBuilder.writeInt(ttl!);
+    }
+    //7:metadataHash (optional)
+    if (metadataHash != null && metadataHash!.isNotEmpty) {
+      mapBuilder.writeInt(7);
+      mapBuilder.writeString('');
+    }
+    //8:validityStartInterval (optional)
+    if (validityStartInterval != null) {
+      mapBuilder.writeInt(8);
+      mapBuilder.writeInt(validityStartInterval!);
+    }
+    //9:mint (optional)
+    if (mint != null && mint!.isNotEmpty) {
+      mapBuilder.writeInt(9);
+      final mintMapBuilder = MapBuilder.builder();
+      mint!.forEach((multiAsset) {
+        // mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+        mintMapBuilder.writeString(multiAsset.policyId);
+        mintMapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
+      });
+      mapBuilder.addBuilderOutput(mintMapBuilder.getData());
+    }
+    return mapBuilder;
+  }
+
+  // Map serialize() throws CborSerializationException, AddressExcepion {
+  //     Map bodyMap = new Map();
+
+  //     Array inputsArray = new Array();
+  //     for(TransactionInput ti: inputs) {
+  //         Array input = ti.serialize();
+  //         inputsArray.add(input);
+  //     }
+  //     bodyMap.put(new UnsignedInteger(0), inputsArray);
+
+  //     Array outputsArray = new Array();
+  //     for(TransactionOutput to: outputs) {
+  //         Array output = to.serialize();
+  //         outputsArray.add(output);
+  //     }
+  //     bodyMap.put(new UnsignedInteger(1), outputsArray);
+
+  //    bodyMap.put(new UnsignedInteger(2), new UnsignedInteger(fee)); //fee
+
+  //    if(ttl != 0) {
+  //        bodyMap.put(new UnsignedInteger(3), new UnsignedInteger(ttl)); //ttl
+  //    }
+
+  //    if(metadataHash != null) {
+  //        bodyMap.put(new UnsignedInteger(7), new ByteString(metadataHash));
+  //    }
+
+  //    if(validityStartInterval != 0) {
+  //        bodyMap.put(new UnsignedInteger(8), new UnsignedInteger(validityStartInterval)); //validityStartInterval
+  //    }
+
+  //     if(mint != null && mint.size() > 0) {
+  //         Map mintMap = new Map();
+  //         for(MultiAsset multiAsset: mint) {
+  //             multiAsset.serialize(mintMap);
+  //         }
+  //         bodyMap.put(new UnsignedInteger(9), mintMap);
+  //     }
+
+  //     return bodyMap;
+  // }
+}
+
+class ShelleyTransactionWitnessSet {}
+
+class ShelleyMetadata {}
+
+class ShelleyTransaction {
+  final ShelleyTransactionBody body;
+  final ShelleyTransactionWitnessSet? witnessSet;
+  final ShelleyMetadata? metadata;
+
+  ShelleyTransaction({required this.body, this.witnessSet, this.metadata});
+
+  ListBuilder toCborList() {
+    final listBuilder = ListBuilder.builder();
+    listBuilder.addBuilderOutput(body.toCborMap().getData());
+    if (witnessSet == null) {
+      listBuilder.writeMap({});
+    } else {
+      listBuilder.writeMap({}); //TODO
+    }
+    if (metadata == null) {
+      listBuilder.writeNull();
+    } else {
+      listBuilder.writeArray([]); //TODO
+    }
+    return listBuilder;
+  }
+
+  List<int> serialize({Cbor? cbor}) {
+    final _cbor = cbor ?? Cbor();
+    final encoder = _cbor.encoder;
+    return toCborList().getData();
+  }
+
+  String get toCborHex => HEX.encode(serialize());
+
+  // public byte[] serialize() throws CborSerializationException {
+  //     try {
+  //         if (metadata != null && body.getMetadataHash() == null) {
+  //             byte[] metadataHash = metadata.getMetadataHash();
+  //             body.setMetadataHash(metadataHash);
+  //         }
+
+  //         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  //         CborBuilder cborBuilder = new CborBuilder();
+
+  //         Array array = new Array();
+  //         Map bodyMap = body.serialize();
+  //         array.add(bodyMap);
+
+  //         //witness
+  //         if (witnessSet != null) {
+  //             Map witnessMap = witnessSet.serialize();
+  //             array.add(witnessMap);
+  //         } else {
+  //             Map witnessMap = new Map();
+  //             array.add(witnessMap);
+  //         }
+
+  //         //metadata
+  //         if (metadata != null) {
+  //             array.add(metadata.getData());
+  //         } else
+  //             array.add(new ByteString((byte[]) null)); //Null for meta
+
+  //         cborBuilder.add(array);
+
+  //         new CborEncoder(baos).nonCanonical().encode(cborBuilder.build());
+  //         byte[] encodedBytes = baos.toByteArray();
+  //         return encodedBytes;
+  //     } catch (Exception e) {
+  //         throw new CborSerializationException("CBOR Serialization failed", e);
+  //     }
+  // }
+}
+
+final _emptyUint8Buffer = Uint8Buffer(0);
+
+///
+/// convert hex string to Uint8Buffer. Strips off 0x prefix if present.
+///
+Uint8Buffer uint8BufferFromHex(String hex, {bool utf8EncodeOnHexFailure = false}) {
+  if (hex.isEmpty) return _emptyUint8Buffer;
+  try {
+    final list = hex.startsWith('0x') ? HEX.decode(hex.substring(2)) : HEX.decode(hex);
+    final result = Uint8Buffer();
+    result.addAll(list);
+    return result;
+  } catch (e) {
+    if (!utf8EncodeOnHexFailure) throw e;
+    final list = utf8.encode(hex);
+    final result = Uint8Buffer();
+    result.addAll(list);
+    return result;
+  }
+}
+
+///
+/// Convert bech32 address payload to hex adding network prefix.
+///
+Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
+  final addr = ShelleyAddress.fromBech32(bech32); //TODO rather inefficient
+  final result = Uint8Buffer();
+  result.addAll(addr.buffer.asUint8List());
+  return result;
+}
+
+///
+/// Convert bech32 address payload to hex string. Optionaly uppercase hex string.
+///
+String hexFromShelleyAddress(String bech32, {bool uppercase = false}) {
+  final result = HEX.encode(unit8BufferFromShelleyAddress(bech32));
+  return uppercase ? result.toUpperCase() : result;
+}
+
+
+// reference shelley.cddl type from: 
+// https://github.com/bloxbean/cardano-serialization-lib/blob/8c0f517ec39c333369462659b6c350223619973b/specs/shelley.cddl
+//
+// ; Shelley Types
 
 // block =
 //   [ header
@@ -196,307 +524,4 @@
 
 // $kes_signature /= bytes
 
-import 'package:cbor/cbor.dart';
-import 'package:hex/hex.dart';
-import 'dart:convert';
-
-///
-/// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
-///
-class ShelleyAsset {
-  final String name;
-  final int value;
-
-  ShelleyAsset({required this.name, required this.value});
-
-  ///name is stored in hex in ledger. Try Hex decode first. If fails, try string.getBytes (used in mint transaction from client)
-  List<int> getNameAsBytes() {
-    try {
-      return name.startsWith('0x') ? HEX.decode(name.substring(2)) : HEX.decode(name);
-    } catch (e) {
-      return utf8.encode(name);
-    }
-  }
-}
-
-class ShelleyMultiAsset {
-  final String policyId;
-  final List<ShelleyAsset> assets;
-
-  ShelleyMultiAsset({required this.policyId, required this.assets});
-
-  void serialize(MapBuilder multiAssetMap) {
-    final mb = MapBuilder.builder();
-    for (ShelleyAsset asset in assets) {
-      mb.writeString(asset.name); //key
-      mb.writeInt(asset.value);
-    }
-    multiAssetMap.writeString(policyId); //key
-    multiAssetMap.addBuilderOutput(mb.getData());
-  }
-
-  static ShelleyMultiAsset deserialize(Map multiAssetsMap, String key) {
-    List<ShelleyAsset> assets = [];
-    String policyId = '';
-    // final data = codec2.getDecodedData()!;
-    // ByteString keyBS = (ByteString) key;
-    // String policyId = (HEX.encode(keyBS.getBytes()));
-
-    // Map assetsMap = (Map) multiAssetsMap.get(key);
-    // for(DataItem assetKey: assetsMap.getKeys()) {
-    //     ByteString assetNameBS = (ByteString)assetKey;
-    //     UnsignedInteger assetValueUI = (UnsignedInteger)(assetsMap.get(assetKey));
-
-    //     String name = HEX.encode(assetNameBS.getBytes());
-    //     assets.add(ShelleyAsset(name:name, value:assetValueUI.getValue()));
-    // }
-    return ShelleyMultiAsset(policyId: policyId, assets: assets);
-  }
-}
-
-class ShelleyTransactionInput {
-  final String transactionId;
-  final int index;
-
-  ShelleyTransactionInput({required this.transactionId, required this.index});
-
-  // public Array serialize() throws CborSerializationException {
-  //     Array inputArray = new Array();
-  //     byte[] transactionIdBytes = HexUtil.decodeHexString(transactionId);
-  //     inputArray.add(new ByteString(transactionIdBytes));
-  //     inputArray.add(new UnsignedInteger(index));
-
-  //     return inputArray;
-  // }
-}
-
-class ShelleyTransactionOutput {
-  final String address;
-  final ShelleyValue value;
-
-  ShelleyTransactionOutput({required this.address, required this.value});
-
-  //transaction_output = [address, amount : value]
-  // public Array serialize() throws CborSerializationException, AddressExcepion {
-  //     Array array = new Array();
-  //     byte[] addressByte = Account.toBytes(address);
-  //     array.add(new ByteString(addressByte));
-
-  //     if(value == null)
-  //         throw new CborSerializationException("Value cannot be null");
-
-  //     if(value.getMultiAssets() != null && value.getMultiAssets().size() > 0) {
-  //         Array coinAssetArray = new Array();
-
-  //         if(value.getCoin() != null)
-  //             coinAssetArray.add(new UnsignedInteger(value.getCoin()));
-
-  //         Map valueMap = value.serialize();
-  //         coinAssetArray.add(valueMap);
-
-  //         array.add(coinAssetArray);
-
-  //     } else {
-  //         array.add(new UnsignedInteger(value.getCoin()));
-  //     }
-
-  //     return array;
-  // }
-}
-
-class ShelleyValue {
-  final int coin;
-  //Policy Id -> Asset
-  final List<ShelleyMultiAsset> multiAssets;
-
-  ShelleyValue({required this.coin, required this.multiAssets});
-
-  // public Map serialize() throws CborSerializationException {
-  //     Map map = new Map();
-  //     if(multiAssets != null) {
-  //         for (MultiAsset multiAsset : multiAssets) {
-  //             Map assetsMap = new Map();
-  //             for (Asset asset : multiAsset.getAssets()) {
-  //                 ByteString assetNameBytes = new ByteString(asset.getNameAsBytes());
-  //                 UnsignedInteger value = new UnsignedInteger(asset.getValue());
-  //                 assetsMap.put(assetNameBytes, value);
-  //             }
-
-  //             ByteString policyIdByte = new ByteString(HexUtil.decodeHexString(multiAsset.getPolicyId()));
-  //             map.put(policyIdByte, assetsMap);
-  //         }
-  //     }
-  //     return map;
-  // }
-}
-
-class ShelleyTransactionBody {
-  final List<ShelleyTransactionInput> inputs;
-  final List<ShelleyTransactionOutput> outputs;
-  final int fee;
-  final int? ttl; //Optional
-  final List<int>? metadataHash;
-  final int? validityStartInterval;
-  final List<ShelleyMultiAsset>? mint;
-
-  ShelleyTransactionBody({
-    required this.inputs,
-    required this.outputs,
-    required this.fee,
-    this.ttl,
-    this.metadataHash,
-    this.validityStartInterval,
-    this.mint,
-  });
-
-  MapBuilder toCborMap({required Encoder encoder}) {
-    final mapBuilder = MapBuilder.builder();
-    //0:inputs
-    mapBuilder.writeInt(0);
-    mapBuilder.writeArray([]);
-    //1:outputs
-    mapBuilder.writeInt(1);
-    mapBuilder.writeArray([]);
-    //2:fee
-    mapBuilder.writeInt(2);
-    mapBuilder.writeInt(fee);
-    //3:ttl (optional)
-    if (ttl != null) {
-      mapBuilder.writeInt(3);
-      mapBuilder.writeInt(ttl!);
-    }
-    //7:metadataHash (optional)
-    if (metadataHash != null && metadataHash!.isNotEmpty) {
-      mapBuilder.writeInt(7);
-      mapBuilder.writeString('');
-    }
-    //8:validityStartInterval (optional)
-    if (validityStartInterval != null) {
-      mapBuilder.writeInt(8);
-      mapBuilder.writeInt(validityStartInterval!);
-    }
-    //9:mint (optional)
-    if (mint != null && mint!.isNotEmpty) {
-      mapBuilder.writeInt(9);
-      mapBuilder.writeArray([]);
-    }
-    return mapBuilder;
-  }
-
-  // Map serialize() throws CborSerializationException, AddressExcepion {
-  //     Map bodyMap = new Map();
-
-  //     Array inputsArray = new Array();
-  //     for(TransactionInput ti: inputs) {
-  //         Array input = ti.serialize();
-  //         inputsArray.add(input);
-  //     }
-  //     bodyMap.put(new UnsignedInteger(0), inputsArray);
-
-  //     Array outputsArray = new Array();
-  //     for(TransactionOutput to: outputs) {
-  //         Array output = to.serialize();
-  //         outputsArray.add(output);
-  //     }
-  //     bodyMap.put(new UnsignedInteger(1), outputsArray);
-
-  //    bodyMap.put(new UnsignedInteger(2), new UnsignedInteger(fee)); //fee
-
-  //    if(ttl != 0) {
-  //        bodyMap.put(new UnsignedInteger(3), new UnsignedInteger(ttl)); //ttl
-  //    }
-
-  //    if(metadataHash != null) {
-  //        bodyMap.put(new UnsignedInteger(7), new ByteString(metadataHash));
-  //    }
-
-  //    if(validityStartInterval != 0) {
-  //        bodyMap.put(new UnsignedInteger(8), new UnsignedInteger(validityStartInterval)); //validityStartInterval
-  //    }
-
-  //     if(mint != null && mint.size() > 0) {
-  //         Map mintMap = new Map();
-  //         for(MultiAsset multiAsset: mint) {
-  //             multiAsset.serialize(mintMap);
-  //         }
-  //         bodyMap.put(new UnsignedInteger(9), mintMap);
-  //     }
-
-  //     return bodyMap;
-  // }
-}
-
-class ShelleyTransactionWitnessSet {}
-
-class ShelleyMetadata {}
-
-class ShelleyTransaction {
-  final ShelleyTransactionBody body;
-  final ShelleyTransactionWitnessSet? witnessSet;
-  final ShelleyMetadata? metadata;
-
-  ShelleyTransaction({required this.body, this.witnessSet, this.metadata});
-
-  ListBuilder toCborList({required Encoder encoder}) {
-    final listBuilder = ListBuilder.builder();
-    listBuilder.addBuilderOutput(body.toCborMap(encoder: encoder).getData());
-    if (witnessSet == null) {
-      listBuilder.writeArray([]);
-    } else {
-      listBuilder.writeArray([]); //TODO
-    }
-    if (metadata == null) {
-      listBuilder.writeNull();
-    } else {
-      listBuilder.writeArray([]); //TODO
-    }
-    return listBuilder;
-  }
-
-  List<int> serialize({Cbor? cbor}) {
-    final _cbor = cbor ?? Cbor();
-    final encoder = _cbor.encoder;
-    return toCborList(encoder: encoder).getData();
-  }
-
-  String get toCborHex => HEX.encode(serialize());
-
-  // public byte[] serialize() throws CborSerializationException {
-  //     try {
-  //         if (metadata != null && body.getMetadataHash() == null) {
-  //             byte[] metadataHash = metadata.getMetadataHash();
-  //             body.setMetadataHash(metadataHash);
-  //         }
-
-  //         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  //         CborBuilder cborBuilder = new CborBuilder();
-
-  //         Array array = new Array();
-  //         Map bodyMap = body.serialize();
-  //         array.add(bodyMap);
-
-  //         //witness
-  //         if (witnessSet != null) {
-  //             Map witnessMap = witnessSet.serialize();
-  //             array.add(witnessMap);
-  //         } else {
-  //             Map witnessMap = new Map();
-  //             array.add(witnessMap);
-  //         }
-
-  //         //metadata
-  //         if (metadata != null) {
-  //             array.add(metadata.getData());
-  //         } else
-  //             array.add(new ByteString((byte[]) null)); //Null for meta
-
-  //         cborBuilder.add(array);
-
-  //         new CborEncoder(baos).nonCanonical().encode(cborBuilder.build());
-  //         byte[] encodedBytes = baos.toByteArray();
-  //         return encodedBytes;
-  //     } catch (Exception e) {
-  //         throw new CborSerializationException("CBOR Serialization failed", e);
-  //     }
-  // }
-}
+// import 'dart:typed_data';

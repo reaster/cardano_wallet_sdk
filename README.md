@@ -13,6 +13,9 @@ It powers a live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.w
 * pricing service powered by [Coin Gecko](https://www.coingecko.com/)
 * Cardano blockchain access via a seperate [BlockFrost API package](https://github.com/reaster/blockfrost_api)
 * public wallet creation via a stakeAddress
+* track native tokens and their transactions
+* track staking and rewards (partial: most recent pool only)
+* CBOR binary encoding
 
 ### Features In Active Development
 * create, submit or track transactions and their fees

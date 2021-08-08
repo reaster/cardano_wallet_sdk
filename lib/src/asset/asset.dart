@@ -1,5 +1,6 @@
 // import 'dart:math';
 
+import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'dart:convert';
 import 'package:pinenacl/digests.dart';
@@ -97,9 +98,6 @@ final lovelacePseudoAsset = CurrencyAsset(
     decimals: 6,
   ),
 );
-
-final Codec<String, String> str2hex = utf8.fuse(HEX);
-final Codec<String, String> hex2str = str2hex.inverted;
 
 ///
 List<int> blake2bHash(List<int> stringBytes, {required int digestSize}) =>

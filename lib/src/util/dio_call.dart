@@ -73,7 +73,7 @@ String translateErrorMessage({required DioError dioError, String? subject}) {
     case 429: // HTTP 429 return code is used when the user has sent too many requests in a given amount of time and therefore has been rate-limited.
       return "rate-limited: sent too many requests";
     case 500: //  HTTP 500 return code is used when our endpoints are having a problem.
-      return "blockfrost server having prolems";
+      return "blockfrost server having problems";
     default:
       return "unknown blockfrost error: ${dioError.response!.statusCode}";
   }
