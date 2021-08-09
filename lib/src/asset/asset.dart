@@ -1,9 +1,10 @@
 // import 'dart:math';
 
+import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
-import 'dart:convert';
-import 'package:pinenacl/digests.dart';
+// import 'dart:convert';
+// import 'package:pinenacl/digests.dart';
 import 'package:pinenacl/encoding.dart';
 // import 'package:quiver/strings.dart';
 
@@ -98,16 +99,6 @@ final lovelacePseudoAsset = CurrencyAsset(
     decimals: 6,
   ),
 );
-
-///
-List<int> blake2bHash(List<int> stringBytes, {required int digestSize}) =>
-    Hash.blake2b(Uint8List.fromList(stringBytes), digestSize: digestSize);
-
-List<int> blake2bHash160(List<int> stringBytes) => blake2bHash(stringBytes, digestSize: 20);
-
-List<int> blake2bHash224(List<int> stringBytes) => blake2bHash(stringBytes, digestSize: 28);
-
-List<int> blake2bHash256(List<int> stringBytes) => blake2bHash(stringBytes, digestSize: 32);
 
 /// given a asset policyId and an assetName in hex, generate a bech32 asset fingerprint
 String calculateFingerprint({required String policyId, required String assetNameHex, String hrp = 'asset'}) {

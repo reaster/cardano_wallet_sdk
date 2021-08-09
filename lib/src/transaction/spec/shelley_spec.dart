@@ -1,10 +1,11 @@
-import 'package:cardano_wallet_sdk/src/address/addresses.dart';
+// import 'package:cardano_wallet_sdk/src/address/addresses.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
 import 'dart:convert';
 import 'package:typed_data/typed_data.dart'; // as typed;
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
+import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 
 ///
 /// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
@@ -152,7 +153,7 @@ class ShelleyTransactionBody {
     //7:metadataHash (optional)
     if (metadataHash != null && metadataHash!.isNotEmpty) {
       mapBuilder.writeInt(7);
-      mapBuilder.writeString('');
+      mapBuilder.writeBuff(unit8BufferFromBytes(metadataHash!));
     }
     //8:validityStartInterval (optional)
     if (validityStartInterval != null) {
@@ -175,60 +176,25 @@ class ShelleyTransactionBody {
     }
     return mapBuilder;
   }
-
-  // Map serialize() throws CborSerializationException, AddressExcepion {
-  //     Map bodyMap = new Map();
-
-  //     Array inputsArray = new Array();
-  //     for(TransactionInput ti: inputs) {
-  //         Array input = ti.serialize();
-  //         inputsArray.add(input);
-  //     }
-  //     bodyMap.put(new UnsignedInteger(0), inputsArray);
-
-  //     Array outputsArray = new Array();
-  //     for(TransactionOutput to: outputs) {
-  //         Array output = to.serialize();
-  //         outputsArray.add(output);
-  //     }
-  //     bodyMap.put(new UnsignedInteger(1), outputsArray);
-
-  //    bodyMap.put(new UnsignedInteger(2), new UnsignedInteger(fee)); //fee
-
-  //    if(ttl != 0) {
-  //        bodyMap.put(new UnsignedInteger(3), new UnsignedInteger(ttl)); //ttl
-  //    }
-
-  //    if(metadataHash != null) {
-  //        bodyMap.put(new UnsignedInteger(7), new ByteString(metadataHash));
-  //    }
-
-  //    if(validityStartInterval != 0) {
-  //        bodyMap.put(new UnsignedInteger(8), new UnsignedInteger(validityStartInterval)); //validityStartInterval
-  //    }
-
-  //     if(mint != null && mint.size() > 0) {
-  //         Map mintMap = new Map();
-  //         for(MultiAsset multiAsset: mint) {
-  //             multiAsset.serialize(mintMap);
-  //         }
-  //         bodyMap.put(new UnsignedInteger(9), mintMap);
-  //     }
-
-  //     return bodyMap;
-  // }
 }
 
-class ShelleyTransactionWitnessSet {}
-
-class ShelleyMetadata {}
+class ShelleyTransactionWitnessSet {} //TODO
 
 class ShelleyTransaction {
-  final ShelleyTransactionBody body;
+  late final ShelleyTransactionBody body;
   final ShelleyTransactionWitnessSet? witnessSet;
-  final ShelleyMetadata? metadata;
+  final CBORMetadata? metadata;
 
-  ShelleyTransaction({required this.body, this.witnessSet, this.metadata});
+  ShelleyTransaction({required ShelleyTransactionBody body, this.witnessSet, this.metadata})
+      : this.body = ShelleyTransactionBody(
+          inputs: body.inputs,
+          outputs: body.outputs,
+          fee: body.fee,
+          ttl: body.ttl,
+          metadataHash: metadata != null ? metadata.hash : null,
+          validityStartInterval: body.validityStartInterval,
+          mint: body.mint,
+        );
 
   ListBuilder toCborList() {
     final listBuilder = ListBuilder.builder();
@@ -241,55 +207,34 @@ class ShelleyTransaction {
     if (metadata == null) {
       listBuilder.writeNull();
     } else {
-      listBuilder.writeArray([]); //TODO
+      listBuilder.addBuilderOutput(metadata!.mapBuilder.getData());
     }
     return listBuilder;
   }
 
+  List<int> get serialize => toCborList().getData();
+
+  String get toCborHex => HEX.encode(serialize);
+}
+
+///
+/// Allow arbitrary metadata via raw CBOR type. Use MapBuilder and ListBuilder instances to compose complex nested structures.
+///
+class CBORMetadata {
+  final MapBuilder mapBuilder;
+
+  CBORMetadata(MapBuilder? mapBuilder) : mapBuilder = mapBuilder == null ? MapBuilder.builder() : mapBuilder;
+
   List<int> get serialize {
-    return toCborList().getData();
+    final result = Uint8Buffer();
+    result.addAll(mapBuilder.getData());
+    mapBuilder.clear(); //need to clear to subsequent calls
+    return result;
   }
 
   String get toCborHex => HEX.encode(serialize);
 
-  // public byte[] serialize() throws CborSerializationException {
-  //     try {
-  //         if (metadata != null && body.getMetadataHash() == null) {
-  //             byte[] metadataHash = metadata.getMetadataHash();
-  //             body.setMetadataHash(metadataHash);
-  //         }
-
-  //         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  //         CborBuilder cborBuilder = new CborBuilder();
-
-  //         Array array = new Array();
-  //         Map bodyMap = body.serialize();
-  //         array.add(bodyMap);
-
-  //         //witness
-  //         if (witnessSet != null) {
-  //             Map witnessMap = witnessSet.serialize();
-  //             array.add(witnessMap);
-  //         } else {
-  //             Map witnessMap = new Map();
-  //             array.add(witnessMap);
-  //         }
-
-  //         //metadata
-  //         if (metadata != null) {
-  //             array.add(metadata.getData());
-  //         } else
-  //             array.add(new ByteString((byte[]) null)); //Null for meta
-
-  //         cborBuilder.add(array);
-
-  //         new CborEncoder(baos).nonCanonical().encode(cborBuilder.build());
-  //         byte[] encodedBytes = baos.toByteArray();
-  //         return encodedBytes;
-  //     } catch (Exception e) {
-  //         throw new CborSerializationException("CBOR Serialization failed", e);
-  //     }
-  // }
+  List<int> get hash => blake2bHash256(serialize);
 }
 
 final _emptyUint8Buffer = Uint8Buffer(0);
@@ -314,6 +259,11 @@ Uint8Buffer uint8BufferFromHex(String hex, {bool utf8EncodeOnHexFailure = false}
 }
 
 ///
+/// Convert List<int> bytes to Uint8Buffer.
+///
+Uint8Buffer unit8BufferFromBytes(List<int> bytes) => Uint8Buffer()..addAll(bytes);
+
+///
 /// Convert bech32 address payload to hex adding network prefix.
 ///
 Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
@@ -331,8 +281,7 @@ String hexFromShelleyAddress(String bech32, {bool uppercase = false}) {
   return uppercase ? result.toUpperCase() : result;
 }
 
-
-// reference shelley.cddl type from: 
+// reference shelley.cddl type from:
 // https://github.com/bloxbean/cardano-serialization-lib/blob/8c0f517ec39c333369462659b6c350223619973b/specs/shelley.cddl
 //
 // ; Shelley Types

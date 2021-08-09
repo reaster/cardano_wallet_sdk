@@ -1,4 +1,5 @@
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
+import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
 import 'package:quiver/iterables.dart';
 import 'package:test/test.dart';
@@ -26,6 +27,75 @@ void main() {
     final addrHex = hexFromShelleyAddress(addr, uppercase: true);
     print(addrHex);
     expect(addrHex, addrHexExpected);
+  });
+
+  test('Serialize Transaction with Metadata', () {
+    final List<ShelleyTransactionInput> inputs = [
+      ShelleyTransactionInput(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+    ];
+    final List<ShelleyTransactionOutput> outputs = [
+      ShelleyTransactionOutput(
+          address: 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
+          value: ShelleyValue(coin: 40000, multiAssets: [])),
+      ShelleyTransactionOutput(
+          address: 'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
+          value: ShelleyValue(coin: 340000, multiAssets: [
+            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
+              ShelleyAsset(name: '736174636f696e', value: 4000),
+            ]),
+            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
+              ShelleyAsset(name: '', value: 9000),
+            ]),
+          ])),
+    ];
+    final body = ShelleyTransactionBody(
+      inputs: inputs,
+      outputs: outputs,
+      fee: 367965,
+      ttl: 26194586,
+      metadataHash: null,
+      validityStartInterval: null,
+      mint: outputs[1].value.multiAssets,
+    );
+
+    //metadata
+    final metadataMap = MapBuilder.builder()
+      ..writeInt(1978) //key
+      ..writeString('201value') //value
+      ..writeInt(197819) //key
+      ..writeInt(200001) //value
+      ..writeString('203') //key
+      ..writeBytes(unit8BufferFromBytes([11, 11, 10])); //value
+    final metadataList = ListBuilder.builder()
+      ..writeString('301value')
+      ..writeInt(300001)
+      ..writeBytes(unit8BufferFromBytes([11, 11, 10]))
+      ..addBuilderOutput((MapBuilder.builder()
+            ..writeInt(401) //key
+            ..writeString('401str') //value
+            ..writeString('hello') //key
+            ..writeString('hellovalue')) //value
+          .getData());
+    final metadata = CBORMetadata(MapBuilder.builder()
+          ..writeInt(197819781978) //key
+          ..writeString('John') //value
+          ..writeInt(197819781979) //key
+          ..writeString('CA') //value
+          ..writeInt(1978197819710) //key
+          ..writeBytes(unit8BufferFromBytes([0, 11])) //value
+          ..writeInt(1978197819711) //key
+          ..addBuilderOutput(metadataMap.getData()) //value
+          ..writeInt(1978197819712) //key
+          ..addBuilderOutput(metadataList.getData()) //value
+        );
+    // print("  actual: ${metadata.toCborHex}");
+    // print('expected: a51b0000002e0efa535a644a6f686e1b0000002e0efa535b6243411b000001cc95c7413e42000b1b000001cc95c7413fa31907ba6832303176616c75651a000304bb1a00030d4163323033430b0b0a1b000001cc95c74140846833303176616c75651a000493e1430b0b0aa2190191663430317374726568656c6c6f6a68656c6c6f76616c7565');
+    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: metadata);
+    final txHex = tx.toCborHex;
+    print(txHex);
+    final expectedHex =
+        '83a6008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a0758203f4851269f7b360569e7fbc7ab3dadd504980d6ccda7afd9e52d83cba855a8bf09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0a51b0000002e0efa535a644a6f686e1b0000002e0efa535b6243411b000001cc95c7413e42000b1b000001cc95c7413fa31907ba6832303176616c75651a000304bb1a00030d4163323033430b0b0a1b000001cc95c74140846833303176616c75651a000493e1430b0b0aa2190191663430317374726568656c6c6f6a68656c6c6f76616c7565';
+    expect(txHex, expectedHex);
   });
 
   test('Serialize Transaction with Mint', () {
