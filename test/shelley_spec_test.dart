@@ -18,13 +18,6 @@ import 'package:cbor/cbor.dart' as cbor;
 ///
 void main() {
   //
-  test('Serialize transaction hex to hex', () {
-    final transactionId = '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002';
-    final input = ShelleyTransactionInput(index: 7, transactionId: transactionId);
-    final listBuilder = input.toCborList();
-    final uint8buffer = listBuilder.getData();
-    print(uint8buffer.toString());
-  });
 
   test('Serialize address to hex', () {
     final addr = 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v';
@@ -68,7 +61,7 @@ void main() {
     print(txHex);
     final expectedHex =
         '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0f6';
-    //expect(txHex, expectedHex);
+    expect(txHex, expectedHex);
   });
 
   test('exploreCborRoundTrip', () {
@@ -122,4 +115,12 @@ void main() {
     print(codec.decodedPrettyPrint(false));
     print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
+
+  // test('Serialize transaction hex to hex', () {
+  //   final transactionId = '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002';
+  //   final input = ShelleyTransactionInput(index: 7, transactionId: transactionId);
+  //   final listBuilder = input.toCborList();
+  //   final uint8buffer = listBuilder.getData();
+  //   print(uint8buffer.toString());
+  // });
 }

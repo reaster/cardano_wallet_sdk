@@ -10,6 +10,8 @@ import 'package:cardano_wallet_sdk/src/util/codec.dart';
 /// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
 ///
 
+final supportByteStringKeys = true;
+
 class ShelleyAsset {
   final String name;
   final int value;
@@ -29,8 +31,11 @@ class ShelleyMultiAsset {
   MapBuilder assetsToCborMap() {
     final mapBuilder = MapBuilder.builder();
     assets.forEach((asset) {
-      mapBuilder.writeString(asset.name);
-      // mapBuilder.writeBuff(uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
+      if (supportByteStringKeys) {
+        mapBuilder.writeBuff(uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
+      } else {
+        mapBuilder.writeString(asset.name);
+      }
       mapBuilder.writeInt(asset.value);
     });
     return mapBuilder;
@@ -93,8 +98,11 @@ class ShelleyValue {
     listBuilder.writeInt(coin);
     final mapBuilder = MapBuilder.builder();
     multiAssets.forEach((multiAsset) {
-      // mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
-      mapBuilder.writeString(multiAsset.policyId);
+      if (supportByteStringKeys) {
+        mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+      } else {
+        mapBuilder.writeString(multiAsset.policyId);
+      }
       mapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
     });
     listBuilder.addBuilderOutput(mapBuilder.getData());
@@ -156,8 +164,11 @@ class ShelleyTransactionBody {
       mapBuilder.writeInt(9);
       final mintMapBuilder = MapBuilder.builder();
       mint!.forEach((multiAsset) {
-        // mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
-        mintMapBuilder.writeString(multiAsset.policyId);
+        if (supportByteStringKeys) {
+          mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+        } else {
+          mintMapBuilder.writeString(multiAsset.policyId);
+        }
         mintMapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
       });
       mapBuilder.addBuilderOutput(mintMapBuilder.getData());
@@ -235,13 +246,11 @@ class ShelleyTransaction {
     return listBuilder;
   }
 
-  List<int> serialize({Cbor? cbor}) {
-    final _cbor = cbor ?? Cbor();
-    final encoder = _cbor.encoder;
+  List<int> get serialize {
     return toCborList().getData();
   }
 
-  String get toCborHex => HEX.encode(serialize());
+  String get toCborHex => HEX.encode(serialize);
 
   // public byte[] serialize() throws CborSerializationException {
   //     try {
