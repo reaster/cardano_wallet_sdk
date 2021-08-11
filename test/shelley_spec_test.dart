@@ -1,9 +1,10 @@
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
+import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cbor/cbor.dart';
-import 'package:hex/hex.dart';
-import 'package:quiver/iterables.dart';
+// import 'package:hex/hex.dart';
+// import 'package:quiver/iterables.dart';
 import 'package:test/test.dart';
-import 'dart:convert';
+// import 'dart:convert';
 import 'package:cbor/cbor.dart' as cbor;
 
 ///
@@ -18,15 +19,51 @@ import 'package:cbor/cbor.dart' as cbor;
 /// tests and results taken from: https://github.com/bloxbean/cardano-client-lib. Thank you!
 ///
 void main() {
-  //
+  test('Deserialization', () {
+    final List<ShelleyTransactionInput> inputs = [
+      ShelleyTransactionInput(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+    ];
+    final List<ShelleyTransactionOutput> outputs = [
+      ShelleyTransactionOutput(
+          address: 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
+          value: ShelleyValue(coin: 40000, multiAssets: [])),
+      ShelleyTransactionOutput(
+          address: 'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
+          value: ShelleyValue(coin: 340000, multiAssets: [
+            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
+              ShelleyAsset(name: '736174636f696e', value: 4000),
+              ShelleyAsset(name: '446174636f696e', value: 1100),
+            ]),
+            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
+              ShelleyAsset(name: '', value: 9000),
+            ]),
+            ShelleyMultiAsset(policyId: '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
+              ShelleyAsset(name: '666174636f696e', value: 5000),
+            ]),
+          ])),
+    ];
+    final body = ShelleyTransactionBody(
+      inputs: inputs,
+      outputs: outputs,
+      fee: 367965,
+      ttl: 26194586,
+      metadataHash: null,
+      validityStartInterval: null,
+      mint: outputs[1].value.multiAssets,
+    );
+    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: null);
+    final txHex = tx.toCborHex;
+    print(txHex);
+    final expectedHex =
+        '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388021a00059d5d031a018fb29a09a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388a0f6';
+    expect(txHex, expectedHex, reason: '1st serialization good');
 
-  test('Serialize address to hex', () {
-    final addr = 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v';
-    final addrHexExpected =
-        '000916A5FED4589D910691B85ADDF608DCEEE4D9D60D4C9A4D2A925026C3229B212BA7EF8643CD8F7E38D6279336D61A40D228B036F40FEED6';
-    final addrHex = hexFromShelleyAddress(addr, uppercase: true);
-    print(addrHex);
-    expect(addrHex, addrHexExpected);
+    final ShelleyTransaction tx2 = ShelleyTransaction.deserializeFromHex(txHex);
+    final txHex2 = tx2.toCborHex;
+    print(txHex2);
+    expect(txHex, txHex2);
+    // print(codec.decodedPrettyPrint(false));
+    //print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
 
   test('Serialize Transaction with Metadata', () {
@@ -132,6 +169,15 @@ void main() {
     final expectedHex =
         '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0f6';
     expect(txHex, expectedHex);
+  });
+
+  test('Serialize address to hex', () {
+    final addr = 'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v';
+    final addrHexExpected =
+        '000916A5FED4589D910691B85ADDF608DCEEE4D9D60D4C9A4D2A925026C3229B212BA7EF8643CD8F7E38D6279336D61A40D228B036F40FEED6';
+    final addrHex = hexFromShelleyAddress(addr, uppercase: true);
+    print(addrHex);
+    expect(addrHex, addrHexExpected);
   });
 
   test('exploreCborRoundTrip', () {

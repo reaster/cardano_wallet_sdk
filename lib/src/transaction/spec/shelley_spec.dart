@@ -1,17 +1,23 @@
 // import 'package:cardano_wallet_sdk/src/address/addresses.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
-import 'dart:convert';
+// import 'dart:convert';
 import 'package:typed_data/typed_data.dart'; // as typed;
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
+// import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 
 ///
 /// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
 ///
+/// note: cbor 4.0.2 package only allows integer and string keys.
+/// The https://github.com/reaster/cbor fork adds byte string support, but awaiting futher testing before submitting a pull request.
+///
 
-final supportByteStringKeys = true;
+final supportByteStringKeys = true; //TODO remove
+
+class CborDeserializationException implements Exception {} //TODO replace with Result?
 
 class ShelleyAsset {
   final String name;
@@ -26,6 +32,13 @@ class ShelleyMultiAsset {
 
   ShelleyMultiAsset({required this.policyId, required this.assets});
 
+  factory ShelleyMultiAsset.deserialize({required MapEntry cMapEntry}) {
+    final policyId = hexFromUnit8Buffer(cMapEntry.key as Uint8Buffer);
+    final List<ShelleyAsset> assets = [];
+    (cMapEntry.value as Map)
+        .forEach((key, value) => assets.add(ShelleyAsset(name: hexFromUnit8Buffer(key as Uint8Buffer), value: value as int)));
+    return ShelleyMultiAsset(policyId: policyId, assets: assets);
+  }
   //
   //    h'329728F73683FE04364631C27A7912538C116D802416CA1EAF2D7A96': {h'736174636F696E': 4000},
   //
@@ -55,6 +68,10 @@ class ShelleyTransactionInput {
     listBuilder.writeInt(index);
     return listBuilder;
   }
+
+  factory ShelleyTransactionInput.deserialize({required List cList}) {
+    return ShelleyTransactionInput(transactionId: HEX.encode(cList[0] as Uint8Buffer), index: cList[1] as int);
+  }
 }
 
 class ShelleyTransactionOutput {
@@ -76,6 +93,18 @@ class ShelleyTransactionOutput {
     }
     return listBuilder;
   }
+
+  factory ShelleyTransactionOutput.deserialize({required List cList}) {
+    final address = bech32ShelleyAddressFromBytes(cList[0] as Uint8Buffer);
+    if (cList[1] is int) {
+      return ShelleyTransactionOutput(address: address, value: ShelleyValue(coin: cList[1] as int, multiAssets: []));
+    } else if (cList[1] is List) {
+      final ShelleyValue value = ShelleyValue.deserialize(cList: cList[1] as List);
+      return ShelleyTransactionOutput(address: address, value: value);
+    } else {
+      throw CborDeserializationException();
+    }
+  }
 }
 
 class ShelleyValue {
@@ -84,7 +113,12 @@ class ShelleyValue {
 
   ShelleyValue({required this.coin, required this.multiAssets});
 
-  // idealy we'd generate byte strings for the keys, but this code generates string keys
+  factory ShelleyValue.deserialize({required List cList}) {
+    final List<ShelleyMultiAsset> multiAssets =
+        (cList[1] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
+    return ShelleyValue(coin: cList[0] as int, multiAssets: multiAssets);
+  }
+  //
   // [
   //  340000,
   //  {
@@ -100,7 +134,7 @@ class ShelleyValue {
     final mapBuilder = MapBuilder.builder();
     multiAssets.forEach((multiAsset) {
       if (supportByteStringKeys) {
-        mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+        mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
       } else {
         mapBuilder.writeString(multiAsset.policyId);
       }
@@ -130,6 +164,40 @@ class ShelleyTransactionBody {
     this.mint,
   });
 
+  factory ShelleyTransactionBody.deserialize2(
+      {required List inputs,
+      required List outputs,
+      required int fee,
+      int? ttl,
+      List? metadataHash,
+      int? validityStartInterval,
+      List? mint}) {
+    return ShelleyTransactionBody(
+      inputs: [],
+      outputs: [],
+      fee: fee,
+      ttl: ttl,
+      metadataHash: [],
+      validityStartInterval: validityStartInterval,
+      mint: [],
+    );
+  }
+
+  factory ShelleyTransactionBody.deserialize({required Map cMap}) {
+    final inputs = (cMap[0] as List).map((i) => ShelleyTransactionInput.deserialize(cList: i as List)).toList();
+    final outputs = (cMap[1] as List).map((i) => ShelleyTransactionOutput.deserialize(cList: i as List)).toList();
+    final mint =
+        (cMap[9] == null) ? null : (cMap[9] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
+    return ShelleyTransactionBody(
+      inputs: inputs,
+      outputs: outputs,
+      fee: cMap[2] as int,
+      ttl: cMap[3] == null ? null : cMap[3] as int,
+      metadataHash: [],
+      validityStartInterval: cMap[8] == null ? null : cMap[8] as int,
+      mint: mint,
+    );
+  }
   MapBuilder toCborMap() {
     final mapBuilder = MapBuilder.builder();
     //0:inputs
@@ -166,7 +234,7 @@ class ShelleyTransactionBody {
       final mintMapBuilder = MapBuilder.builder();
       mint!.forEach((multiAsset) {
         if (supportByteStringKeys) {
-          mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId)); //lib only allows integer and string keys
+          mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
         } else {
           mintMapBuilder.writeString(multiAsset.policyId);
         }
@@ -178,7 +246,13 @@ class ShelleyTransactionBody {
   }
 }
 
-class ShelleyTransactionWitnessSet {} //TODO
+class ShelleyTransactionWitnessSet {
+  //TODO
+  ShelleyTransactionWitnessSet();
+  factory ShelleyTransactionWitnessSet.deserialize() {
+    return ShelleyTransactionWitnessSet();
+  }
+}
 
 class ShelleyTransaction {
   late final ShelleyTransactionBody body;
@@ -187,14 +261,33 @@ class ShelleyTransaction {
 
   ShelleyTransaction({required ShelleyTransactionBody body, this.witnessSet, this.metadata})
       : this.body = ShelleyTransactionBody(
+          //rebuild body to include metadataHash
           inputs: body.inputs,
           outputs: body.outputs,
           fee: body.fee,
           ttl: body.ttl,
-          metadataHash: metadata != null ? metadata.hash : null,
+          metadataHash: metadata != null ? metadata.hash : null, //optionally add hash if metadata present
           validityStartInterval: body.validityStartInterval,
           mint: body.mint,
         );
+
+  factory ShelleyTransaction.deserializeFromHex(String transactionHex) {
+    final codec = Cbor();
+    final buff = uint8BufferFromHex(transactionHex);
+    codec.decodeFromBuffer(buff);
+    final list = codec.getDecodedData()!;
+    if (list.length != 1) throw CborDeserializationException();
+    final tx = list[0];
+    if (tx.length < 3) throw CborDeserializationException();
+    return ShelleyTransaction.deserialize(cBody: tx[0] as Map, cWitnessSet: tx[1] as Map, cMetadata: tx[2] == null ? null : tx[2] as Map);
+  }
+  factory ShelleyTransaction.deserialize({required Map cBody, required Map cWitnessSet, Map? cMetadata}) {
+    final body = ShelleyTransactionBody.deserialize(cMap: cBody);
+    final ShelleyTransactionWitnessSet witnessSet = ShelleyTransactionWitnessSet.deserialize(); //TODO
+    //if (MajorType.MAP.equals(metadata.getMajorType())) { //Metadata available
+    final CBORMetadata? metadata = cMetadata == null ? null : null; //TODO
+    return ShelleyTransaction(body: body, witnessSet: witnessSet, metadata: metadata);
+  }
 
   ListBuilder toCborList() {
     final listBuilder = ListBuilder.builder();
@@ -235,50 +328,6 @@ class CBORMetadata {
   String get toCborHex => HEX.encode(serialize);
 
   List<int> get hash => blake2bHash256(serialize);
-}
-
-final _emptyUint8Buffer = Uint8Buffer(0);
-
-///
-/// convert hex string to Uint8Buffer. Strips off 0x prefix if present.
-///
-Uint8Buffer uint8BufferFromHex(String hex, {bool utf8EncodeOnHexFailure = false}) {
-  if (hex.isEmpty) return _emptyUint8Buffer;
-  try {
-    final list = hex.startsWith('0x') ? HEX.decode(hex.substring(2)) : HEX.decode(hex);
-    final result = Uint8Buffer();
-    result.addAll(list);
-    return result;
-  } catch (e) {
-    if (!utf8EncodeOnHexFailure) throw e;
-    final list = utf8.encode(hex);
-    final result = Uint8Buffer();
-    result.addAll(list);
-    return result;
-  }
-}
-
-///
-/// Convert List<int> bytes to Uint8Buffer.
-///
-Uint8Buffer unit8BufferFromBytes(List<int> bytes) => Uint8Buffer()..addAll(bytes);
-
-///
-/// Convert bech32 address payload to hex adding network prefix.
-///
-Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
-  final addr = ShelleyAddress.fromBech32(bech32); //TODO rather inefficient
-  final result = Uint8Buffer();
-  result.addAll(addr.buffer.asUint8List());
-  return result;
-}
-
-///
-/// Convert bech32 address payload to hex string. Optionaly uppercase hex string.
-///
-String hexFromShelleyAddress(String bech32, {bool uppercase = false}) {
-  final result = HEX.encode(unit8BufferFromShelleyAddress(bech32));
-  return uppercase ? result.toUpperCase() : result;
 }
 
 // reference shelley.cddl type from:
