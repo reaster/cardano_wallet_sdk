@@ -18,7 +18,7 @@ dependencies:
     ^0.1.23-dev.4
     # git: git@github.com:reaster/blockfrost_api.git
     # path: ../blockfrost_api
-  pinenacl: ^0.3.1
+  pinenacl: ^0.3.3
   bip39: ^1.0.6
   cryptography: ^2.0.1
   pedantic: ^1.11.0
@@ -29,8 +29,8 @@ dependencies:
   built_value: ^8.1.0
   hex: ^0.2.0
   cbor:
-    # ^4.0.2
-    path: ../cbor
+    ^4.1.0
+    # path: ../cbor
   quiver: ^3.0.1
   # kms: ^0.4.1 # Key Management Service
   # bitcoin_bip44: ^0.1.0
