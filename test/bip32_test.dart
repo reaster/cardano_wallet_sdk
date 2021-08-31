@@ -1,12 +1,13 @@
 // import 'dart:io';
 // import 'dart:convert';
 // import 'package:cardano_wallet_sdk/src/bip32/key_gen.dart';
+import 'package:cardano_wallet_sdk/src/bip32/key_gen.dart';
 import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
 import 'package:test/test.dart';
 //import 'package:bip32_ed25519/cardano.dart';
 import 'package:bip39/bip39.dart' as bip39;
 //import 'package:convert/convert.dart';
-// import 'package:hex/hex.dart' as hex;
+import 'package:hex/hex.dart' as hex;
 
 //
 // BIP-44 path: m / purpose' / coin_type' / account_ix' / change_chain / address_ix
@@ -121,12 +122,12 @@ void main() {
       expect(seedHex, equals(testHexSeed1));
     });
     // test('seed hex to master bech32', () async {
-    //   var masterPrivate = await ED25519_HD_KEY.getMasterKeyFromSeed(hex.decode(testHexSeed1));
-    //   final masterPrivateHex = hex.encode(masterPrivate.key);
+    //   var masterPrivate = await ED25519_HD_KEY.getMasterKeyFromSeed(hex.HEX.decode(testHexSeed1));
+    //   final masterPrivateHex = hex.HEX.encode(masterPrivate.key);
     //   print(masterPrivateHex);
     //   expect(masterPrivateHex, equals(masterPrv));
     //   var masterPublic = await ED25519_HD_KEY.getPublicKey(masterPrivate.key);
-    //   expect(hex.encode(masterPublic), equals(masterPub));
+    //   expect(hex.HEX.encode(masterPublic), equals(masterPub));
     //   // print("seedHex: $seedHex");
     //   // expect(seedHex, equals(testHexSeed1));
     // });

@@ -52,7 +52,7 @@ void main() {
     });
   });
 
-  group('for English mnemonic worrds and entropy+check sum = 256 bits', () {
+  group('for English mnemonic words and entropy+check sum = 256 bits', () {
     setUp(() {});
     test('mnemoic to entropy', () {
       final String entropy = bip39.mnemonicToEntropy(testMnemonic1);
@@ -76,6 +76,21 @@ void main() {
     });
     test('validate mnemonic', () {
       expect(bip39.validateMnemonic(testMnemonic1), isTrue, reason: 'validateMnemonic returns true');
+    });
+  });
+
+  group('cardano-serialization-lib', () {
+    test('entropy to mnemonic', () {
+      //[0x4e, 0x82, 0x8f, 0x9a, 0x67, 0xdd, 0xcf, 0xf0, 0xe6, 0x39, 0x1a, 0xd4, 0xf2, 0x6d, 0xdb, 0x75, 0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba, 0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda];
+      final testEntropy0 = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final mnemonic = bip39.entropyToMnemonic(testEntropy0);
+      final bytes = bip39.mnemonicToSeed(mnemonic);
+      print(bytes.join(','));
+      print(mnemonic);
+      expect(
+          mnemonic,
+          equals(
+              'excess behave track soul table wear ocean cash stay nature item turtle palm soccer lunch horror start stumble month panic right must lock dress'));
     });
   });
 }
