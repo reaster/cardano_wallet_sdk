@@ -1,67 +1,3 @@
-/*
-cardano-address logs
-Notes: --network-tag 1 is mainnet,--network-tag 0 is testnet
-Source: https://github.com/input-output-hk/cardano-addresses
-Source: https://github.com/uniVocity/cardano-tutorials/blob/master/cardano-addresses.md
-
-
-> ./cardano-address recovery-phrase generate --size 24 > phrase.prv
-> cat phrase.prv
-rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just
-> cat phrase.prv | ./cardano-address key from-recovery-phrase Shelley > root.xsk
-> cat root.xsk 
-root_xsk1wp6nhemf5djl9rf7mrzw2u75xuy2g2tsmyyqd7u73v44qt8f49xqus60er5l3r33lj9shhvqygav3l3hy62ewj2l7pj86ft9nwgq2rguxtkz7j66aqjf80xeccepd3873e5umsee5z454wqv82xcl80xuvv57734%                                                                          > cat root.xsk | ./cardano-address key public > public_key.txt
-> cat public_key.txt 
-> cat root.xsk | ./cardano-address key public --with-chain-code > public_key.txt
-> cat public_key.txt                                                                   
-root_xvk1rgd2fz33qwe83vdy2sxcduavx5c56m8m232ezyvkqx07upzyhwy3cvhv9a9446pyjw7dn33jzmz0arnfehpnng9tf2uqcw5d37w7dcc9psu04%                                                                                                                                      
-> cat root.xsk | ./cardano-address key public --without-chain-code > public_key-without-chain-code.txt
-> cat public_key-without-chain-code.txt                                                                      
-root_vk1rgd2fz33qwe83vdy2sxcduavx5c56m8m232ezyvkqx07upzyhwysp0js2t%                                                                                                                                                                                          
-> cat root.xsk | ./cardano-address key child 1852H/1815H/0H > account_0_key_path.txt
-> cat account_0_key_path.txt 
-acct_xsk1npdht8s7wzqf5whm8ahyrwg6w3tjnh53c56zk675f67xwvhf49x0kt9tks8w49039ytmaurnngvmqxuq3cq09jhp2vg6d59sn3k96hsem5tw77eusxvvwzpee9acnzd0jclzjtaspr49k2ytk5ndx4xvsur7vh0j%                                                                                   
-> cat account_0_key_path.txt | ./cardano-address key public --with-chain-code > account_0_public_root_key.txt 
-> cat account_0_public_root_key.txt 
-acct_xvk1r7ceazv8kqssd9rk4u3p2hdmprplrn8pftj798qnq8hygwkc6ft3nhgkaaaneqvccuyrnjtm3xy6l9379yhmqz82tv5ghdfx6d2vepc0vn0hr%                                                                                                                                      
-> cat account_0_public_root_key.txt | ./cardano-address key child 0/0 > key_for_account_0_address_0.txt
-> cat key_for_account_0_address_0.txt 
-addr_xvk1esyq6apw8590yjux07mt97m964zafmwcux2vht2d0x454xm2qtp8d6xtgkwxq6l36c35adzjeguu04t39d7nnvr30x8nh9quur9unqqjtlzzr%                                                                                                                                      
-> cat account_0_public_root_key.txt | ./cardano-address key child 0/1 > key_for_account_0_address_1.txt
-> cat key_for_account_0_address_1.txt                                                                  
-addr_xvk1zm347726w5t93vy0ghd00xjtezyx4rlmynv5zzgps8n95trekzwh6zzv3z3x0wuqp86jundlt7t6et0pjqkwxjtq3snd6wn6jzcy50gcctsw2%                                                                                                                                      
-> cat key_for_account_0_address_0.txt | ./cardano-address address payment --network-tag 1 > pay_to_account_0_address_0.txt
-> cat pay_to_account_0_address_0.txt                                                                                      
-addr1v8lqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkghlyxln%                                                                                                                                                                                                  
-> ./cardano-address key child 1852H/1815H/0H/2/0 < root.xsk | ./cardano-address key public --with-chain-code > stake.xvk
-> cat stake.xvk 
-stake_xvk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucqalzd2x%                                                                                                                                     
-> ./cardano-address key child 1852H/1815H/0H/0/0 < root.xsk | ./cardano-address key public --with-chain-code > addr.xvk
-> cat addr.xvk
-addr_xvk1esyq6apw8590yjux07mt97m964zafmwcux2vht2d0x454xm2qtp8d6xtgkwxq6l36c35adzjeguu04t39d7nnvr30x8nh9quur9unqqjtlzzr%                                                                                                                                      
-> ./cardano-address address payment --network-tag testnet < addr.xvk > payment.addr
-> cat payment.addr
-addr_test1vrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkgvhs6sk%                                                                                                                                                                                             
-> ./cardano-address address delegation $(cat stake.xvk) < payment.addr > payment-delegated.addr
-> cat payment-delegated.addr 
-addr_test1qrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqm2rpzj%                                                                                                                                                
-> ./cardano-address address stake --network-tag testnet < stake.xvk > stake.addr
-> cat stake.addr 
-stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6%  
->
-> cat root.xsk | ./cardano-address key public --with-chain-code | ./cardano-address key inspect 
-{
-    "chain_code": "1c32ec2f4b5ae82493bcd9c63216c4fe8e69cdc339a0ab4ab80c3a8d8f9de6e3",
-    "key_type": "public",
-    "extended_key": "1a1aa48a3103b278b1a4540d86f3ac35314d6cfb5455911196019fee0444bb89"
-}
->
-> ls
-account_0_key_path.txt                  cardano-address                         pay_to_account_0_address_0.txt          root.xsk                         phrase.prv
-account_0_public_root_key.txt           key_for_account_0_address_0.txt         payment-delegated.addr                  public_key-without-chain-code.txt       stake.addr
-addr.xvk                                key_for_account_0_address_1.txt         payment.addr                            public_key.txt                          stake.xvk
-
-*/
 import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
@@ -114,7 +50,7 @@ void main() {
   const public_key_size = 32;
   // const choin_code_size = 32;
 
-  group('cardano-serialization-lib -', () {
+  group('rust cardano-serialization-lib test -', () {
     test('entropy to root private and public keys', () {
       //[0x4e,0x82,0x8f,0x9a,0x67,0xdd,0xcf,0xf0,0xe6,0x39,0x1a,0xd4,0xf2,0x6d,0xdb,0x75,0x79,0xf5,0x9b,0xa1,0x4b,0x6d,0xd4,0xba,0xf6,0x3d,0xcf,0xdb,0x9d,0x24,0x20,0xda];
       final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
@@ -178,6 +114,85 @@ void main() {
       expect(stake.toBech32(), 'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
       final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
       expect(stake_test.toBech32(), 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
+    });
+  });
+
+  /*
+cardano-address logs
+Notes: --network-tag 1 is mainnet,--network-tag 0 is testnet
+Source: https://github.com/input-output-hk/cardano-addresses
+Source: https://github.com/uniVocity/cardano-tutorials/blob/master/cardano-addresses.md
+
+
+> ./cardano-address recovery-phrase generate --size 24 > phrase.prv
+> cat phrase.prv
+rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just
+> cat phrase.prv | ./cardano-address key from-recovery-phrase Shelley > root.xsk
+> cat root.xsk 
+root_xsk1wp6nhemf5djl9rf7mrzw2u75xuy2g2tsmyyqd7u73v44qt8f49xqus60er5l3r33lj9shhvqygav3l3hy62ewj2l7pj86ft9nwgq2rguxtkz7j66aqjf80xeccepd3873e5umsee5z454wqv82xcl80xuvv57734%                                                                          > cat root.xsk | ./cardano-address key public > public_key.txt
+> cat public_key.txt 
+> cat root.xsk | ./cardano-address key public --with-chain-code > public_key.txt
+> cat public_key.txt                                                                   
+root_xvk1rgd2fz33qwe83vdy2sxcduavx5c56m8m232ezyvkqx07upzyhwy3cvhv9a9446pyjw7dn33jzmz0arnfehpnng9tf2uqcw5d37w7dcc9psu04%                                                                                                                                      
+> cat root.xsk | ./cardano-address key public --without-chain-code > public_key-without-chain-code.txt
+> cat public_key-without-chain-code.txt                                                                      
+root_vk1rgd2fz33qwe83vdy2sxcduavx5c56m8m232ezyvkqx07upzyhwysp0js2t%                                                                                                                                                                                          
+> cat root.xsk | ./cardano-address key child 1852H/1815H/0H > account_0_key_path.txt
+> cat account_0_key_path.txt 
+acct_xsk1npdht8s7wzqf5whm8ahyrwg6w3tjnh53c56zk675f67xwvhf49x0kt9tks8w49039ytmaurnngvmqxuq3cq09jhp2vg6d59sn3k96hsem5tw77eusxvvwzpee9acnzd0jclzjtaspr49k2ytk5ndx4xvsur7vh0j%                                                                                   
+> cat account_0_key_path.txt | ./cardano-address key public --with-chain-code > account_0_public_root_key.txt 
+> cat account_0_public_root_key.txt 
+acct_xvk1r7ceazv8kqssd9rk4u3p2hdmprplrn8pftj798qnq8hygwkc6ft3nhgkaaaneqvccuyrnjtm3xy6l9379yhmqz82tv5ghdfx6d2vepc0vn0hr%                                                                                                                                      
+> cat account_0_public_root_key.txt | ./cardano-address key child 0/0 > key_for_account_0_address_0.txt
+> cat key_for_account_0_address_0.txt 
+addr_xvk1esyq6apw8590yjux07mt97m964zafmwcux2vht2d0x454xm2qtp8d6xtgkwxq6l36c35adzjeguu04t39d7nnvr30x8nh9quur9unqqjtlzzr%                                                                                                                                      
+> cat account_0_public_root_key.txt | ./cardano-address key child 0/1 > key_for_account_0_address_1.txt
+> cat key_for_account_0_address_1.txt                                                                  
+addr_xvk1zm347726w5t93vy0ghd00xjtezyx4rlmynv5zzgps8n95trekzwh6zzv3z3x0wuqp86jundlt7t6et0pjqkwxjtq3snd6wn6jzcy50gcctsw2%                                                                                                                                      
+> cat key_for_account_0_address_0.txt | ./cardano-address address payment --network-tag 1 > pay_to_account_0_address_0.txt
+> cat pay_to_account_0_address_0.txt                                                                                      
+addr1v8lqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkghlyxln%                                                                                                                                                                                                  
+> ./cardano-address key child 1852H/1815H/0H/2/0 < root.xsk | ./cardano-address key public --with-chain-code > stake.xvk
+> cat stake.xvk 
+stake_xvk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucqalzd2x%                                                                                                                                     
+> ./cardano-address key child 1852H/1815H/0H/0/0 < root.xsk | ./cardano-address key public --with-chain-code > addr.xvk
+> cat addr.xvk
+addr_xvk1esyq6apw8590yjux07mt97m964zafmwcux2vht2d0x454xm2qtp8d6xtgkwxq6l36c35adzjeguu04t39d7nnvr30x8nh9quur9unqqjtlzzr%                                                                                                                                      
+> ./cardano-address address payment --network-tag testnet < addr.xvk > payment.addr
+> cat payment.addr
+addr_test1vrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkgvhs6sk%                                                                                                                                                                                             
+> ./cardano-address address delegation $(cat stake.xvk) < payment.addr > payment-delegated.addr
+> cat payment-delegated.addr 
+addr_test1qrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqm2rpzj%                                                                                                                                                
+> ./cardano-address address stake --network-tag testnet < stake.xvk > stake.addr
+> cat stake.addr 
+stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6%  
+>
+> cat root.xsk | ./cardano-address key public --with-chain-code | ./cardano-address key inspect 
+{
+    "chain_code": "1c32ec2f4b5ae82493bcd9c63216c4fe8e69cdc339a0ab4ab80c3a8d8f9de6e3",
+    "key_type": "public",
+    "extended_key": "1a1aa48a3103b278b1a4540d86f3ac35314d6cfb5455911196019fee0444bb89"
+}
+>
+> ls
+account_0_key_path.txt                  cardano-address                         pay_to_account_0_address_0.txt          root.xsk                         phrase.prv
+account_0_public_root_key.txt           key_for_account_0_address_0.txt         payment-delegated.addr                  public_key-without-chain-code.txt       stake.addr
+addr.xvk                                key_for_account_0_address_1.txt         payment.addr                            public_key.txt                          stake.xvk
+
+*/
+  group('Haskell cardano-address data -', () {
+    test('HdWallet -', () {
+      final mnemonic =
+          'rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just';
+      final hdWallet = HdWallet.fromMnemonic(mnemonic);
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddress(change: 2);
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
+      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddress();
+      final addr_test = hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+      expect(addr_test.toBech32(),
+          'addr_test1qrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqm2rpzj');
     });
   });
 
