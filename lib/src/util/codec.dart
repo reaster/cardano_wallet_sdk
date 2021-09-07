@@ -47,6 +47,7 @@ String hexFromUnit8Buffer(Uint8Buffer bytes) => HEX.encode(bytes);
 
 ///
 /// Convert bech32 address payload to hex adding network prefix.
+/// TODO move to shelley_address.dart
 ///
 Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
   final addr = ShelleyAddress.fromBech32(bech32); //TODO rather inefficient
@@ -57,6 +58,7 @@ Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
 
 ///
 /// Convert bech32 address payload to hex string. Optionaly uppercase hex string.
+/// TODO move to shelley_address.dart
 ///
 String hexFromShelleyAddress(String bech32, {bool uppercase = false}) {
   final result = HEX.encode(unit8BufferFromShelleyAddress(bech32));
@@ -65,8 +67,9 @@ String hexFromShelleyAddress(String bech32, {bool uppercase = false}) {
 
 ///
 /// Convert bytes to bech32 Shelley address.
+/// TODO move to shelley_address.dart
 ///
 String bech32ShelleyAddressFromBytes(Uint8Buffer bytes) {
-  final addr = ShelleyAddress.fromBytes(bytes);
+  final addr = ShelleyAddress(bytes);
   return addr.toBech32();
 }

@@ -6,6 +6,7 @@ export './src/asset/asset.dart';
 export './src/wallet/public_wallet.dart';
 export './src/wallet/wallet_factory.dart';
 export './src/address/shelley_address.dart';
+export './src/address/hd_wallet.dart';
 export './src/transaction/transaction.dart';
 export './src/network/cardano_network.dart';
 export './src/util/ada_formatter.dart';

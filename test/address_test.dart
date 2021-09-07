@@ -64,11 +64,19 @@ addr.xvk                                key_for_account_0_address_1.txt         
 */
 import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
-import 'package:cardano_wallet_sdk/src/bip32_ed25519/bip32_ed25519.dart';
+import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
+// import 'package:cardano_wallet_sdk/src/bip32_ed25519/bip32_ed25519.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 // import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:test/test.dart';
+
+// const int hardened_offset = 0x80000000;
+
+// int harden(int index) => index | hardened_offset;
+List<int> tolist(String csv) => csv.split(',').map((n) => int.parse(n)).toList();
 
 void main() {
   final entropyPlusCs24Words = 256;
@@ -77,45 +85,35 @@ void main() {
   final testEntropy1 = "bcfa7e43752d19eabb38fa22bf6bc3622af9ed1cc4b6f645b833c7a5a8be2ce3";
   final testHexSeed1 =
       'ee344a00f29cc2fb0a84e43afd91f06beabe5f39e9e84eec729f64c56068d5795ea367d197e5d851a529f33e1d582c63887d0bb59fba8956d78fcf9f697f16a1';
-
-  /// Extended Private key size in bytes
-  const xprv_size = 96;
-  const extended_secret_key_size = 64;
+  final excpectedXskBip32Bytes = tolist(
+      '152,156,7,208,14,141,61,24,124,24,85,242,84,104,224,19,251,27,202,217,52,48,252,90,41,138,37,152,2,17,143,69,30,132,107,115,166,39,197,74,177,61,73,245,153,91,133,99,179,42,216,96,192,25,162,139,11,149,50,9,205,17,188,24,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166');
+  final expectedXvkBip32Bytes = tolist(
+      '144,157,252,200,194,195,56,252,90,234,197,170,203,188,44,108,87,67,179,130,54,219,203,57,57,5,159,226,111,24,18,158,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166');
+  final expectedPurposeXsk = tolist(
+      '184,74,168,186,106,194,150,231,102,65,4,152,99,223,135,221,172,111,161,213,247,232,5,104,70,137,45,159,3,17,143,69,185,148,219,125,227,191,90,209,187,14,186,202,238,5,40,3,126,167,45,77,98,97,196,155,137,209,156,114,248,63,132,20,24,173,18,17,250,137,178,51,117,154,118,193,74,61,58,237,1,117,26,105,181,45,253,35,129,230,99,44,202,180,207,58');
+  final expectedCoinTypeXsk = tolist(
+      '168,20,53,153,225,95,189,33,37,223,221,179,95,87,95,173,36,26,69,122,164,192,96,113,233,34,221,163,3,17,143,69,13,219,136,133,14,140,84,207,148,241,93,82,57,166,103,54,152,156,198,70,254,62,37,213,117,32,194,118,252,106,243,91,152,227,170,252,140,142,206,250,55,157,136,182,253,116,99,243,136,59,60,64,15,225,113,195,108,201,251,70,74,252,111,24');
+  final expectedAccount0Xsk = tolist(
+      '64,246,231,31,5,34,87,102,234,127,223,47,231,16,38,174,155,203,159,162,244,12,68,28,233,29,109,16,7,17,143,69,99,163,20,154,255,245,240,102,22,115,68,73,66,109,26,74,157,47,205,195,175,131,141,179,153,220,26,66,152,143,39,236,77,87,90,245,169,59,223,73,5,163,112,47,173,237,244,81,234,88,71,145,210,51,173,233,9,101,214,8,186,197,115,4');
+  final expectedChange0Xsk = tolist(
+      '32,252,38,192,255,180,208,38,209,162,139,214,141,102,30,46,192,248,56,119,93,226,69,198,254,58,141,139,13,17,143,69,224,178,189,12,154,221,217,239,241,203,71,202,74,183,204,47,136,167,210,244,145,190,241,11,68,112,19,130,182,133,18,35,96,160,127,43,182,21,248,82,206,177,177,173,172,158,72,208,107,10,26,177,129,220,101,177,220,6,159,132,181,88,187,203');
+  final expectedSpend0Xsk = tolist(
+      '16,41,227,180,98,205,86,19,164,21,138,56,61,41,138,149,60,198,210,108,65,244,169,96,247,21,18,90,21,17,143,69,194,70,255,246,50,124,72,102,231,105,50,116,96,25,83,94,245,96,206,37,0,21,11,224,246,1,224,54,119,47,202,15,23,236,32,214,162,3,215,59,218,48,86,59,210,15,41,200,58,115,47,149,36,193,106,147,177,129,121,138,250,247,136,13');
+  final expectedSpend0Xvk = tolist(
+      '249,22,43,145,18,98,18,183,21,0,232,157,199,218,49,17,29,252,20,102,169,242,79,72,163,78,126,165,41,210,211,56,23,236,32,214,162,3,215,59,218,48,86,59,210,15,41,200,58,115,47,149,36,193,106,147,177,129,121,138,250,247,136,13');
+  final expectedStake0Xsk = tolist(
+      '40,184,124,185,16,22,113,157,33,204,24,190,209,97,23,160,125,79,145,114,178,38,114,18,12,243,32,248,12,17,143,69,125,104,75,46,40,163,136,6,34,32,65,216,70,97,70,131,241,143,123,118,111,164,172,17,148,250,121,254,98,152,125,49,87,224,30,183,139,184,57,170,146,167,191,86,138,123,240,59,3,81,148,105,27,177,61,94,63,155,51,150,90,200,13,150');
+  final expectedStake0Xvk = tolist(
+      '198,178,48,87,100,108,196,77,168,58,125,66,86,243,155,111,205,69,182,176,228,239,165,107,172,195,228,202,189,233,179,128,87,224,30,183,139,184,57,170,146,167,191,86,138,123,240,59,3,81,148,105,27,177,61,94,63,155,51,150,90,200,13,150');
+  final expectedSpend0Bech32 = 'addr1qyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sdn8p3d';
 
   /// Extended Public key size in bytes
-  const xpub_size = 64;
+  // const xpub_size = 64;
   const public_key_size = 32;
-  const choin_code_size = 32;
-/*
-pub fn from_bip39_entropy(entropy: &[u8],password: &[u8]) -> SecretKey<Ed25519Bip32> {
-    let mut pbkdf2_result = [0; XPRV_SIZE];
+  // const choin_code_size = 32;
 
-    const ITER: u32 = 4096;
-    let mut mac = Hmac::new(Sha512::new(),password);
-    pbkdf2(&mut mac,entropy.as_ref(),ITER,&mut pbkdf2_result);
-
-    SecretKey(XPrv::normalize_bytes_force3rd(pbkdf2_result))
-}
-
-  Bip32Key master(Uint8List seed) {
-    final rawMaster = PBKDF2.hmac_sha512(Uint8List(0),seed,4096,96);
-
-    return Bip32SigningKey.normalizeBytes(rawMaster);
-  }
-
-*/
-  group('cardano-serialization-lib', () {
+  group('cardano-serialization-lib -', () {
     test('entropy to root private and public keys', () {
-      final excpectedXskBip32Bytes =
-          '152,156,7,208,14,141,61,24,124,24,85,242,84,104,224,19,251,27,202,217,52,48,252,90,41,138,37,152,2,17,143,69,30,132,107,115,166,39,197,74,177,61,73,245,153,91,133,99,179,42,216,96,192,25,162,139,11,149,50,9,205,17,188,24,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166'
-              .split(',')
-              .map((n) => int.parse(n))
-              .toList();
-      final expectedXvkBip32Bytes =
-          '144,157,252,200,194,195,56,252,90,234,197,170,203,188,44,108,87,67,179,130,54,219,203,57,57,5,159,226,111,24,18,158,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166'
-              .split(',')
-              .map((n) => int.parse(n))
-              .toList();
       //[0x4e,0x82,0x8f,0x9a,0x67,0xdd,0xcf,0xf0,0xe6,0x39,0x1a,0xd4,0xf2,0x6d,0xdb,0x75,0x79,0xf5,0x9b,0xa1,0x4b,0x6d,0xd4,0xba,0xf6,0x3d,0xcf,0xdb,0x9d,0x24,0x20,0xda];
       final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final seed = Uint8List.fromList(HEX.decode(testEntropy));
@@ -129,10 +127,44 @@ pub fn from_bip39_entropy(entropy: &[u8],password: &[u8]) -> SecretKey<Ed25519Bi
       //print(xpvtKey.keyBytes.join(','));
       expect(root_xsk.keyBytes, excpectedXskBip32Bytes.sublist(0, extended_secret_key_size), reason: 'first 64 bytes are private key');
       expect(root_xsk.chainCode, excpectedXskBip32Bytes.sublist(extended_secret_key_size), reason: 'second 32 bytes are chain code');
-      Bip32VerifyKey root_xvk = root_xsk.verifyKey;
+      Bip32VerifyKey root_xvk = root_xsk.verifyKey; //get public key
       expect(root_xvk.keyBytes, expectedXvkBip32Bytes.sublist(0, public_key_size), reason: 'first 32 bytes are public key');
       expect(root_xvk.chainCode, expectedXvkBip32Bytes.sublist(public_key_size), reason: 'second 32 bytes are chain code');
-      expect(root_xsk.chainCode, root_xvk.chainCode);
+      expect(root_xsk.chainCode, root_xvk.chainCode, reason: 'chain code is identical in both private and public keys');
+      //generate chain and addresses - m/1852'/1815'/0'/0/0
+      final derivator = Bip32Ed25519KeyDerivation.instance;
+      final pvt_purpose_1852 = derivator.ckdPriv(root_xsk, harden(1852));
+      expect(pvt_purpose_1852, expectedPurposeXsk);
+      final pvt_coin_1815 = derivator.ckdPriv(pvt_purpose_1852, harden(1815));
+      expect(pvt_coin_1815, expectedCoinTypeXsk);
+      final pvt_account_0 = derivator.ckdPriv(pvt_coin_1815, harden(0));
+      expect(pvt_account_0, expectedAccount0Xsk);
+      final pvt_change_0 = derivator.ckdPriv(pvt_account_0, 0);
+      expect(pvt_change_0, expectedChange0Xsk);
+      final pvt_address_0 = derivator.ckdPriv(pvt_change_0, 0);
+      expect(pvt_address_0, expectedSpend0Xsk);
+      final pub_address_0 = pvt_address_0.publicKey;
+      expect(pub_address_0, expectedSpend0Xvk);
+    });
+  });
+
+  group('address -', () {
+    test('private and public key generation', () {
+      final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final addresses = HdWallet.fromHexEntropy(testEntropy);
+      expect(addresses.rootSigningKey, excpectedXskBip32Bytes, reason: 'root private/signing key');
+      expect(addresses.rootVerifyKey, expectedXvkBip32Bytes, reason: 'root public/verify key');
+      final Bip32KeyPair spendAddress0Pair = addresses.deriveAddress(address: 0);
+      expect(spendAddress0Pair.privateKey, expectedSpend0Xsk);
+      expect(spendAddress0Pair.publicKey, expectedSpend0Xvk);
+      final Bip32KeyPair stakeAddress0Pair = addresses.deriveAddress(change: 2, address: 0);
+      expect(stakeAddress0Pair.privateKey, expectedStake0Xsk);
+      expect(stakeAddress0Pair.publicKey, expectedStake0Xvk);
+      final addr0 =
+          addresses.toBaseAddress(networkId: NetworkId.mainnet, spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+      print(addr0);
+      print(addr0.join(','));
+      expect(addr0.toBech32(), expectedSpend0Bech32);
     });
   });
 
@@ -152,24 +184,4 @@ pub fn from_bip39_entropy(entropy: &[u8],password: &[u8]) -> SecretKey<Ed25519Bi
       expect(seedHex, equals(testHexSeed1));
     });
   });
-
-  // const xprvCoder = Bech32Coder(hrp: 'xprv');
-  // const xpubCoder = Bech32Coder(hrp: 'xpub');
-  // group('Key derivation tests',() {
-  //   final dir = Directory.current;
-  //   final file = File('${dir.path}/test/data/yoroi_keys.json');
-
-  //   final contents = file.readAsStringSync();
-  //   final dynamic yoroi = JsonDecoder().convert(contents);
-
-  //   final dynamic keypairs = yoroi['keypairs'];
-
-  //   final dynamic ck = yoroi['chain_prv']! as String;
-  //   final dynamic cK = yoroi['chain_pub']! as String;
-
-  //   group('mnemonic words -',() {
-  //     final chainPrv = Bip32SigningKey.decode(ck,coder: xprvCoder);
-  //     final chainPub = Bip32VerifyKey.decode(cK,coder: xpubCoder);
-  //   });
-  // });
 }

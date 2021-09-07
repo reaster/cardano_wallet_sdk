@@ -1,13 +1,14 @@
 // import 'dart:io';
 // import 'dart:convert';
 // import 'package:cardano_wallet_sdk/src/bip32/key_gen.dart';
-import 'package:cardano_wallet_sdk/src/bip32/key_gen.dart';
-import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
+// import 'package:cardano_wallet_sdk/src/bip32/key_gen.dart';
+// import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:test/test.dart';
 //import 'package:bip32_ed25519/cardano.dart';
 import 'package:bip39/bip39.dart' as bip39;
 //import 'package:convert/convert.dart';
-import 'package:hex/hex.dart' as hex;
+// import 'package:hex/hex.dart' as hex;
 
 //
 // BIP-44 path: m / purpose' / coin_type' / account_ix' / change_chain / address_ix

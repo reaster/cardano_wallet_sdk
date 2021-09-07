@@ -11,16 +11,16 @@ dependencies:
   # pointycastle: ^3.0.1
   # base58check: ^2.0.0
   convert: ^3.0.0
-  # bip32_ed25519: #^0.2.1
+  bip32_ed25519: ^0.2.1
   #   git: git@github.com:ilap/bip32-ed25519-dart.git
   # path: ../bip32-ed25519-dart
   blockfrost:
-    ^0.1.23-dev.4
+    ^1.0.0-dev.6
     # git: git@github.com:reaster/blockfrost_api.git
     # path: ../blockfrost_api
   pinenacl: ^0.3.3
   bip39: ^1.0.6
-  cryptography: ^2.0.1
+  # cryptography: ^2.0.1
   pedantic: ^1.11.0
   oxidized: ^4.2.0
   intl: ^0.17.0
