@@ -106,6 +106,8 @@ void main() {
   final expectedStake0Xvk = tolist(
       '198,178,48,87,100,108,196,77,168,58,125,66,86,243,155,111,205,69,182,176,228,239,165,107,172,195,228,202,189,233,179,128,87,224,30,183,139,184,57,170,146,167,191,86,138,123,240,59,3,81,148,105,27,177,61,94,63,155,51,150,90,200,13,150');
   final expectedSpend0Bech32 = 'addr1qyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sdn8p3d';
+  final expectedTestnetSpend0Bech32 =
+      'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
 
   /// Extended Public key size in bytes
   // const xpub_size = 64;
@@ -148,23 +150,34 @@ void main() {
     });
   });
 
-  group('address -', () {
-    test('private and public key generation', () {
+  group('HdWallet -', () {
+    test('private/public key and address generation', () {
       final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-      final addresses = HdWallet.fromHexEntropy(testEntropy);
-      expect(addresses.rootSigningKey, excpectedXskBip32Bytes, reason: 'root private/signing key');
-      expect(addresses.rootVerifyKey, expectedXvkBip32Bytes, reason: 'root public/verify key');
-      final Bip32KeyPair spendAddress0Pair = addresses.deriveAddress(address: 0);
+      final hdWallet = HdWallet.fromHexEntropy(testEntropy);
+      expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes, reason: 'root private/signing key');
+      expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes, reason: 'root public/verify key');
+      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddress(address: 0);
       expect(spendAddress0Pair.privateKey, expectedSpend0Xsk);
       expect(spendAddress0Pair.publicKey, expectedSpend0Xvk);
-      final Bip32KeyPair stakeAddress0Pair = addresses.deriveAddress(change: 2, address: 0);
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddress(change: 2, address: 0);
       expect(stakeAddress0Pair.privateKey, expectedStake0Xsk);
       expect(stakeAddress0Pair.publicKey, expectedStake0Xvk);
       final addr0 =
-          addresses.toBaseAddress(networkId: NetworkId.mainnet, spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
-      print(addr0);
-      print(addr0.join(','));
+          hdWallet.toBaseAddress(networkId: NetworkId.mainnet, spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+      // print(addr0.join(','));
       expect(addr0.toBech32(), expectedSpend0Bech32);
+      final addr_test0 = hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+      expect(addr_test0.toBech32(), expectedTestnetSpend0Bech32);
+    });
+
+    test('bip32_12_reward address', () {
+      final mnemonic = 'test walk nut penalty hip pave soap entry language right filter choice';
+      final hdWallet = HdWallet.fromMnemonic(mnemonic);
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddress(change: 2);
+      final stake = hdWallet.toRewardAddress(networkId: NetworkId.mainnet, spend: stakeAddress0Pair.publicKey!);
+      expect(stake.toBech32(), 'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      expect(stake_test.toBech32(), 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
     });
   });
 

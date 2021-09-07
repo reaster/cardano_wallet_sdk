@@ -59,7 +59,7 @@ class ShelleyAddress extends ByteList {
   }
 
   String toBech32({String? prefix}) {
-    prefix ??= _computeHrp(networkId, defaultAddrHrp);
+    prefix ??= _computeHrp(networkId, hrp);
     return this.encode(Bech32Coder(hrp: prefix));
   }
 
