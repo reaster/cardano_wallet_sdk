@@ -1,30 +1,85 @@
-/// import 'package:built_value/built_value.dart';
-/// import 'package:built_value/serializer.dart';
 import 'dart:typed_data';
-// import 'package:built_collection/built_collection.dart';
-import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-// import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
-// import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:hex/hex.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:pinenacl/key_derivation.dart';
-//part 'addresses.g.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 
 ///
-/// BIP-0044 Multi-Account Hierarchy for Deterministic Wallets is a Bitcoin standard defining a structure
-/// and algorithm to build a hierarchy tree of keys from a single root private key. Note that this is the
-/// derivation scheme used by Icarus / Yoroi.
+/// This class generates cryptographic key pairs and addresses given a secret set of nmemonic BIP-39 words.
+/// It generates Cardano Shelley addresses by default, but can be used to generate and/or restore any wallet
+/// based on the BIP32-ED25519 standard.
 ///
-/// It is built upon BIP-0032 and is a direct application of BIP-0043. It defines a common representation
-/// of addresses as a multi-level tree of derivations:
+/// This code builes on following standards:
 ///
-///    m / purpose' / coin_type' / account_ix' / change_chain / address_ix
+/// https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki - HD wallets
+/// https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki - mnemonic words
+/// https://github.com/bitcoin/bips/blob/master/bip-0043.mediawiki - Bitcoin purpose
+/// https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki - multi-acct wallets
+/// https://cips.cardano.org/cips/cip3/       - key generation
+/// https://cips.cardano.org/cips/cip5/       - Bech32 prefixes
+/// https://cips.cardano.org/cips/cip11/      - staking key
+/// https://cips.cardano.org/cips/cip16/      - key serialisation
+/// https://cips.cardano.org/cips/cip19/      - address structure
+/// https://cips.cardano.org/cips/cip1852/    - 1852 purpose field
+/// https://cips.cardano.org/cips/cip1855/    - forging keys
+/// https://raw.githubusercontent.com/input-output-hk/adrestia/master/user-guide/static/Ed25519_BIP.pdf
 ///
-/// Where m is the private key, purpose is 1852 for Cardano, coin_type is 1815 for ADA, account_ix is a zero-
-/// based index defaulting to 0, change_chain is generaly 1 for change, address_ix is a zero-based index
-/// defaulting to 0.
-/// see https://docs.cardano.org/projects/cardano-wallet/en/latest/About-Address-Derivation.html
+///
+/// BIP-44 path:
+///     m / purpose' / coin_type' / account_ix' / change_chain / address_ix
+///
+/// Cardano adoption:
+///     m / 1852' / 1851' / account' / role / index
+///
+///
+///  BIP-44 Wallets Key Hierarchy - Cardano derivation:
+/// +--------------------------------------------------------------------------------+
+/// |                BIP-39 Encoded Seed with CRC a.k.a Mnemonic Words               |
+/// |                                                                                |
+/// |    squirrel material silly twice direct ... razor become junk kingdom flee     |
+/// |                                                                                |
+/// +--------------------------------------------------------------------------------+
+///        |
+///        |
+///        v
+/// +--------------------------+    +-----------------------+
+/// |    Wallet Private Key    |--->|   Wallet Public Key   |
+/// +--------------------------+    +-----------------------+
+///        |
+///        | purpose (e.g. 1852')
+///        |
+///        v
+/// +--------------------------+
+/// |   Purpose Private Key    |
+/// +--------------------------+
+///        |
+///        | coin type (e.g. 1815' for ADA)
+///        v
+/// +--------------------------+
+/// |  Coin Type Private Key   |
+/// +--------------------------+
+///        |
+///        | account ix (e.g. 0')
+///        v
+/// +--------------------------+    +-----------------------+
+/// |   Account Private Key    |--->|   Account Public Key  |
+/// +--------------------------+    +-----------------------+
+///        |                                          |
+///        | role   (e.g. 0=external/payments,        |
+///        |         1=internal/change, 2=staking)    |
+///        v                                          v
+/// +--------------------------+    +-----------------------+
+/// |   Change Private Key     |--->|   Change Public Key   |
+/// +--------------------------+    +-----------------------+
+///        |                                          |
+///        | index (e.g. 0)                           |
+///        v                                          v
+/// +--------------------------+    +-----------------------+
+/// |   Address Private Key    |--->|   Address Public Key  |
+/// +--------------------------+    +-----------------------+
+///
 ///
 class HdWallet {
   final Uint8List seed;
@@ -33,74 +88,26 @@ class HdWallet {
 
   HdWallet({required this.seed}) : rootSigningKey = _bip32signingKey(seed);
 
-  factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(seed: Uint8List.fromList(HEX.decode(hexEntropy)));
+  factory HdWallet.fromHexEntropy(String hexEntropy) =>
+      HdWallet(seed: Uint8List.fromList(HEX.decode(hexEntropy)));
 
-  factory HdWallet.fromMnemonic(String mnemonic) => HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
+  factory HdWallet.fromMnemonic(String mnemonic) =>
+      HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
 
   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
 
   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
-    final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, xprv_size);
+    final rawMaster = PBKDF2.hmac_sha512(
+        Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
     final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
     return root_xsk;
   }
 
-  ///
-  /// BIP-44 path: m / purpose' / coin_type' / account_ix' / change_chain / address_ix
-  ///
-  /// Cardano adoption: m / 1852' / 1851' / 0' / change_chain / address_ix
-  ///
-  ///
-  /// +--------------------------------------------------------------------------------+
-  /// |                BIP-39 Encoded Seed with CRC a.k.a Mnemonic Words               |
-  /// |                                                                                |
-  /// |    squirrel material silly twice direct ... razor become junk kingdom flee     |
-  /// |                                                                                |
-  /// +--------------------------------------------------------------------------------+
-  ///        |
-  ///        |
-  ///        v
-  /// +--------------------------+    +-----------------------+
-  /// |    Wallet Private Key    |--->|   Wallet Public Key   |
-  /// +--------------------------+    +-----------------------+
-  ///        |
-  ///        | purpose (e.g. 1852')
-  ///        |
-  ///        v
-  /// +--------------------------+
-  /// |   Purpose Private Key    |
-  /// +--------------------------+
-  ///        |
-  ///        | coin type (e.g. 1815' for ADA)
-  ///        v
-  /// +--------------------------+
-  /// |  Coin Type Private Key   |
-  /// +--------------------------+
-  ///        |
-  ///        | account ix (e.g. 0')
-  ///        v
-  /// +--------------------------+    +-----------------------+
-  /// |   Account Private Key    |--->|   Account Public Key  |
-  /// +--------------------------+    +-----------------------+
-  ///        |                                          |
-  ///        | chain  (e.g. 0=external/payments,        |
-  ///        |         1=internal/change, 2=staking)    |
-  ///        v                                          v
-  /// +--------------------------+    +-----------------------+
-  /// |   Change Private Key     |--->|   Change Public Key   |
-  /// +--------------------------+    +-----------------------+
-  ///        |                                          |
-  ///        | address ix (e.g. 0)                      |
-  ///        v                                          v
-  /// +--------------------------+    +-----------------------+
-  /// |   Address Private Key    |--->|   Address Public Key  |
-  /// +--------------------------+    +-----------------------+
-  ///
-  ///              BIP-44 Wallets Key Hierarchy
-  ///
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
-    Bip32PrivateKey? privateKey = keys.privateKey != null ? _derivator.ckdPriv(keys.privateKey!, index) : null;
+    Bip32PrivateKey? privateKey = keys.privateKey != null
+        ? _derivator.ckdPriv(keys.privateKey!, index)
+        : null;
     Bip32PublicKey? publicKey = isHardened(index)
         ? null
         : keys.publicKey != null
@@ -113,21 +120,28 @@ class HdWallet {
       {int purpose = defaultPurpose,
       int coinType = defaultCoinType,
       int account = defaultAccountIndex,
-      int change = defaultChange,
-      int address = defaultAddressIndex}) {
-    final rootKeys = Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
+      int role = paymentRole,
+      int index = defaultAddressIndex}) {
+    final rootKeys =
+        Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
     final pair0 = derive(keys: rootKeys, index: purpose);
     final pair1 = derive(keys: pair0, index: coinType);
     final pair2 = derive(keys: pair1, index: account);
-    final pair3 = derive(keys: pair2, index: change);
-    final pair4 = derive(keys: pair3, index: address);
+    final pair3 = derive(keys: pair2, index: role);
+    final pair4 = derive(keys: pair3, index: index);
     return pair4;
   }
 
-  ShelleyAddress toBaseAddress({required Bip32PublicKey spend, required Bip32PublicKey stake, NetworkId networkId = NetworkId.testnet}) =>
-      ShelleyAddress.toBaseAddress(spend: spend, stake: stake, networkId: networkId);
+  ShelleyAddress toBaseAddress(
+          {required Bip32PublicKey spend,
+          required Bip32PublicKey stake,
+          NetworkId networkId = NetworkId.testnet}) =>
+      ShelleyAddress.toBaseAddress(
+          spend: spend, stake: stake, networkId: networkId);
 
-  ShelleyAddress toRewardAddress({required Bip32PublicKey spend, NetworkId networkId = NetworkId.testnet}) =>
+  ShelleyAddress toRewardAddress(
+          {required Bip32PublicKey spend,
+          NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
 
@@ -137,21 +151,30 @@ class Bip32KeyPair {
   const Bip32KeyPair({this.privateKey, this.publicKey});
 }
 
-///
-const int hardened_offset = 0x80000000; //denoted by a single quote in chain values
+/// Hardended chain values should not have public keys.
+/// They are denoted by a single quote in chain values.
+const int hardenedOffset = 0x80000000;
 
 /// default purpose. Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
-const int defaultPurpose = 1852 | hardened_offset;
-const int defaultCoinType = 1815 | hardened_offset;
-const int defaultAccountIndex = 0 | hardened_offset;
+const int defaultPurpose = 1852 | hardenedOffset;
+const int defaultCoinType = 1815 | hardenedOffset;
+const int defaultAccountIndex = 0 | hardenedOffset;
 
-/// 0=external/payments, 1=internal/change, 2=staking
-const int defaultChange = 0;
+/// role 0=external/payments
+const int paymentRole = 0;
+
+/// role 1=internal/change
+const int changeRole = 1;
+
+/// role 2=staking
+const int stakingRole = 2;
 const int defaultAddressIndex = 0;
 
-/// Extended Private key size in bytes
-const xprv_size = 96;
-const extended_secret_key_size = 64;
+/// Extended private key size in bytes
+const cip16ExtendedSigningKeySize = 96;
 
-int harden(int index) => index | hardened_offset;
-bool isHardened(int index) => index & hardened_offset != 0;
+/// Extended public key size in bytes
+const cip16ExtendedVerificationgKeySize = 64;
+
+int harden(int index) => index | hardenedOffset;
+bool isHardened(int index) => index & hardenedOffset != 0;
