@@ -1,4 +1,4 @@
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 // import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
@@ -9,6 +9,8 @@ import 'package:pinenacl/api.dart';
 /// Encapsulates Shelley address types. Handles proper bech32 encoding and decoding mainnet and testnet addresses.
 ///
 /// Note: Currently only supports Base addresses and Key credentials.
+/// TODO: Subclass ShelleyAddress into BaseAddress, EnterpriseAddress, PointerAddress and RewardsAddress to support
+/// different behaviors.
 ///
 /// [reference](https://cips.cardano.org/cips/cip19/)
 /// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
@@ -48,7 +50,8 @@ class ShelleyAddress extends ByteList {
     String hrp = defaultRewardHrp,
     CredentialType paymentType = CredentialType.Key,
   }) =>
-      ShelleyAddress([rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] + blake2bHash224(spend.rawKey),
+      ShelleyAddress(
+          [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] + blake2bHash224(spend.rawKey),
           hrp: _computeHrp(networkId, hrp));
 
   factory ShelleyAddress.fromBech32(String address) {
@@ -84,7 +87,8 @@ class ShelleyAddress extends ByteList {
       case 15:
         return AddressType.Reward;
       default:
-        throw InvalidAddressTypeError("addressType: $addressType is not defined. Containing address ${this.toBech32()}");
+        throw InvalidAddressTypeError(
+            "addressType: $addressType is not defined. Containing address ${this.toBech32()}");
     }
   }
 

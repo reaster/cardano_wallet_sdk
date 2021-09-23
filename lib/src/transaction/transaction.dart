@@ -1,4 +1,4 @@
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 
 enum TransactionType { deposit, withdrawal }
@@ -40,16 +40,19 @@ class TransactionIO {
   final List<TransactionAmount> amounts;
   TransactionIO({required this.address, required this.amounts});
   @override
-  String toString() => "TransactionIO(address: $address count: ${amounts.length})";
+  String toString() =>
+      "TransactionIO(address: $address count: ${amounts.length})";
 }
 
 class WalletTransactionImpl implements WalletTransaction {
   final Transaction baseTransaction;
   final Map<String, int> currencies;
   final Set<String> ownedAddresses;
-  WalletTransactionImpl({required this.baseTransaction, required Set<String> addressSet})
+  WalletTransactionImpl(
+      {required this.baseTransaction, required Set<String> addressSet})
       : currencies = baseTransaction.sumCurrencies(addressSet: addressSet),
-        ownedAddresses = baseTransaction.filterAddresses(addressSet: addressSet);
+        ownedAddresses =
+            baseTransaction.filterAddresses(addressSet: addressSet);
 
   @override
   String get txId => baseTransaction.txId;
@@ -64,23 +67,32 @@ class WalletTransactionImpl implements WalletTransaction {
   @override
   List<TransactionIO> get outputs => baseTransaction.outputs;
 
-  String currencyBalancesByTicker({required Map<String, CurrencyAsset> assetByAssetId, String? filterAssetId}) => currencies.entries
-      .where((e) => filterAssetId == null || e.key != filterAssetId || assetByAssetId[e.key] != null)
-      .map((e) => MapEntry(assetByAssetId[e.key]!, e.value))
-      .map((e) => "${e.key.symbol}:${e.value}")
-      .join(', ');
+  String currencyBalancesByTicker(
+          {required Map<String, CurrencyAsset> assetByAssetId,
+          String? filterAssetId}) =>
+      currencies.entries
+          .where((e) =>
+              filterAssetId == null ||
+              e.key != filterAssetId ||
+              assetByAssetId[e.key] != null)
+          .map((e) => MapEntry(assetByAssetId[e.key]!, e.value))
+          .map((e) => "${e.key.symbol}:${e.value}")
+          .join(', ');
 
   @override
   int get amount => currencies[lovelaceHex] ?? 0;
 
   @override
-  TransactionType get type => amount >= 0 ? TransactionType.deposit : TransactionType.withdrawal;
+  TransactionType get type =>
+      amount >= 0 ? TransactionType.deposit : TransactionType.withdrawal;
 
   @override
-  String toString() => "Transaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
+  String toString() =>
+      "Transaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
 
   @override
-  bool containsCurrency({required String assetId}) => currencies[assetId] != null;
+  bool containsCurrency({required String assetId}) =>
+      currencies[assetId] != null;
 
   @override
   int currencyAmount({required String assetId}) => currencies[assetId] ?? 0;
