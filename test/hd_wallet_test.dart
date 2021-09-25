@@ -3,21 +3,20 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 // import 'package:cardano_wallet_sdk/src/bip32_ed25519/bip32_ed25519.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 // import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:test/test.dart';
 
-List<int> tolist(String csv) =>
-    csv.split(',').map((n) => int.parse(n)).toList();
+List<int> tolist(String csv) => csv.split(',').map((n) => int.parse(n)).toList();
 
 void main() {
   //final entropyPlusCs24Words = 256;
   final testMnemonic1 =
       "rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just";
-  final testEntropy1 =
-      "bcfa7e43752d19eabb38fa22bf6bc3622af9ed1cc4b6f645b833c7a5a8be2ce3";
+  final testEntropy1 = "bcfa7e43752d19eabb38fa22bf6bc3622af9ed1cc4b6f645b833c7a5a8be2ce3";
   final testHexSeed1 =
       'ee344a00f29cc2fb0a84e43afd91f06beabe5f39e9e84eec729f64c56068d5795ea367d197e5d851a529f33e1d582c63887d0bb59fba8956d78fcf9f697f16a1';
   final excpectedXskBip32Bytes = tolist(
@@ -53,33 +52,26 @@ void main() {
   group('rust cardano-serialization-lib test -', () {
     test('entropy to root private and public keys', () {
       //[0x4e,0x82,0x8f,0x9a,0x67,0xdd,0xcf,0xf0,0xe6,0x39,0x1a,0xd4,0xf2,0x6d,0xdb,0x75,0x79,0xf5,0x9b,0xa1,0x4b,0x6d,0xd4,0xba,0xf6,0x3d,0xcf,0xdb,0x9d,0x24,0x20,0xda];
-      final testEntropy =
-          '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final seed = Uint8List.fromList(HEX.decode(testEntropy));
-      final rawMaster = PBKDF2.hmac_sha512(
-          Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
+      final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
       expect(rawMaster[0], 156, reason: 'byte 0 before normalization');
       expect(rawMaster[31], 101, reason: 'byte 31 before normalization');
       //print(rawMaster.join(','));
-      final Bip32SigningKey root_xsk =
-          Bip32SigningKey.normalizeBytes(rawMaster);
+      final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
       expect(root_xsk.keyBytes[0], 152, reason: 'byte 0 after normalization');
       expect(root_xsk.keyBytes[31], 69, reason: 'byte 31 after normalization');
       //print(xpvtKey.keyBytes.join(','));
-      expect(root_xsk.keyBytes,
-          excpectedXskBip32Bytes.sublist(0, cip16ExtendedVerificationgKeySize),
+      expect(root_xsk.keyBytes, excpectedXskBip32Bytes.sublist(0, cip16ExtendedVerificationgKeySize),
           reason: 'first 64 bytes are private key');
-      expect(root_xsk.chainCode,
-          excpectedXskBip32Bytes.sublist(cip16ExtendedVerificationgKeySize),
+      expect(root_xsk.chainCode, excpectedXskBip32Bytes.sublist(cip16ExtendedVerificationgKeySize),
           reason: 'second 32 bytes are chain code');
       Bip32VerifyKey root_xvk = root_xsk.verifyKey; //get public key
-      expect(
-          root_xvk.keyBytes, expectedXvkBip32Bytes.sublist(0, public_key_size),
+      expect(root_xvk.keyBytes, expectedXvkBip32Bytes.sublist(0, public_key_size),
           reason: 'first 32 bytes are public key');
       expect(root_xvk.chainCode, expectedXvkBip32Bytes.sublist(public_key_size),
           reason: 'second 32 bytes are chain code');
-      expect(root_xsk.chainCode, root_xvk.chainCode,
-          reason: 'chain code is identical in both private and public keys');
+      expect(root_xsk.chainCode, root_xvk.chainCode, reason: 'chain code is identical in both private and public keys');
       //generate chain and addresses - m/1852'/1815'/0'/0/0
       final derivator = Bip32Ed25519KeyDerivation.instance;
       final pvt_purpose_1852 = derivator.ckdPriv(root_xsk, harden(1852));
@@ -99,46 +91,33 @@ void main() {
 
   group('HdWallet -', () {
     test('private/public key and address generation', () {
-      final testEntropy =
-          '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-      expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes,
-          reason: 'root private/signing key');
-      expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes,
-          reason: 'root public/verify key');
-      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddress(index: 0);
+      expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes, reason: 'root private/signing key');
+      expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes, reason: 'root public/verify key');
+      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys(index: 0);
       expect(spendAddress0Pair.privateKey, expectedSpend0Xsk);
       expect(spendAddress0Pair.publicKey, expectedSpend0Xvk);
-      final Bip32KeyPair stakeAddress0Pair =
-          hdWallet.deriveAddress(role: stakingRole, index: 0);
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
       expect(stakeAddress0Pair.privateKey, expectedStake0Xsk);
       expect(stakeAddress0Pair.publicKey, expectedStake0Xvk);
       final addr0 = hdWallet.toBaseAddress(
-          networkId: NetworkId.mainnet,
-          spend: spendAddress0Pair.publicKey!,
-          stake: stakeAddress0Pair.publicKey!);
+          networkId: NetworkId.mainnet, spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
       // print(addr0.join(','));
       expect(addr0.toBech32(), expectedSpend0Bech32);
-      final addr_test0 = hdWallet.toBaseAddress(
-          spend: spendAddress0Pair.publicKey!,
-          stake: stakeAddress0Pair.publicKey!);
+      final addr_test0 =
+          hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
       expect(addr_test0.toBech32(), expectedTestnetSpend0Bech32);
     });
 
     test('bip32_12_reward address', () {
-      final mnemonic =
-          'test walk nut penalty hip pave soap entry language right filter choice';
+      final mnemonic = 'test walk nut penalty hip pave soap entry language right filter choice';
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
-      final Bip32KeyPair stakeAddress0Pair =
-          hdWallet.deriveAddress(role: stakingRole);
-      final stake = hdWallet.toRewardAddress(
-          networkId: NetworkId.mainnet, spend: stakeAddress0Pair.publicKey!);
-      expect(stake.toBech32(),
-          'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
-      final stake_test =
-          hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
-      expect(stake_test.toBech32(),
-          'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
+      final stake = hdWallet.toRewardAddress(networkId: NetworkId.mainnet, spend: stakeAddress0Pair.publicKey!);
+      expect(stake.toBech32(), 'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      expect(stake_test.toBech32(), 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
     });
   });
 
@@ -207,30 +186,45 @@ addr.xvk                                key_for_account_0_address_1.txt         
 
 */
   group('Haskell cardano-address data -', () {
-    test('HdWallet -', () {
-      final mnemonic =
-          'rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just';
+    final mnemonic =
+        'rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just';
+    final addr0Testnet =
+        'addr_test1qrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqm2rpzj';
+    final addr1Testnet =
+        'addr_test1qp68ev9dryvaq4nn0yyntv3zwmrcvz99mgr4f7yqzzq6c6v3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqfmsyuj';
+    final addr0Mainnet =
+        'addr1q8lqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqcu7pwd';
+    final change0Mainnet =
+        'addr1qx25lzk4msem7df6a3ktcqh7knmzqul40rjxyghyk69jqnv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjq5cyenl';
+    test('toBaseAddress', () {
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
-      final Bip32KeyPair stakeAddress0Pair =
-          hdWallet.deriveAddress(role: stakingRole);
-      final stake_test =
-          hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
-      expect(stake_test.toBech32(),
-          'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
-      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddress();
-      final addr_test = hdWallet.toBaseAddress(
-          spend: spendAddress0Pair.publicKey!,
-          stake: stakeAddress0Pair.publicKey!);
-      expect(addr_test.toBech32(),
-          'addr_test1qrlqwws609v256tuydd4hf5vanrwyljwftanh2ntafkkpkv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjqm2rpzj');
+      final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
+      final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys();
+      final addr_test =
+          hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+      expect(addr_test.toBech32(), addr0Testnet);
+    });
+    test('deriveUnusedBaseAddress', () {
+      final hdWallet = HdWallet.fromMnemonic(mnemonic);
+      ShelleyAddress spend0 = hdWallet.deriveUnusedBaseAddress();
+      expect(spend0.toBech32(), addr0Testnet);
+      ShelleyAddress spend1 = hdWallet.deriveUnusedBaseAddress(index: 1);
+      expect(spend1.toBech32(), addr1Testnet);
+      ShelleyAddress spend1a = hdWallet.deriveUnusedBaseAddress(unusedCallback: (a) => a.toBech32() != addr0Testnet);
+      expect(spend1a.toBech32(), addr1Testnet, reason: 'callback flags addr0 as used, so returns addr1');
+      ShelleyAddress spend0Mainnet = hdWallet.deriveUnusedBaseAddress(networkId: NetworkId.mainnet);
+      expect(spend0Mainnet.toBech32(), addr0Mainnet);
+      ShelleyAddress change0 = hdWallet.deriveUnusedBaseAddress(networkId: NetworkId.mainnet, role: changeRole);
+      expect(change0.toBech32(), change0Mainnet);
     });
   });
 
   group('mnemonic words -', () {
     setUp(() {});
     test('validate', () {
-      expect(bip39.validateMnemonic(testMnemonic1), isTrue,
-          reason: 'validateMnemonic returns true');
+      expect(bip39.validateMnemonic(testMnemonic1), isTrue, reason: 'validateMnemonic returns true');
     });
     test('to entropy', () {
       final String entropy = bip39.mnemonicToEntropy(testMnemonic1);
@@ -238,8 +232,7 @@ addr.xvk                                key_for_account_0_address_1.txt         
       expect(entropy, equals(testEntropy1));
     });
     test('to seed hex', () {
-      final seedHex =
-          bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
+      final seedHex = bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
       //print("seedHex: $seedHex");
       expect(seedHex, equals(testHexSeed1));
     });

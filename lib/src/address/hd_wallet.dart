@@ -85,29 +85,25 @@ class HdWallet {
   final Uint8List seed;
   final Bip32SigningKey rootSigningKey;
   final _derivator = Bip32Ed25519KeyDerivation.instance;
+  //final Map<int, Bip32KeyPair> _roleKeysCache = {};
 
   HdWallet({required this.seed}) : rootSigningKey = _bip32signingKey(seed);
 
-  factory HdWallet.fromHexEntropy(String hexEntropy) =>
-      HdWallet(seed: Uint8List.fromList(HEX.decode(hexEntropy)));
+  factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(seed: Uint8List.fromList(HEX.decode(hexEntropy)));
 
-  factory HdWallet.fromMnemonic(String mnemonic) =>
-      HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
+  factory HdWallet.fromMnemonic(String mnemonic) => HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
 
   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
 
   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
-    final rawMaster = PBKDF2.hmac_sha512(
-        Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
+    final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
     final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
     return root_xsk;
   }
 
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
-    Bip32PrivateKey? privateKey = keys.privateKey != null
-        ? _derivator.ckdPriv(keys.privateKey!, index)
-        : null;
+    Bip32PrivateKey? privateKey = keys.privateKey != null ? _derivator.ckdPriv(keys.privateKey!, index) : null;
     Bip32PublicKey? publicKey = isHardened(index)
         ? null
         : keys.publicKey != null
@@ -116,32 +112,53 @@ class HdWallet {
     return Bip32KeyPair(privateKey: privateKey, publicKey: publicKey);
   }
 
-  Bip32KeyPair deriveAddress(
+  Bip32KeyPair deriveAddressKeys(
       {int purpose = defaultPurpose,
       int coinType = defaultCoinType,
       int account = defaultAccountIndex,
       int role = paymentRole,
       int index = defaultAddressIndex}) {
-    final rootKeys =
-        Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
-    final pair0 = derive(keys: rootKeys, index: purpose);
-    final pair1 = derive(keys: pair0, index: coinType);
-    final pair2 = derive(keys: pair1, index: account);
-    final pair3 = derive(keys: pair2, index: role);
-    final pair4 = derive(keys: pair3, index: index);
-    return pair4;
+    final rootKeys = Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
+    final purposeKey = derive(keys: rootKeys, index: purpose);
+    final coinKey = derive(keys: purposeKey, index: coinType);
+    final accountKey = derive(keys: coinKey, index: account);
+    final roleKeys = derive(keys: accountKey, index: role);
+    final addressKeys = derive(keys: roleKeys, index: index);
+    return addressKeys;
+  }
+
+  ShelleyAddress deriveUnusedBaseAddress(
+      {int account = defaultAccountIndex,
+      int role = paymentRole,
+      int index = defaultAddressIndex,
+      NetworkId networkId = NetworkId.testnet,
+      UnusedAddressFunction unusedCallback = alwaysUnused}) {
+    assert(role == paymentRole || role == changeRole);
+    final rootKeys = Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
+    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+    final accountKey = derive(keys: coinKey, index: account);
+    //stake chain:
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+    //address chain:
+    int i = index;
+    final spendRoleKeys = derive(keys: accountKey, index: role);
+    ShelleyAddress addr;
+    do {
+      final spendAddressKeys = derive(keys: spendRoleKeys, index: i++);
+      addr =
+          toBaseAddress(spend: spendAddressKeys.publicKey!, stake: stakeAddressKeys.publicKey!, networkId: networkId);
+      print("addr[$i]: $addr");
+    } while (!unusedCallback(addr));
+    return addr;
   }
 
   ShelleyAddress toBaseAddress(
-          {required Bip32PublicKey spend,
-          required Bip32PublicKey stake,
-          NetworkId networkId = NetworkId.testnet}) =>
-      ShelleyAddress.toBaseAddress(
-          spend: spend, stake: stake, networkId: networkId);
+          {required Bip32PublicKey spend, required Bip32PublicKey stake, NetworkId networkId = NetworkId.testnet}) =>
+      ShelleyAddress.toBaseAddress(spend: spend, stake: stake, networkId: networkId);
 
-  ShelleyAddress toRewardAddress(
-          {required Bip32PublicKey spend,
-          NetworkId networkId = NetworkId.testnet}) =>
+  ShelleyAddress toRewardAddress({required Bip32PublicKey spend, NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
 
@@ -178,3 +195,7 @@ const cip16ExtendedVerificationgKeySize = 64;
 
 int harden(int index) => index | hardenedOffset;
 bool isHardened(int index) => index & hardenedOffset != 0;
+
+typedef UnusedAddressFunction = bool Function(ShelleyAddress address);
+
+bool alwaysUnused(_) => true;

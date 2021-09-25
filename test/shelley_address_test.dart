@@ -12,9 +12,9 @@ void main() {
   group('shelley address test -', () {
     final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-    final Bip32KeyPair spendPair = hdWallet.deriveAddress(index: 0);
+    final Bip32KeyPair spendPair = hdWallet.deriveAddressKeys(index: 0);
     //final Bip32KeyPair changePair = hdWallet.deriveAddress(role: changeRole, index: 0);
-    final Bip32KeyPair stakePair = hdWallet.deriveAddress(role: stakingRole, index: 0);
+    final Bip32KeyPair stakePair = hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
     test('network header', () {
       var a = ShelleyAddress.fromBech32(addr);
       expect(a.networkId, NetworkId.mainnet, reason: 'set mainnet bit in header');
