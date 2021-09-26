@@ -11,11 +11,6 @@ import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 ///
 /// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
 ///
-/// note: cbor 4.0.2 package only allows integer and string keys.
-/// The https://github.com/reaster/cbor fork adds byte string support, but awaiting futher testing before submitting a pull request.
-///
-
-final supportByteStringKeys = true; //TODO remove
 
 class CborDeserializationException implements Exception {} //TODO replace with Result?
 
@@ -35,8 +30,8 @@ class ShelleyMultiAsset {
   factory ShelleyMultiAsset.deserialize({required MapEntry cMapEntry}) {
     final policyId = hexFromUnit8Buffer(cMapEntry.key as Uint8Buffer);
     final List<ShelleyAsset> assets = [];
-    (cMapEntry.value as Map)
-        .forEach((key, value) => assets.add(ShelleyAsset(name: hexFromUnit8Buffer(key as Uint8Buffer), value: value as int)));
+    (cMapEntry.value as Map).forEach(
+        (key, value) => assets.add(ShelleyAsset(name: hexFromUnit8Buffer(key as Uint8Buffer), value: value as int)));
     return ShelleyMultiAsset(policyId: policyId, assets: assets);
   }
   //
@@ -45,11 +40,8 @@ class ShelleyMultiAsset {
   MapBuilder assetsToCborMap() {
     final mapBuilder = MapBuilder.builder();
     assets.forEach((asset) {
-      if (supportByteStringKeys) {
-        mapBuilder.writeBuff(uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
-      } else {
-        mapBuilder.writeString(asset.name);
-      }
+      mapBuilder.writeBuff(
+          uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
       mapBuilder.writeInt(asset.value);
     });
     return mapBuilder;
@@ -133,11 +125,7 @@ class ShelleyValue {
     listBuilder.writeInt(coin);
     final mapBuilder = MapBuilder.builder();
     multiAssets.forEach((multiAsset) {
-      if (supportByteStringKeys) {
-        mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
-      } else {
-        mapBuilder.writeString(multiAsset.policyId);
-      }
+      mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
       mapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
     });
     listBuilder.addBuilderOutput(mapBuilder.getData());
@@ -186,14 +174,15 @@ class ShelleyTransactionBody {
   factory ShelleyTransactionBody.deserialize({required Map cMap}) {
     final inputs = (cMap[0] as List).map((i) => ShelleyTransactionInput.deserialize(cList: i as List)).toList();
     final outputs = (cMap[1] as List).map((i) => ShelleyTransactionOutput.deserialize(cList: i as List)).toList();
-    final mint =
-        (cMap[9] == null) ? null : (cMap[9] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
+    final mint = (cMap[9] == null)
+        ? null
+        : (cMap[9] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
     return ShelleyTransactionBody(
       inputs: inputs,
       outputs: outputs,
       fee: cMap[2] as int,
       ttl: cMap[3] == null ? null : cMap[3] as int,
-      metadataHash: [],
+      metadataHash: cMap[7] == null ? null : cMap[7] as List<int>,
       validityStartInterval: cMap[8] == null ? null : cMap[8] as int,
       mint: mint,
     );
@@ -233,11 +222,7 @@ class ShelleyTransactionBody {
       mapBuilder.writeInt(9);
       final mintMapBuilder = MapBuilder.builder();
       mint!.forEach((multiAsset) {
-        if (supportByteStringKeys) {
-          mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
-        } else {
-          mintMapBuilder.writeString(multiAsset.policyId);
-        }
+        mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
         mintMapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
       });
       mapBuilder.addBuilderOutput(mintMapBuilder.getData());
@@ -246,11 +231,75 @@ class ShelleyTransactionBody {
   }
 }
 
+class ShelleyVkeyWitness {
+  final List<int> vkey;
+  final List<int> signature;
+
+  ShelleyVkeyWitness({required this.vkey, required this.signature});
+
+  ListBuilder toCborList() {
+    final listBuilder = ListBuilder.builder();
+    listBuilder.writeBuff(unit8BufferFromBytes(vkey));
+    listBuilder.writeBuff(unit8BufferFromBytes(signature));
+    return listBuilder;
+  }
+
+  factory ShelleyVkeyWitness.deserialize({required List cList}) {
+    return ShelleyVkeyWitness(vkey: cList[0], signature: cList[1]);
+  }
+}
+
+/// TODO ShelleyNativeScript is just a place-holder for these concrete classes:
+/// ScriptPubkey, ScriptAll, ScriptAny, ScriptAtLeast, RequireTimeAfter, RequireTimeBefore
+class ShelleyNativeScript {
+  final int selector;
+  final List<int> blob;
+
+  ShelleyNativeScript(this.selector, this.blob);
+
+  ListBuilder toCborList() {
+    final listBuilder = ListBuilder.builder();
+    listBuilder.writeInt(selector);
+    listBuilder.writeBuff(unit8BufferFromBytes(blob));
+    return listBuilder;
+  }
+}
+
 class ShelleyTransactionWitnessSet {
-  //TODO
-  ShelleyTransactionWitnessSet();
-  factory ShelleyTransactionWitnessSet.deserialize() {
-    return ShelleyTransactionWitnessSet();
+  final List<ShelleyVkeyWitness> vkeyWitnesses;
+  final List<ShelleyNativeScript> nativeScripts;
+  ShelleyTransactionWitnessSet({required this.vkeyWitnesses, required this.nativeScripts});
+  //    transaction_witness_set =
+  //    { ? 0: [* vkeywitness ]
+  //  , ? 1: [* native_script ]
+  //  , ? 2: [* bootstrap_witness ]
+  //        ; In the future, new kinds of witnesses can be added like this:
+  //        ; , ? 4: [* foo_script ]
+  //        ; , ? 5: [* plutus_script ]
+  //    }
+  factory ShelleyTransactionWitnessSet.deserialize({required Map cMap}) {
+    return ShelleyTransactionWitnessSet(
+      vkeyWitnesses: cMap[0] != null ? cMap[0] as List<ShelleyVkeyWitness> : [],
+      nativeScripts: cMap[1] != null ? cMap[1] as List<ShelleyNativeScript> : [],
+    );
+  }
+  MapBuilder toCborMap() {
+    final mapBuilder = MapBuilder.builder();
+    //0:inputs
+    if (vkeyWitnesses.isNotEmpty) {
+      mapBuilder.writeInt(0); //key
+      final inListBuilder = ListBuilder.builder();
+      vkeyWitnesses.forEach((witness) => inListBuilder.addBuilderOutput(witness.toCborList().getData()));
+      mapBuilder.addBuilderOutput(inListBuilder.getData()); //value
+    }
+    //1:outputs
+    if (nativeScripts.isNotEmpty) {
+      mapBuilder.writeInt(1); //key
+      final outListBuilder = ListBuilder.builder();
+      nativeScripts.forEach((script) => outListBuilder.addBuilderOutput(script.toCborList().getData()));
+      mapBuilder.addBuilderOutput(outListBuilder.getData()); //value
+    }
+    return mapBuilder;
   }
 }
 
@@ -279,11 +328,12 @@ class ShelleyTransaction {
     if (list.length != 1) throw CborDeserializationException();
     final tx = list[0];
     if (tx.length < 3) throw CborDeserializationException();
-    return ShelleyTransaction.deserialize(cBody: tx[0] as Map, cWitnessSet: tx[1] as Map, cMetadata: tx[2] == null ? null : tx[2] as Map);
+    return ShelleyTransaction.deserialize(
+        cBody: tx[0] as Map, cWitnessSet: tx[1] as Map, cMetadata: tx[2] == null ? null : tx[2] as Map);
   }
   factory ShelleyTransaction.deserialize({required Map cBody, required Map cWitnessSet, Map? cMetadata}) {
     final body = ShelleyTransactionBody.deserialize(cMap: cBody);
-    final ShelleyTransactionWitnessSet witnessSet = ShelleyTransactionWitnessSet.deserialize(); //TODO
+    final ShelleyTransactionWitnessSet witnessSet = ShelleyTransactionWitnessSet.deserialize(cMap: cWitnessSet);
     //if (MajorType.MAP.equals(metadata.getMajorType())) { //Metadata available
     final CBORMetadata? metadata = cMetadata == null ? null : null; //TODO
     return ShelleyTransaction(body: body, witnessSet: witnessSet, metadata: metadata);
@@ -295,7 +345,7 @@ class ShelleyTransaction {
     if (witnessSet == null) {
       listBuilder.writeMap({});
     } else {
-      listBuilder.writeMap({}); //TODO
+      listBuilder.addBuilderOutput(witnessSet!.toCborMap().getData());
     }
     if (metadata == null) {
       listBuilder.writeNull();
