@@ -4,7 +4,8 @@ import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 // import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/wallet/public_wallet.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/blockfrost_wallet_adapter.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
@@ -23,9 +24,12 @@ final Serializers serializers = standardSerializers;
 
 const stakeAddr2 = 'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
 
-const addr1 = 'addr_test1qputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5l924fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sutu8kq';
-const addr2 = 'addr_test1qrektsyevyxxqpytjwnwxvmvrj8xgzv4qsuzf57qkp432ma24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sk7kesv';
-const addr3 = 'addr_test1qpcdsfzewqkl3w5kxk553hts5lvw9tdjda9nzt069gqmyud24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9s89kyst';
+const addr1 =
+    'addr_test1qputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5l924fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sutu8kq';
+const addr2 =
+    'addr_test1qrektsyevyxxqpytjwnwxvmvrj8xgzv4qsuzf57qkp432ma24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sk7kesv';
+const addr3 =
+    'addr_test1qpcdsfzewqkl3w5kxk553hts5lvw9tdjda9nzt069gqmyud24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9s89kyst';
 
 const tx1 = 'ffcbd47773a37289bc64b976d3a0b823594cce330c2f425437e5419437c589db';
 const tx2 = '8afcf3999633a58c9ce5e22578b59ef5bb7c5dddacfbaf504ee05f5f5ad0d581';
@@ -97,7 +101,10 @@ Response<BlockContent> blockContent(String block) {
     default:
       throw Exception('unknown block: $block');
   }
-  return Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: serializers.fromJson(BlockContent.serializer, json));
+  return Response(
+      requestOptions: RequestOptions(path: ''),
+      statusCode: 200,
+      data: serializers.fromJson(BlockContent.serializer, json));
 }
 // final Response<BlockContent> blockContent = Response(
 //     requestOptions: RequestOptions(path: ''),
@@ -187,12 +194,12 @@ void main() {
   //addresses transactions
   when(cardanoAccountsApi.accountsStakeAddressAddressesGet(stakeAddress: stakeAddr2, count: anyNamed('count')))
       .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: addresses2));
-  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr1))
-      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx1, tx2, tx3])));
-  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr2))
-      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx4, tx3])));
-  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr3))
-      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx3])));
+  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr1)).thenAnswer((_) async =>
+      Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx1, tx2, tx3])));
+  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr2)).thenAnswer(
+      (_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx4, tx3])));
+  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr3)).thenAnswer(
+      (_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx3])));
 
   //transaction content
   when(cardanoTransactionsApi.txsHashGet(hash: tx1)).thenAnswer((_) async => txContent(tx1));
@@ -224,8 +231,9 @@ void main() {
 
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
-      final wallet = PublicWalletImpl(stakeAddress: stakeAddr2, walletName: 'mock wallet');
-      final updateResult = await mockWalletAdapter.updatePublicWallet(stakeAddress: stakeAddr2);
+      final address = ShelleyAddress.fromBech32(stakeAddr2);
+      final wallet = ReadOnlyWalletImpl(stakeAddress: address, walletName: 'mock wallet');
+      final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: address);
       updateResult.when(
           ok: (update) {
             print("Wallet(balance: ${update.balance}, formatted: ${formatter.format(update.balance)})");

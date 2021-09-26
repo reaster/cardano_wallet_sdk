@@ -1,5 +1,8 @@
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_formatter.dart';
-import 'package:cardano_wallet_sdk/src/wallet/public_wallet.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_factory_impl.dart';
+import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
 import 'package:test/test.dart';
 import './my_api_key_auth.dart';
@@ -28,7 +31,10 @@ void main() {
       await testWallet(stakeAddress: wallet4, walletFactory: walletFactory, walletName: 'Wallet 4');
     });
     test('missing account', () async {
-      final result = await testWallet(stakeAddress: 'stake_test1uqnfXXXXXXXXXXX', walletFactory: walletFactory, walletName: 'MIA');
+      final result = await testWallet(
+          stakeAddress: 'stake1uy88uenysztnswv6u3cssgpamztc25q5wea703rnp50s4qq0ddctn',
+          walletFactory: walletFactory,
+          walletName: 'MIA');
       expect(true, result.isErr());
       print("ERROR: ${result.unwrapErr()}");
     });
@@ -41,9 +47,10 @@ void main() {
 
 final formatter = AdaFormattter.compactCurrency();
 
-Future<Result<PublicWallet, String>> testWallet(
+Future<Result<ReadOnlyWallet, String>> testWallet(
     {required String stakeAddress, required WalletFactory walletFactory, String? walletName}) async {
-  final result = await walletFactory.createPublicWallet(stakeAddress: stakeAddress, walletName: walletName);
+  final result = await walletFactory.createReadOnlyWallet(
+      stakeAddress: ShelleyAddress.fromBech32(stakeAddress), walletName: walletName);
   bool error = false;
   result.when(
     ok: (wallet) {
@@ -76,7 +83,7 @@ Future<Result<PublicWallet, String>> testWallet(
     return Err(result.unwrapErr());
   }
   final wallet = walletFactory.byStakeAddress(stakeAddress);
-  final update = await walletFactory.updatePublicWallet(wallet: wallet as PublicWalletImpl);
+  final update = await walletFactory.updateWallet(wallet: wallet as ReadOnlyWalletImpl);
   expect(false, update.unwrap());
   return Ok(result.unwrap());
 }

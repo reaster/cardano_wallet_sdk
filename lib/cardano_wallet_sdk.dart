@@ -3,7 +3,7 @@ library cardano_wallet_sdk;
 export './src/price/price_service.dart';
 export './src/price/coingecko_price_service.dart';
 export './src/asset/asset.dart';
-export './src/wallet/public_wallet.dart';
+export 'src/wallet/impl/read_only_wallet_impl.dart';
 export './src/wallet/wallet_factory.dart';
 export './src/address/shelley_address.dart';
 export './src/address/hd_wallet.dart';
