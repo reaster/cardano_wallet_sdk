@@ -9,11 +9,19 @@ import 'package:typed_data/typed_data.dart'; // as typed;
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 
 ///
+/// These classes define the data stored on the Cardano blockchain as defined by the shelley.cddl specification.
+///
+/// Currently this is a hand-coded subset without full plutus core or plutus smart contract coverage.
+///
 /// translation from java: https://github.com/bloxbean/cardano-client-lib/tree/master/src/main/java/com/bloxbean/cardano/client/transaction/spec
+///
+/// TODO write a cddl parser based on the ABNF grammar (https://datatracker.ietf.org/doc/html/rfc8610#appendix-B) and combine
+/// with Dart generators or https://github.com/reaster/schema-gen to generate these classes.
 ///
 
 class CborDeserializationException implements Exception {} //TODO replace with Result?
 
+/// an single asset name and value under a MultiAsset policyId
 class ShelleyAsset {
   final String name;
   final int value;
@@ -21,6 +29,7 @@ class ShelleyAsset {
   ShelleyAsset({required this.name, required this.value});
 }
 
+/// Native Token multi-asset container.
 class ShelleyMultiAsset {
   final String policyId;
   final List<ShelleyAsset> assets;
@@ -48,6 +57,7 @@ class ShelleyMultiAsset {
   }
 }
 
+/// Points to an UTXO unspent change entry using a transactionId and index.
 class ShelleyTransactionInput {
   final String transactionId;
   final int index;
@@ -66,6 +76,7 @@ class ShelleyTransactionInput {
   }
 }
 
+/// Address to send to and amount to send.
 class ShelleyTransactionOutput {
   final String address;
   final ShelleyValue value;
@@ -99,6 +110,7 @@ class ShelleyTransactionOutput {
   }
 }
 
+/// Can be a simple ADA amount using coin or a combination of ADA and Native Tokens and their amounts.
 class ShelleyValue {
   final int coin;
   final List<ShelleyMultiAsset> multiAssets;
@@ -133,6 +145,7 @@ class ShelleyValue {
   }
 }
 
+/// Core of the Shelley transaction that is signed.
 class ShelleyTransactionBody {
   final List<ShelleyTransactionInput> inputs;
   final List<ShelleyTransactionOutput> outputs;
@@ -231,6 +244,7 @@ class ShelleyTransactionBody {
   }
 }
 
+/// A witness is a public key and a signature (a signed hash of the body) used for on-chain validation.
 class ShelleyVkeyWitness {
   final List<int> vkey;
   final List<int> signature;
@@ -255,7 +269,7 @@ class ShelleyNativeScript {
   final int selector;
   final List<int> blob;
 
-  ShelleyNativeScript(this.selector, this.blob);
+  ShelleyNativeScript({required this.selector, required this.blob});
 
   ListBuilder toCborList() {
     final listBuilder = ListBuilder.builder();
@@ -265,6 +279,7 @@ class ShelleyNativeScript {
   }
 }
 
+/// this can be transaction signatures or a full blown smart contract
 class ShelleyTransactionWitnessSet {
   final List<ShelleyVkeyWitness> vkeyWitnesses;
   final List<ShelleyNativeScript> nativeScripts;
@@ -278,9 +293,15 @@ class ShelleyTransactionWitnessSet {
   //        ; , ? 5: [* plutus_script ]
   //    }
   factory ShelleyTransactionWitnessSet.deserialize({required Map cMap}) {
+    final witnessSetRawList = cMap[0] != null ? cMap[0] as List : [];
+    final List<ShelleyVkeyWitness> vkeyWitnesses =
+        witnessSetRawList.map((item) => ShelleyVkeyWitness(vkey: item[0], signature: item[1])).toList();
+    final scriptRawList = cMap[1] != null ? cMap[1] as List : [];
+    final List<ShelleyNativeScript> nativeScripts =
+        scriptRawList.map((item) => ShelleyNativeScript(selector: item[0], blob: item[1])).toList();
     return ShelleyTransactionWitnessSet(
-      vkeyWitnesses: cMap[0] != null ? cMap[0] as List<ShelleyVkeyWitness> : [],
-      nativeScripts: cMap[1] != null ? cMap[1] as List<ShelleyNativeScript> : [],
+      vkeyWitnesses: vkeyWitnesses,
+      nativeScripts: nativeScripts,
     );
   }
   MapBuilder toCborMap() {
@@ -303,6 +324,7 @@ class ShelleyTransactionWitnessSet {
   }
 }
 
+/// outer wrapper of a Cardano blockchain transaction.
 class ShelleyTransaction {
   late final ShelleyTransactionBody body;
   final ShelleyTransactionWitnessSet? witnessSet;
