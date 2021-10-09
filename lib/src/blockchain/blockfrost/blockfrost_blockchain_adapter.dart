@@ -1,12 +1,13 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/util/dio_call.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/dio_call.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
 import 'package:dio/dio.dart';
@@ -20,16 +21,38 @@ import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 ///
 /// Caches transactions, blocks, acount data and assets.
 ///
-class BlockfrostWalletAdapter implements WalletServiceAdapter {
+class BlockfrostBlockchainAdapter implements BlockchainAdapter {
+  static const mainnetUrl = 'https://cardano-mainnet.blockfrost.io/api/v0';
+  static const testnetUrl = 'https://cardano-testnet.blockfrost.io/api/v0';
+
+  /// return base URL for blockfrost service given the network type.
+  static String urlFromNetwork(NetworkId networkId) => networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
+
   final NetworkId networkId;
-  final CardanoNetwork cardanoNetwork;
+  //final CardanoNetwork cardanoNetwork;
   final Blockfrost blockfrost;
-  Map<String, Transaction> _transactionCache = {};
+  Map<String, RawTransaction> _transactionCache = {};
   Map<String, Block> _blockCache = {};
   Map<String, AccountContent> _accountContentCache = {};
   Map<String, CurrencyAsset> _assetCache = {lovelaceHex: lovelacePseudoAsset};
 
-  BlockfrostWalletAdapter({required this.networkId, required this.cardanoNetwork, required this.blockfrost});
+  BlockfrostBlockchainAdapter({required this.networkId, required this.blockfrost});
+
+  @override
+  Future<Result<Block, String>> latestBlock() async {
+    final blockResult = await dioCall<BlockContent>(
+      request: () => blockfrost.getCardanoBlocksApi().blocksLatestGet(),
+      onSuccess: (data) => print(
+          "blockfrost.getCardanoBlocksApi().blocksLatestGet() -> ${serializers.toJson(BlockContent.serializer, data)}"),
+      errorSubject: 'latest block',
+    );
+    if (blockResult.isErr()) return Err(blockResult.unwrapErr());
+    final b = blockResult.unwrap();
+    var dateTime = DateTime.fromMillisecondsSinceEpoch(b.time * 1000, isUtc: true);
+    final block =
+        Block(time: dateTime, hash: b.hash, slot: b.slot ?? 0, epoch: b.epoch ?? 0, epochSlot: b.epochSlot ?? 0);
+    return Ok(block);
+  }
 
   @override
   Future<Result<WalletUpdate, String>> updateWallet(
@@ -52,7 +75,7 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
       }
       stakeAccounts = stakeAccountResponse.unwrap();
     }
-    List<Transaction> transactions = [];
+    List<RawTransaction> transactions = [];
     Set<String> duplicateTxHashes = {}; //track and skip duplicates
     for (var address in addresses.unwrap()) {
       final trans = await _transactions(address: address.toBech32(), duplicateTxHashes: duplicateTxHashes);
@@ -200,13 +223,13 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     return Ok(addresses);
   }
 
-  Future<Result<List<Transaction>, String>> _transactions({
+  Future<Result<List<RawTransaction>, String>> _transactions({
     required String address,
     //required Set<String> addressSet,
     required Set<String> duplicateTxHashes,
   }) async {
     List<String> txHashes = await _transactionsHashes(address: address);
-    List<Transaction> transactions = [];
+    List<RawTransaction> transactions = [];
     for (var txHash in txHashes) {
       if (duplicateTxHashes.contains(txHash)) continue; //skip already processed transactions
       final result = await _loadTransaction(txHash: txHash);
@@ -257,7 +280,7 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     return list;
   }
 
-  Future<Result<Transaction, String>> _loadTransaction({required String txHash}) async {
+  Future<Result<RawTransaction, String>> _loadTransaction({required String txHash}) async {
     final cachedTx = _transactionCache[txHash];
     if (cachedTx != null) {
       return Ok(cachedTx);
@@ -269,13 +292,14 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
       errorSubject: 'transaction content',
     );
     if (txContentResult.isErr()) return Err(txContentResult.unwrapErr());
+    final txContent = txContentResult.unwrap();
     // Response<TxContent> txContent = await blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash);
     // if (txContent.statusCode != 200 || txContent.data == null) {
     //   return Err("${txContent.statusCode}: ${txContent.statusMessage}");
     // }
     // print(
     //     "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, txContent.data!)}");
-    final block = await _loadBlock(hashOrNumber: txContentResult.unwrap().block);
+    final block = await _loadBlock(hashOrNumber: txContent.block);
     if (block.isErr()) {
       return Err(block.unwrapErr());
     }
@@ -307,6 +331,8 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
     //int lovelace = currencies[lovelaceHex] ?? 0;
     final trans = TransactionImpl(
       txId: txHash,
+      blockHash: txContent.block,
+      blockIndex: txContent.index,
       status: TransactionStatus.confirmed,
       //type: lovelace >= 0 ? TransactionType.deposit : TransactionType.withdrawal,
       fees: fees,
@@ -404,10 +430,16 @@ class BlockfrostWalletAdapter implements WalletServiceAdapter {
         .blocksHashOrNumberGet(hashOrNumber: hashOrNumber); //TODO replace with dioCall
     final isData = result.statusCode == 200 && result.data != null;
     if (isData) {
+      final b = result.data!;
       print(
-          "blockfrost.getCardanoBlocksApi().blocksHashOrNumberGet(hashOrNumber: $hashOrNumber) -> ${serializers.toJson(BlockContent.serializer, result.data!)}");
-      final block =
-          Block(hash: result.data!.hash, height: result.data!.height, time: adaDateTime.encode(result.data!.time));
+          "blockfrost.getCardanoBlocksApi().blocksHashOrNumberGet(hashOrNumber: $hashOrNumber) -> ${serializers.toJson(BlockContent.serializer, b)}");
+      final block = Block(
+          hash: b.hash,
+          height: b.height,
+          time: adaDateTime.encode(b.time),
+          slot: b.slot ?? 0,
+          epoch: b.epoch ?? 0,
+          epochSlot: b.epochSlot ?? 0);
       _blockCache[hashOrNumber] = block;
       return Ok(block);
     }
