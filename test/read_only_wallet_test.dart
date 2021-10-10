@@ -1,4 +1,5 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_formatter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_factory_impl.dart';
@@ -15,7 +16,7 @@ void main() {
   final wallet3 = 'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
   final wallet4 = 'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
 
-  final walletFactory = ShelleyWalletFactory(authInterceptor: MyApiKeyAuthInterceptor());
+  final walletFactory = ShelleyWalletFactory(authInterceptor: MyApiKeyAuthInterceptor(), networkId: NetworkId.testnet);
 
   group('PublicWallet -', () {
     test('test create testnet wallet 1', () async {

@@ -75,9 +75,11 @@ class CurrencyAssetMetadata {
   /// Number of decimals in currency. ADA has 6. Default is 0.
   final int decimals;
 
-  CurrencyAssetMetadata({required this.name, required this.description, this.ticker, this.url, this.logo, this.decimals = 0});
+  CurrencyAssetMetadata(
+      {required this.name, required this.description, this.ticker, this.url, this.logo, this.decimals = 0});
   @override
-  String toString() => "CurrencyAssetMetadata(name: $name ticker: $ticker url: $url description: $description hasLogo: ${logo != null})";
+  String toString() =>
+      "CurrencyAssetMetadata(name: $name ticker: $ticker url: $url description: $description hasLogo: ${logo != null})";
 }
 
 ///
@@ -113,9 +115,6 @@ String calculateFingerprint({required String policyId, required String assetName
   //print(b2s(fiveBitArray, prefix: 'fiveBitArray'));
   return bech32.encode(Bech32(hrp, fiveBitArray));
 }
-
-/// Dump byte array. Example: bytes[20]: 244,155,227,187,150,186,199,61,202,241,76,208,46,192,219,56,241,103,253,67
-String b2s(List<int> bytes, {String prefix = 'bytes'}) => "$prefix[${bytes.length}]: ${bytes.join(',')}";
 
 List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
   int acc = 0;

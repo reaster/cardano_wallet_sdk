@@ -1,8 +1,9 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
 enum TransactionQueryType { all, used, unused }
 
@@ -17,13 +18,13 @@ abstract class ReadOnlyWallet {
   String get walletName;
 
   /// balance of wallet in lovelace
-  int get balance;
+  Coin get balance;
 
   /// calculate balance from transactions and rewards
-  int get calculatedBalance;
+  Coin get calculatedBalance;
 
   /// balances of native tokens indexed by assetId
-  Map<String, int> get currencies;
+  Map<String, Coin> get currencies;
 
   /// optional stake pool details
   List<StakeAccount> get stakeAccounts;
@@ -35,7 +36,7 @@ abstract class ReadOnlyWallet {
   List<ShelleyAddress> addresses({TransactionQueryType type = TransactionQueryType.all});
   bool refresh(
       {required int balance,
-      required List<Transaction> transactions,
+      required List<RawTransaction> transactions,
       required List<ShelleyAddress> usedAddresses,
       required Map<String, CurrencyAsset> assets,
       required List<StakeAccount> stakeAccounts});

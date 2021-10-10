@@ -4,6 +4,7 @@ import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
 import 'package:oxidized/oxidized.dart';
 
@@ -17,26 +18,29 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   /// Normaly WalletFactory is used to build a wallet and call this method.
   /// TODO change seed to private key
   WalletImpl({
+    required BlockchainAdapter blockchainAdapter,
     required ShelleyAddress stakeAddress,
     required String walletName,
     required Uint8List seed,
   })  : hdWallet = HdWallet(seed: seed),
-        super(stakeAddress: stakeAddress, walletName: walletName);
+        super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
 
   @override
-  ShelleyAddress get firstUnusedChangeAddress =>
-      hdWallet.deriveUnusedBaseAddress(role: changeRole, networkId: networkId, unusedCallback: _isUnusedSpendAddress);
+  ShelleyAddress get firstUnusedChangeAddress => hdWallet
+      .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: _isUnusedSpendAddress)
+      .address;
 
   @override
   ShelleyAddress get firstUnusedSpendAddress =>
-      hdWallet.deriveUnusedBaseAddress(networkId: networkId, unusedCallback: _isUnusedChangeAddress);
+      hdWallet.deriveUnusedBaseAddressKit(networkId: networkId, unusedCallback: _isUnusedChangeAddress).address;
 
   bool _isUnusedSpendAddress(ShelleyAddress address) => true; //TODO
 
-  bool _isUnusedChangeAddress(ShelleyAddress address) => true;
+  bool _isUnusedChangeAddress(ShelleyAddress address) => true; //TODO
 
   @override
-  Future<Result<Transaction, String>> sendAda({required ShelleyAddress toAddress, required int lovelaceAmount}) async {
+  Future<Result<RawTransaction, String>> sendAda(
+      {required ShelleyAddress toAddress, required int lovelaceAmount}) async {
     if (lovelaceAmount > balance) {
       return Err('insufficient balance');
     }
@@ -52,7 +56,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   }
 
   @override
-  Bip32KeyPair get rootKeyPair => Bip32KeyPair(privateKey: hdWallet.rootSigningKey, publicKey: hdWallet.rootVerifyKey);
+  Bip32KeyPair get rootKeyPair => Bip32KeyPair(signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
 }
 
 // Yorio Wallet interface:

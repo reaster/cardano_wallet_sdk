@@ -1,5 +1,10 @@
 import 'package:oxidized/oxidized.dart';
 
+///
+/// Used for tracking currency trading pair prices (i.e. ADA to USD).
+///
+/// TODO simple ticker names won't work with Cardano Native tokens which use a policyId and coin name.
+///
 class Price {
   final String fromTicker;
   final String toTicker;
@@ -32,7 +37,6 @@ class Price {
 }
 
 /// not being used at the moment. see price_polling_service
-///
 abstract class PriceService {
   ///
   /// retrieve current ratio of to currency to from currency.

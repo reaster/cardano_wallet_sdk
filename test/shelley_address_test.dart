@@ -1,6 +1,7 @@
+import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -20,26 +21,34 @@ void main() {
       expect(a.networkId, NetworkId.mainnet, reason: 'set mainnet bit in header');
       a = ShelleyAddress.fromBech32(addr_test);
       expect(a.networkId, NetworkId.testnet, reason: 'set testnet bit in header');
-      a = ShelleyAddress.toBaseAddress(spend: spendPair.publicKey!, stake: stakePair.publicKey!);
+      a = ShelleyAddress.toBaseAddress(spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
       expect(a.networkId, NetworkId.testnet, reason: 'set testnet bit in header');
       expect(a.toBech32(), startsWith('addr_test1'), reason: 'set testnet bit in header');
       a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.publicKey!, stake: stakePair.publicKey!, networkId: NetworkId.mainnet);
+          spend: spendPair.verifyKey!, stake: stakePair.verifyKey!, networkId: NetworkId.mainnet);
       expect(a.networkId, NetworkId.mainnet, reason: 'set mainnet bit in header');
       expect(a.toBech32(), startsWith('addr1'), reason: 'set mainnet bit in header');
     });
     test('credential type header', () {
-      var a = ShelleyAddress.toBaseAddress(spend: spendPair.publicKey!, stake: stakePair.publicKey!);
+      var a = ShelleyAddress.toBaseAddress(spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
       expect(a.paymentCredentialType, CredentialType.Key, reason: 'key is default credential type');
       a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.publicKey!, stake: stakePair.publicKey!, paymentType: CredentialType.Script);
+          spend: spendPair.verifyKey!, stake: stakePair.verifyKey!, paymentType: CredentialType.Script);
       expect(a.paymentCredentialType, CredentialType.Script, reason: 'override credential type');
     });
     test('address type header', () {
-      var a = ShelleyAddress.toBaseAddress(spend: spendPair.publicKey!, stake: stakePair.publicKey!);
+      var a = ShelleyAddress.toBaseAddress(spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
       expect(a.addressType, AddressType.Base, reason: 'toBaseAddress sets address type');
-      a = ShelleyAddress.toRewardAddress(spend: spendPair.publicKey!);
+      a = ShelleyAddress.toRewardAddress(spend: spendPair.verifyKey!);
       expect(a.addressType, AddressType.Reward, reason: 'toRewardAddress sets address type');
     });
+
+    // test('bech32', () {
+    //   final decoded = bech32.decode(addr, 108);
+    //   final hrp = decoded.hrp;
+    //   expect('addr', hrp);
+    //   final addr2 = Bech32Coder(hrp: hrp).encode(decoded.data);
+    //   expect(addr2, addr);
+    // });
   });
 }

@@ -1,7 +1,7 @@
 // import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 // import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:pinenacl/api.dart';
 

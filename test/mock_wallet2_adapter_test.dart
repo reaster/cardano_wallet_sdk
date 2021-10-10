@@ -1,10 +1,10 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 // import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 // import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/wallet/impl/blockfrost_wallet_adapter.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
@@ -40,6 +40,7 @@ const blk1 = '56f61aba101c755d7b5db12d3e9aa127ac7b0693bc02e581371571b4ebe21c1e';
 const blk2 = '572543b794a8ea0de53a95b01a991e4debc2b7b3439214acac0c1ce66d7f3c46';
 const blk3 = 'b2e9922268a831b4f71162498c256152abbd451fe8e4ae6c5005dd5f96841280';
 const blk4 = 'dca1741ebe0f8a1ad30f3f3d22e63fef0a16634e0b822221b312f93f4811b12a';
+const blk0 = 'c203a1fd6ab384c271f6197c6807315c9385161bdc2c50ac3ac67c2c19239f79';
 
 const asset1 = '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7';
 
@@ -82,21 +83,25 @@ Response<TxContent> txContent(String txId) {
 Response<BlockContent> blockContent(String block) {
   String json = '';
   switch (block) {
+    case blk0:
+      json =
+          '["time",1633610391,"height",2973207,"hash","$blk0","slot",39241175,"epoch",161,"epoch_slot",58775,"slot_leader","pool1weu4vlg9t8knma7t2j5y3w2k3vzdr9mtnynd2jhfalwn76nwh48","size",4,"tx_count",0,"output","1864160557","fees","521715","block_vrf","vrf_vk1mzhz5k03lahvx0gdlqtplkyasgzn8w2cpf8y8a8f76nzskptzzhqdqyyq3","previous_block","94242efb63fd7d49d9080600e5b1b1ac8e7970a0168b099a275b9dcd6b0b2e06","confirmations",0]';
+      break;
     case blk1:
       json =
-          '["time",1621755054,"height",2606771,"hash","56f61aba101c755d7b5db12d3e9aa127ac7b0693bc02e581371571b4ebe21c1e","slot",27385838,"epoch",133,"epoch_slot",299438,"slot_leader","pool1ed6d9unxud3dx3xh0xa2c6xscxqxvn786cs5d65zp4ymxzgfmr3","size",1240,"tx_count",3,"output","1864160557","fees","521715","block_vrf","vrf_vk1c76s4nzdchtkw8kwjj26655h95qaj3zfd8q8az3dexjkdkxeg8aqh8g5q3","previous_block","bc099e7a2c1ff98d25a14505ae283b7ef0a41eab8ebd083f4e812e460596105a","next_block","0c90ebe14c8dd51bc5534dce6581ae29a44f6190e36923e0ce3e244baa300870","confirmations",147402]';
+          '["time",1621755054,"height",2606771,"hash","$blk1","slot",27385838,"epoch",133,"epoch_slot",299438,"slot_leader","pool1ed6d9unxud3dx3xh0xa2c6xscxqxvn786cs5d65zp4ymxzgfmr3","size",1240,"tx_count",3,"output","1864160557","fees","521715","block_vrf","vrf_vk1c76s4nzdchtkw8kwjj26655h95qaj3zfd8q8az3dexjkdkxeg8aqh8g5q3","previous_block","bc099e7a2c1ff98d25a14505ae283b7ef0a41eab8ebd083f4e812e460596105a","next_block","0c90ebe14c8dd51bc5534dce6581ae29a44f6190e36923e0ce3e244baa300870","confirmations",147402]';
       break;
     case blk2:
       json =
-          '["time",1621791837,"height",2608000,"hash","572543b794a8ea0de53a95b01a991e4debc2b7b3439214acac0c1ce66d7f3c46","slot",27422621,"epoch",133,"epoch_slot",336221,"slot_leader","pool18yslg3q320jex6gsmetukxvzm7a20qd90wsll9anlkrfua38flr","size",1241,"tx_count",3,"output","878727447","fees","521759","block_vrf","vrf_vk1sleujze3zraykllkafvrxggcmpts3hp6zxrpazdkdzp9g07kkehsnmy8ka","previous_block","2543d65bd017ca954a1fd5bf5f3c712e92be9903eaf743b1a3a0488ace92d7f0","next_block","fc0213330f879136967b77a56c2694810ec4cf58925e9e6cfafdd61aa53690c7","confirmations",146173]';
+          '["time",1621791837,"height",2608000,"hash","$blk2","slot",27422621,"epoch",133,"epoch_slot",336221,"slot_leader","pool18yslg3q320jex6gsmetukxvzm7a20qd90wsll9anlkrfua38flr","size",1241,"tx_count",3,"output","878727447","fees","521759","block_vrf","vrf_vk1sleujze3zraykllkafvrxggcmpts3hp6zxrpazdkdzp9g07kkehsnmy8ka","previous_block","2543d65bd017ca954a1fd5bf5f3c712e92be9903eaf743b1a3a0488ace92d7f0","next_block","fc0213330f879136967b77a56c2694810ec4cf58925e9e6cfafdd61aa53690c7","confirmations",146173]';
       break;
     case blk3:
       json =
-          '["time",1624680600,"height",2704226,"hash","b2e9922268a831b4f71162498c256152abbd451fe8e4ae6c5005dd5f96841280","slot",30311384,"epoch",140,"epoch_slot",200984,"slot_leader","pool1ek7tv04ccm5mhg04r9qz4pcxf8lfm55lax0k67unp3nksukvfuy","size",788,"tx_count",2,"output","9594204730088","fees","347590","block_vrf","vrf_vk1a3h24z97a0g3jmdcf9fwj5xmfa90gschzmsswxuy87m0y6gjl6xqv2s0c7","previous_block","fd8379e069191bbaf537331dd20058df949a9160bb7428ec2113b883ac0afa8b","next_block","58e9f81121fd12570f092e8166fd4dd74391831c3787745a35bf94644bc3eeda","confirmations",49947]';
+          '["time",1624680600,"height",2704226,"hash","$blk3","slot",30311384,"epoch",140,"epoch_slot",200984,"slot_leader","pool1ek7tv04ccm5mhg04r9qz4pcxf8lfm55lax0k67unp3nksukvfuy","size",788,"tx_count",2,"output","9594204730088","fees","347590","block_vrf","vrf_vk1a3h24z97a0g3jmdcf9fwj5xmfa90gschzmsswxuy87m0y6gjl6xqv2s0c7","previous_block","fd8379e069191bbaf537331dd20058df949a9160bb7428ec2113b883ac0afa8b","next_block","58e9f81121fd12570f092e8166fd4dd74391831c3787745a35bf94644bc3eeda","confirmations",49947]';
       break;
     case blk4:
       json =
-          '["time",1624680391,"height",2704219,"hash","dca1741ebe0f8a1ad30f3f3d22e63fef0a16634e0b822221b312f93f4811b12a","slot",30311175,"epoch",140,"epoch_slot",200775,"slot_leader","pool1uxws0e2d8kg2hncjc0szkwrpd0wajx0gn7unympa2myucjdm6dz","size",366,"tx_count",1,"output","4960335032","fees","172585","block_vrf","vrf_vk1mnc45cv7qxzrwv795jaxaxjaf4q42vl50dwh7r6h59f625nn9fuq6k6esc","previous_block","2fcff256944da22852f1d1de12f622826485281bb8ab47b269d28c94d2719d57","next_block","43900d07f86515c1f4519fecc12fda1da55ea71e7c3586ae7658405f70a2ed65","confirmations",49486]';
+          '["time",1624680391,"height",2704219,"hash","$blk4","slot",30311175,"epoch",140,"epoch_slot",200775,"slot_leader","pool1uxws0e2d8kg2hncjc0szkwrpd0wajx0gn7unympa2myucjdm6dz","size",366,"tx_count",1,"output","4960335032","fees","172585","block_vrf","vrf_vk1mnc45cv7qxzrwv795jaxaxjaf4q42vl50dwh7r6h59f625nn9fuq6k6esc","previous_block","2fcff256944da22852f1d1de12f622826485281bb8ab47b269d28c94d2719d57","next_block","43900d07f86515c1f4519fecc12fda1da55ea71e7c3586ae7658405f70a2ed65","confirmations",49486]';
       break;
     default:
       throw Exception('unknown block: $block');
@@ -213,6 +218,8 @@ void main() {
   when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk3)).thenAnswer((_) async => blockContent(blk3));
   when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk4)).thenAnswer((_) async => blockContent(blk4));
 
+  when(cardanoBlocksApi.blocksLatestGet()).thenAnswer((_) async => blockContent(blk0));
+
   //transactions UTx0s
   when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx1)).thenAnswer((_) async => txContentUtxo(tx1));
   when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx2)).thenAnswer((_) async => txContentUtxo(tx2));
@@ -224,15 +231,25 @@ void main() {
 
   //when(cardanoTransactionsApi.txsHashGet(hash: tx1)).thenAnswer((realInvocation) => null)
 
-  final mockWalletAdapter = BlockfrostWalletAdapter(
-      blockfrost: blockfrost, networkId: NetworkId.testnet, cardanoNetwork: CardanoNetwork.network(NetworkId.testnet));
+  final mockWalletAdapter = BlockfrostBlockchainAdapter(blockfrost: blockfrost, networkId: NetworkId.testnet);
 
   final formatter = AdaFormattter.compactCurrency();
 
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
       final address = ShelleyAddress.fromBech32(stakeAddr2);
-      final wallet = ReadOnlyWalletImpl(stakeAddress: address, walletName: 'mock wallet');
+      final wallet = ReadOnlyWalletImpl(
+        blockchainAdapter: mockWalletAdapter,
+        stakeAddress: address,
+        walletName: 'mock wallet',
+      );
+      final latestBlockResult = await mockWalletAdapter.latestBlock();
+      latestBlockResult.when(
+          ok: (block) {
+            print("Block(time: ${block.time}, slot: ${block.slot})");
+            expect(block.slot, greaterThanOrEqualTo(39241175));
+          },
+          err: (err) => print(err));
       final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: address);
       updateResult.when(
           ok: (update) {
@@ -257,8 +274,8 @@ void main() {
 
             //transactions
             final Set<String> addressSet = update.addresses.map((a) => a.toBech32()).toSet();
-            update.transactions.forEach((Transaction tx) {
-              final w = WalletTransactionImpl(baseTransaction: tx, addressSet: addressSet);
+            update.transactions.forEach((RawTransaction tx) {
+              final w = WalletTransactionImpl(rawTransaction: tx, addressSet: addressSet);
               print("${tx.toString()} - ${w.currencyBalancesByTicker(assetByAssetId: update.assets)} fees:${w.fees}");
             });
             expect(wallet.filterTransactions(assetId: lovelaceHex).length, equals(4));

@@ -1,10 +1,12 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:quiver/strings.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
 ///
 /// Given a stakingAddress, generate a read-only wallet with balances of all native assets,
@@ -14,37 +16,38 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   final NetworkId networkId;
   final ShelleyAddress stakeAddress;
   final String walletName;
+  final BlockchainAdapter blockchainAdapter;
   int _balance = 0;
   List<WalletTransaction> _transactions = [];
   List<ShelleyAddress> _usedAddresses = [];
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
-  ReadOnlyWalletImpl({required this.stakeAddress, required this.walletName})
+  ReadOnlyWalletImpl({required this.blockchainAdapter, required this.stakeAddress, required this.walletName})
       : this.networkId = stakeAddress.toBech32().startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet;
 
   @override
-  Map<String, int> get currencies {
+  Map<String, Coin> get currencies {
     return transactions
         .map((t) => t.currencies)
         .expand((m) => m.entries)
-        .fold(<String, int>{}, (result, entry) => result..[entry.key] = entry.value + (result[entry.key] ?? 0));
+        .fold(<String, Coin>{}, (result, entry) => result..[entry.key] = entry.value + (result[entry.key] ?? 0));
   }
 
   @override
-  int get calculatedBalance {
-    final int rewardsSum =
+  Coin get calculatedBalance {
+    final Coin rewardsSum =
         stakeAccounts.map((s) => s.withdrawalsSum).fold(0, (p, c) => p + c); //TODO figure out the math
-    final int lovelaceSum = currencies[lovelaceHex] as int;
+    final Coin lovelaceSum = currencies[lovelaceHex] as Coin;
     final result = lovelaceSum + rewardsSum;
     return result;
   }
 
   @override
   bool refresh({
-    required int balance,
+    required Coin balance,
     required List<ShelleyAddress> usedAddresses,
-    required List<Transaction> transactions,
+    required List<RawTransaction> transactions,
     required Map<String, CurrencyAsset> assets,
     required List<StakeAccount> stakeAccounts,
   }) {
@@ -65,7 +68,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       change = true;
       final Set<String> addressSet = usedAddresses.map((a) => a.toBech32()).toSet();
       this._transactions =
-          transactions.map((t) => WalletTransactionImpl(baseTransaction: t, addressSet: addressSet)).toList();
+          transactions.map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: addressSet)).toList();
     }
     if (this._stakeAccounts.length != stakeAccounts.length) {
       change = true;
@@ -81,7 +84,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   String toString() => "Wallet(name: $walletName, balance: $balance lovelace)";
 
   @override
-  int get balance => _balance;
+  Coin get balance => _balance;
 
   @override
   List<WalletTransaction> get transactions => _transactions;
