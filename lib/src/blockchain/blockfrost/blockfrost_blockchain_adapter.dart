@@ -54,9 +54,22 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(block);
   }
 
+  Future<Result<String, String>> submitTransaction(List<int> cborTransaction) async {
+    final result = await dioCall<String>(
+      request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'),
+      onSuccess: (data) =>
+          print("blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
+      errorSubject: 'submit cbor transaction',
+    );
+    if (result.isErr()) return Err(result.unwrapErr());
+    return Ok(result.unwrap());
+  }
+
   @override
-  Future<Result<WalletUpdate, String>> updateWallet(
-      {required ShelleyAddress stakeAddress, TemperalSortOrder sortOrder = TemperalSortOrder.descending}) async {
+  Future<Result<WalletUpdate, String>> updateWallet({
+    required ShelleyAddress stakeAddress,
+    TemperalSortOrder sortOrder = TemperalSortOrder.descending,
+  }) async {
     final content = await _loadAccountContent(stakeAddress: stakeAddress.toBech32());
     if (content.isErr()) {
       return Err(content.unwrapErr());

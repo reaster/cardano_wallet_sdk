@@ -9,4 +9,5 @@ import 'package:oxidized/oxidized.dart';
 abstract class BlockchainAdapter {
   Future<Result<WalletUpdate, String>> updateWallet({required ShelleyAddress stakeAddress});
   Future<Result<Block, String>> latestBlock();
+  Future<Result<String, String>> submitTransaction(List<int> cborTransaction);
 }
