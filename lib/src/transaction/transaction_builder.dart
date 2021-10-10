@@ -1,23 +1,38 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
+import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
+import 'package:oxidized/oxidized.dart';
 
 ///
-/// Manages details of building a correct transaction, such as fee calculation, change
+/// Manages details of building a correct transaction, including fee calculation, change
 /// callculation, time-to-live constraints (ttl) and signing.
 ///
 class TransactionBuilder {
+  BlockchainAdapter? _blockchainAdapter;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
-  int _fee = 0;
+  Coin _fee = 0;
   int _ttl = 0;
   List<int>? _metadataHash;
   int? _validityStartInterval;
   List<ShelleyMultiAsset> _mint = [];
   ShelleyTransactionWitnessSet? _witnessSet;
   CBORMetadata? _metadata;
+  MinFeeFunction _minFeeFunction = simpleMinFee;
+  LinearFee _linearFee = defaultLinearFee;
+  int _currentSlot = 0;
+  DateTime _currentSlotTimestamp = DateTime.now().toUtc();
+
+  /// Added to current slot to get ttl. Currently 900sec or 15min.
+  final defaultTtlDelta = 900;
+
+  /// How often to check current slot. If 1 minute old, update
+  final staleSlotCuttoff = Duration(seconds: 60);
 
   List<int> transactionBodyHash() => blake2bHash256(buildBody().toCborMap().getData());
 
@@ -31,12 +46,94 @@ class TransactionBuilder {
         mint: _mint.isEmpty ? null : _mint,
       );
 
-  ShelleyTransaction build() {
-    final body = buildBody();
-    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+  Future<Result<ShelleyTransaction, String>> build() async {
+    final dataCheck = _checkContraints();
+    if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
+    _optionallySetupChangeOutput();
+    if (_ttl == 0) {
+      final result = await _calculateTimeToLive();
+      if (result.isErr()) {
+        return Err(result.unwrapErr());
+      }
+      _ttl = result.unwrap();
+    }
+    var body = buildBody();
+    var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    _fee = _calculateMinFee(tx);
+    body = buildBody();
+    tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
     final txHex = tx.toCborHex;
     print(txHex);
-    return tx;
+    return Ok(tx);
+  }
+
+  void _optionallySetupChangeOutput() {
+    //TODO
+  }
+
+  Result<bool, String> _checkContraints() {
+    if (_blockchainAdapter == null) return Err("'blockchainAdapter' property must be set");
+    return Ok(true);
+  }
+
+  /// Because transaction size effects fees, this method should be called last, after all other
+  /// ShelleyTransactionBody properties are set.
+  Coin _calculateMinFee(ShelleyTransaction tx) {
+    Coin calculatedFee = _minFeeFunction(transaction: tx, linearFee: _linearFee);
+    final fee = (calculatedFee < _fee) ? _fee : calculatedFee;
+    return fee;
+  }
+
+  bool get currentSlotUnsetOrStale {
+    if (currentSlot == 0) return true; //not set
+    final now = DateTime.now().toUtc();
+    return _currentSlotTimestamp.add(staleSlotCuttoff).isBefore(now); //cuttoff reached?
+  }
+
+  /// Set the time range in which this transaction is valid.
+  /// Time-to-live (TTL) - represents a slot, or deadline by which a transaction must be submitted.
+  /// The TTL is an absolute slot number, rather than a relative one, which means that the ttl value
+  /// should be greater than the current slot number. A transaction becomes invalid once its ttl expires.
+  /// Currently each slot is one second and each epoch currently includes 432,000 slots (5 days).
+  Future<Result<int, String>> _calculateTimeToLive() async {
+    if (currentSlotUnsetOrStale) {
+      final result = await _blockchainAdapter!.latestBlock();
+      if (result.isErr()) {
+        return Err(result.unwrapErr());
+      } else {
+        final block = result.unwrap();
+        _currentSlot = block.slot;
+        _currentSlotTimestamp = block.time;
+      }
+    }
+    if (_ttl != 0) {
+      if (_ttl < _currentSlot) {
+        return Err("specified ttl of $_ttl can't be less than current slot: $_currentSlot");
+      }
+      return Ok(_ttl);
+    }
+
+    return Ok(_currentSlot + defaultTtlDelta);
+  }
+
+  TransactionBuilder blockchainAdapter(BlockchainAdapter blockchainAdapter) {
+    _blockchainAdapter = blockchainAdapter;
+    return this;
+  }
+
+  TransactionBuilder currentSlot(int currentSlot) {
+    _currentSlot = currentSlot;
+    return this;
+  }
+
+  TransactionBuilder minFeeFunction(MinFeeFunction feeFunction) {
+    _minFeeFunction = feeFunction;
+    return this;
+  }
+
+  TransactionBuilder linearFee(LinearFee linearFee) {
+    _linearFee = linearFee;
+    return this;
   }
 
   TransactionBuilder metadataHash(List<int>? metadataHash) {
@@ -49,7 +146,7 @@ class TransactionBuilder {
     return this;
   }
 
-  TransactionBuilder fee(int fee) {
+  TransactionBuilder fee(Coin fee) {
     _fee = fee;
     return this;
   }
@@ -104,7 +201,7 @@ class TransactionBuilder {
     return this;
   }
 
-  TransactionBuilder send({ShelleyAddress? shelleyAddress, String? address, int lovelace = 0, int ada = 0}) {
+  TransactionBuilder send({ShelleyAddress? shelleyAddress, String? address, Coin lovelace = 0, Coin ada = 0}) {
     assert(address != null || shelleyAddress != null);
     assert(!(address != null && shelleyAddress != null));
     final String addr = shelleyAddress != null ? shelleyAddress.toBech32() : address!;
@@ -121,42 +218,9 @@ class TransactionBuilder {
     _metadata = metadata;
     return this;
   }
-
-// pub fn min_fee(tx: &Transaction, linear_fee: &LinearFee) -> Result<Coin, JsError> {
-//     to_bignum(tx.to_bytes().len() as u64)
-//         .checked_mul(&linear_fee.coefficient())?
-//         .checked_add(&linear_fee.constant())
-// }
-// Specifies an amount of ADA in terms of lovelace
-// pub type Coin = BigNum;
-// #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-// pub struct LinearFee {
-//     constant: Coin,
-//     coefficient: Coin,
-
-  ///
-  /// calculate transaction fee based on transaction lnegth and minimum constant
-  ///
-  int minFee({required ShelleyTransaction transaction, LinearFee linearFee = defaultLinearFee}) {
-    final len = transaction.toCborList().getData().length;
-    return len * linearFee.coefficient + linearFee.constant;
-  }
 }
 
-///
-/// Used in calculating Cardano transaction fees.
-///
-class LinearFee {
-  final int constant;
-  final int coefficient;
-
-  const LinearFee({required this.constant, required this.coefficient});
-}
-
-/// fee calculation factors
-/// TODO update this from blockchain
-/// TODO verify fee calculation context of this values
-const defaultLinearFee = LinearFee(constant: 2, coefficient: 500);
+typedef CurrentEpochFunction = Future<int> Function();
 
 ///
 /// Special builder for creating ShelleyValue objects containing multi-asset transactions.
