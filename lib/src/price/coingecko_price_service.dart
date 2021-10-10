@@ -7,6 +7,11 @@ import 'package:coingecko_dart/coingecko_dart.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
 
+///
+/// Coin Gecko service to get real-time exchange trading values.
+///
+/// WARNING This code will eventualy be removed from this project as it's not a core Cardano wallet feature.
+///
 class CoinGeckoApiFix extends CoinGeckoApi {
   ///
   ///* Coingecko API ( **GET** /ping )
@@ -17,7 +22,9 @@ class CoinGeckoApiFix extends CoinGeckoApi {
   Future<CoinGeckoResult<bool>> ping() async {
     Response response = await dio!.get("/ping", options: Options(contentType: 'application/json'));
     return CoinGeckoResult(response.statusCode == 200,
-        errorCode: response.statusCode ?? -1, errorMessage: (response.statusMessage ?? ""), isError: response.statusCode != 200);
+        errorCode: response.statusCode ?? -1,
+        errorMessage: (response.statusMessage ?? ""),
+        isError: response.statusCode != 200);
   }
 }
 
@@ -64,7 +71,8 @@ class CoingeckoPriceService extends PriceService {
       return Err("no data");
     } else {
       PricedCoin pricedCoin = list.data.first;
-      final timestamp = DateTime.now().millisecondsSinceEpoch; // pricedCoin.lastUpdatedAtTimeStamp.millisecondsSinceEpoch;
+      final timestamp =
+          DateTime.now().millisecondsSinceEpoch; // pricedCoin.lastUpdatedAtTimeStamp.millisecondsSinceEpoch;
       Map<String, double> pair = pricedCoin.data;
       return Ok(Price(fromTicker: from, toTicker: to, timestamp: timestamp, value: pair[to]!));
     }
