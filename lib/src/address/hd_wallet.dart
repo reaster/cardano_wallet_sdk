@@ -4,7 +4,7 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 
 ///
 /// This class generates cryptographic key pairs and addresses given a secret set of nmemonic BIP-39 words.
@@ -103,13 +103,25 @@ class HdWallet {
 
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
+    Bip32SigningKey? signingKey =
+        keys.signingKey != null ? _derivator.ckdPriv(keys.signingKey!, index) as Bip32SigningKey : null;
+    Bip32VerifyKey? verifyKey = isHardened(index)
+        ? null
+        : keys.verifyKey != null
+            ? _derivator.ckdPub(keys.verifyKey!, index) as Bip32VerifyKey
+            : _derivator.neuterPriv(signingKey!) as Bip32VerifyKey;
+    return Bip32KeyPair(signingKey: signingKey, verifyKey: verifyKey);
+  }
+
+  Bip32KeyPair2 derive2({required Bip32KeyPair2 keys, required int index}) {
+    // computes a child extended private key from the parent extended private key.
     Bip32PrivateKey? privateKey = keys.privateKey != null ? _derivator.ckdPriv(keys.privateKey!, index) : null;
     Bip32PublicKey? publicKey = isHardened(index)
         ? null
         : keys.publicKey != null
             ? _derivator.ckdPub(keys.publicKey!, index)
             : _derivator.neuterPriv(privateKey!);
-    return Bip32KeyPair(privateKey: privateKey, publicKey: publicKey);
+    return Bip32KeyPair2(privateKey: privateKey, publicKey: publicKey);
   }
 
   Bip32KeyPair deriveAddressKeys(
@@ -118,7 +130,7 @@ class HdWallet {
       int account = defaultAccountIndex,
       int role = paymentRole,
       int index = defaultAddressIndex}) {
-    final rootKeys = Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
+    final rootKeys = Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: purpose);
     final coinKey = derive(keys: purposeKey, index: coinType);
     final accountKey = derive(keys: coinKey, index: account);
@@ -127,14 +139,15 @@ class HdWallet {
     return addressKeys;
   }
 
-  ShelleyAddress deriveUnusedBaseAddress(
+  /// iterate key chain until an unused address is found, then return keys and address.
+  ShelleyAddressKit deriveUnusedBaseAddressKit(
       {int account = defaultAccountIndex,
       int role = paymentRole,
       int index = defaultAddressIndex,
       NetworkId networkId = NetworkId.testnet,
       UnusedAddressFunction unusedCallback = alwaysUnused}) {
     assert(role == paymentRole || role == changeRole);
-    final rootKeys = Bip32KeyPair(privateKey: rootSigningKey, publicKey: rootVerifyKey);
+    final rootKeys = Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
     final accountKey = derive(keys: coinKey, index: account);
@@ -145,13 +158,21 @@ class HdWallet {
     int i = index;
     final spendRoleKeys = derive(keys: accountKey, index: role);
     ShelleyAddress addr;
+    Bip32KeyPair keyPair;
     do {
-      final spendAddressKeys = derive(keys: spendRoleKeys, index: i++);
-      addr =
-          toBaseAddress(spend: spendAddressKeys.publicKey!, stake: stakeAddressKeys.publicKey!, networkId: networkId);
+      keyPair = derive(keys: spendRoleKeys, index: i++);
+      addr = toBaseAddress(spend: keyPair.verifyKey!, stake: stakeAddressKeys.verifyKey!, networkId: networkId);
       print("addr[$i]: $addr");
     } while (!unusedCallback(addr));
-    return addr;
+    final result = ShelleyAddressKit(
+      account: account,
+      role: role,
+      index: i - 1,
+      signingKey: keyPair.signingKey,
+      verifyKey: keyPair.verifyKey,
+      address: addr,
+    );
+    return result;
   }
 
   ShelleyAddress toBaseAddress(
@@ -162,10 +183,34 @@ class HdWallet {
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
 
+/// Private/signing and public/varification key pair.
 class Bip32KeyPair {
+  final Bip32SigningKey? signingKey;
+  final Bip32VerifyKey? verifyKey;
+  const Bip32KeyPair({this.signingKey, this.verifyKey});
+}
+
+/// Private/signing and public/varification key pair.
+class Bip32KeyPair2 {
   final Bip32PrivateKey? privateKey;
   final Bip32PublicKey? publicKey;
-  const Bip32KeyPair({this.privateKey, this.publicKey});
+  const Bip32KeyPair2({this.privateKey, this.publicKey});
+}
+
+/// Everything you need to add a spend (or change) address to a UTxO transaction.
+class ShelleyAddressKit extends Bip32KeyPair {
+  final int account;
+  final int role;
+  final int index;
+  final ShelleyAddress address;
+  const ShelleyAddressKit(
+      {this.account = defaultAccountIndex,
+      this.role = paymentRole,
+      required this.index,
+      required this.address,
+      Bip32SigningKey? signingKey,
+      Bip32VerifyKey? verifyKey})
+      : super(signingKey: signingKey, verifyKey: verifyKey);
 }
 
 /// Hardended chain values should not have public keys.

@@ -4,7 +4,7 @@ import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 // import 'package:cardano_wallet_sdk/src/bip32_ed25519/bip32_ed25519.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/cardano_network.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 // import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'package:pinenacl/key_derivation.dart';
@@ -96,17 +96,17 @@ void main() {
       expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes, reason: 'root private/signing key');
       expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes, reason: 'root public/verify key');
       final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys(index: 0);
-      expect(spendAddress0Pair.privateKey, expectedSpend0Xsk);
-      expect(spendAddress0Pair.publicKey, expectedSpend0Xvk);
+      expect(spendAddress0Pair.signingKey, expectedSpend0Xsk);
+      expect(spendAddress0Pair.verifyKey, expectedSpend0Xvk);
       final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
-      expect(stakeAddress0Pair.privateKey, expectedStake0Xsk);
-      expect(stakeAddress0Pair.publicKey, expectedStake0Xvk);
+      expect(stakeAddress0Pair.signingKey, expectedStake0Xsk);
+      expect(stakeAddress0Pair.verifyKey, expectedStake0Xvk);
       final addr0 = hdWallet.toBaseAddress(
-          networkId: NetworkId.mainnet, spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+          networkId: NetworkId.mainnet, spend: spendAddress0Pair.verifyKey!, stake: stakeAddress0Pair.verifyKey!);
       // print(addr0.join(','));
       expect(addr0.toBech32(), expectedSpend0Bech32);
       final addr_test0 =
-          hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+          hdWallet.toBaseAddress(spend: spendAddress0Pair.verifyKey!, stake: stakeAddress0Pair.verifyKey!);
       expect(addr_test0.toBech32(), expectedTestnetSpend0Bech32);
     });
 
@@ -114,9 +114,9 @@ void main() {
       final mnemonic = 'test walk nut penalty hip pave soap entry language right filter choice';
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
       final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
-      final stake = hdWallet.toRewardAddress(networkId: NetworkId.mainnet, spend: stakeAddress0Pair.publicKey!);
+      final stake = hdWallet.toRewardAddress(networkId: NetworkId.mainnet, spend: stakeAddress0Pair.verifyKey!);
       expect(stake.toBech32(), 'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
-      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
       expect(stake_test.toBech32(), 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
     });
   });
@@ -199,24 +199,26 @@ addr.xvk                                key_for_account_0_address_1.txt         
     test('toBaseAddress', () {
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
       final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
-      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
+      final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
       expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
       final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys();
       final addr_test =
-          hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
+          hdWallet.toBaseAddress(spend: spendAddress0Pair.verifyKey!, stake: stakeAddress0Pair.verifyKey!);
       expect(addr_test.toBech32(), addr0Testnet);
     });
     test('deriveUnusedBaseAddress', () {
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
-      ShelleyAddress spend0 = hdWallet.deriveUnusedBaseAddress();
+      ShelleyAddress spend0 = hdWallet.deriveUnusedBaseAddressKit().address;
       expect(spend0.toBech32(), addr0Testnet);
-      ShelleyAddress spend1 = hdWallet.deriveUnusedBaseAddress(index: 1);
+      ShelleyAddress spend1 = hdWallet.deriveUnusedBaseAddressKit(index: 1).address;
       expect(spend1.toBech32(), addr1Testnet);
-      ShelleyAddress spend1a = hdWallet.deriveUnusedBaseAddress(unusedCallback: (a) => a.toBech32() != addr0Testnet);
+      ShelleyAddress spend1a =
+          hdWallet.deriveUnusedBaseAddressKit(unusedCallback: (a) => a.toBech32() != addr0Testnet).address;
       expect(spend1a.toBech32(), addr1Testnet, reason: 'callback flags addr0 as used, so returns addr1');
-      ShelleyAddress spend0Mainnet = hdWallet.deriveUnusedBaseAddress(networkId: NetworkId.mainnet);
+      ShelleyAddress spend0Mainnet = hdWallet.deriveUnusedBaseAddressKit(networkId: NetworkId.mainnet).address;
       expect(spend0Mainnet.toBech32(), addr0Mainnet);
-      ShelleyAddress change0 = hdWallet.deriveUnusedBaseAddress(networkId: NetworkId.mainnet, role: changeRole);
+      ShelleyAddress change0 =
+          hdWallet.deriveUnusedBaseAddressKit(networkId: NetworkId.mainnet, role: changeRole).address;
       expect(change0.toBech32(), change0Mainnet);
     });
   });
