@@ -4,7 +4,7 @@ SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutt
 
 ## Status
 
-Currently it is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It is a light-weight client library using a [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
+Currently this project is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
 
 Under a [Fund 6 proposal](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK-Fund6/368970-48088) this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management, hardware wallets and other essential features needed to write dApps and other types of Cardano clients.
 
@@ -12,12 +12,12 @@ Under a [Fund 6 proposal](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flu
 To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
 
 ## Fund 5 Features
-* Create Wallets - Create and restore both read-only and transactional wallets using staking addresses, mnemonics or a private keys.
-* Transaction history - List transactions, rewards and fees for both ADA and Native Tokens.
-* Generate and manage Shelley key pairs and addresses.
-* Build, sign and submit simple ADA payment transactions.
-* Cardano blockchain access via the [BlockFrost API package](https://github.com/reaster/blockfrost_api)
-* Basic CBOR binary encoding
+* Create Wallets - Create and restore both read-only and transactional wallets using staking addresses, mnemonics or private keys.
+* Transaction History - List transactions, rewards and fees for both ADA and Native Tokens.
+* Addresses - Generate and manage Shelley key pairs and addresses.
+* Transactions - Build, sign and submit simple ADA payment transactions.
+* Blockchain API - Cardano blockchain access via the [BlockFrost API package](https://github.com/reaster/blockfrost_api)
+* Binary Encoding - Enough CBOR support is provided to submit simple payment transactions.
 
 ## Usage
 
@@ -73,7 +73,7 @@ print("mnemonic: ${mnemonic.join(' ')}");
 
 List transaction history.
 ```
-wallet.transactions.forEach((tx) => print("$tx"));
+wallet.transactions.forEach((tx) => print(tx));
 ```
 
 List addresses.
@@ -128,21 +128,21 @@ print(wallet.firstUnusedSpendAddress));
 Send ADA to address.
 ```
 var to = ShelleyAddress.fromBech32('addr1qyy6...');
-var result = await wallet.sendAda(toAddress: to, lovelace=:1000000)
+var result = await wallet.sendAda(toAddress: to, lovelace:1000000)
 if (result.isOk()) { print("ADA sent"); }
 ```
 
 
 ### Planned [Fund 6 Features](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK-Fund6/368970-48088)
-* Smart contracts - Consisting of examples and supporting code.
+* Smart Contracts - Consisting of examples and supporting code.
 * Persistence - Caching blockchain data to speed state restoration.
 * Native Token/NFT - Provide minting and burning support.
 * Staking - Provide stake pool ranking and stake delegation support.
 * Blockchain Adapter - Abstraction layer to allow multiple blockchain gateways (i.e. Blockfrost, GraphQL, Ogmios and Mithril).
-* Secure storage - Encrypted storage solution for private keys and passwords.
+* Secure Storage - Encrypted storage solution for private keys and passwords.
 * Multi-signature - Support multi-party signatures.
 * Alternate Addresses - Support enterprise, pointer and legacy addresses.
-* Hardware wallets - Support key storage and signing delegation.
+* Hardware Wallets - Support key storage and signing delegation.
 * DApp Linking - Metamask-like Chrome browser extension.
 
 ### Running Tests
