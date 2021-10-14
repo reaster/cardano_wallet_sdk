@@ -1,6 +1,6 @@
 name: cardano_wallet_sdk
 description: Cardano Wallet SDK.
-version: 0.1.0-alpha.4
+version: 0.1.0-alpha.5
 homepage: https://github.com/reaster/cardano_wallet_sdk
 
 environment:
