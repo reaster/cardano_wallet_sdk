@@ -198,7 +198,13 @@ addr.xvk                                key_for_account_0_address_1.txt         
         'addr1qx25lzk4msem7df6a3ktcqh7knmzqul40rjxyghyk69jqnv3vuea47tq3shgvp2376dn5stzdz2ge90tmuac00v4cnjq5cyenl';
     test('toBaseAddress', () {
       final hdWallet = HdWallet.fromMnemonic(mnemonic);
+      print("hdWallet.rootSigningKey: ${hdWallet.rootSigningKey.encode()}");
+      print("hdWallet.rootVerifyKey:  ${hdWallet.rootVerifyKey.encode()}");
       final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
+      final verifyKey = stakeAddress0Pair.verifyKey!;
+      print("verifyKey: ${verifyKey.encode()}");
+      expect(verifyKey.encode(),
+          'ed25519bip32_pk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucq3m3kde');
       final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
       expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
       final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys();

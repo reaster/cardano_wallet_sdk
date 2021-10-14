@@ -7,11 +7,11 @@ import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 
 ///
-/// This class generates cryptographic key pairs and addresses given a secret set of nmemonic BIP-39 words.
+/// This class generates cryptographic keys and addresses given a secret set of nmemonic BIP-39 words.
 /// It generates Cardano Shelley addresses by default, but can be used to generate and/or restore any wallet
 /// based on the BIP32-ED25519 standard.
 ///
-/// This code builes on following standards:
+/// This code builds on following standards:
 ///
 /// https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki - HD wallets
 /// https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki - mnemonic words
@@ -82,14 +82,17 @@ import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 ///
 ///
 class HdWallet {
-  final Uint8List seed;
+  //final Uint8List seed;
   final Bip32SigningKey rootSigningKey;
   final _derivator = Bip32Ed25519KeyDerivation.instance;
   //final Map<int, Bip32KeyPair> _roleKeysCache = {};
 
-  HdWallet({required this.seed}) : rootSigningKey = _bip32signingKey(seed);
+  HdWallet({required this.rootSigningKey});
 
-  factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(seed: Uint8List.fromList(HEX.decode(hexEntropy)));
+  factory HdWallet.fromSeed(Uint8List seed) => HdWallet(rootSigningKey: _bip32signingKey(seed));
+
+  factory HdWallet.fromHexEntropy(String hexEntropy) =>
+      HdWallet(rootSigningKey: _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
 
   factory HdWallet.fromMnemonic(String mnemonic) => HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
 
@@ -190,6 +193,9 @@ class Bip32KeyPair {
   const Bip32KeyPair({this.signingKey, this.verifyKey});
 }
 
+// final decoded = bech32.decode(address, 256);
+// final hrp = decoded.hrp;
+// final bytes = Bech32Coder(hrp: hrp).decode(address);
 /// Private/signing and public/varification key pair.
 class Bip32KeyPair2 {
   final Bip32PrivateKey? privateKey;

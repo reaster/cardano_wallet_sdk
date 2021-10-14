@@ -7,6 +7,7 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
+  #TODO remove coingecko_dart
   coingecko_dart: ^0.1.0
   # pointycastle: ^3.0.1
   # base58check: ^2.0.0
@@ -22,9 +23,10 @@ dependencies:
   bip39: ^1.0.6
   # cryptography: ^2.0.1
   pedantic: ^1.11.0
+  #TODO swap oxidized Result for dartz Either?
   oxidized: ^4.2.0
   intl: ^0.17.0
-  dio: ^4.0.0
+  # dio: ^4.0.0
   built_collection: ^5.1.0
   built_value: ^8.1.0
   hex: ^0.2.0

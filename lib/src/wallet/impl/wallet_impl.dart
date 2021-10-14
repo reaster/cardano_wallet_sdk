@@ -16,14 +16,12 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   final HdWallet hdWallet;
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
-  /// TODO change seed to private key
   WalletImpl({
     required BlockchainAdapter blockchainAdapter,
     required ShelleyAddress stakeAddress,
     required String walletName,
-    required Uint8List seed,
-  })  : hdWallet = HdWallet(seed: seed),
-        super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
+    required this.hdWallet,
+  }) : super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
 
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet

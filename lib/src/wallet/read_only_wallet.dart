@@ -29,6 +29,9 @@ abstract class ReadOnlyWallet {
   /// optional stake pool details
   List<StakeAccount> get stakeAccounts;
 
+  /// staking address
+  ShelleyAddress get stakeAddress;
+
   /// assets present in this wallet indexed by assetId
   Map<String, CurrencyAsset> get assets;
   List<WalletTransaction> get transactions;
