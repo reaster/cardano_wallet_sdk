@@ -1,6 +1,12 @@
+## [0.1.0-alpha.5] - 2021-10-14
+
+* document use-cases in readme
+
 ## [0.1.0-alpha.4] - 2021-08-05
 
+* add spending wallet
 * cbor encoding
+* API clean-up
 
 ## [0.1.0-alpha.3] - 2021-07-27
 
