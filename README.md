@@ -4,7 +4,7 @@ SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutt
 
 ## Status
 
-Currently it is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It is a light-weight client library using a [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submiting simple transactions. 
+Currently it is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It is a light-weight client library using a [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
 
 Under a [Fund 6 proposal](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK-Fund6/368970-48088) this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management, hardware wallets and other essential features needed to write dApps and other types of Cardano clients.
 
@@ -137,7 +137,7 @@ if (result.isOk()) { print("ADA sent"); }
 * Smart contracts - Consisting of examples and supporting code.
 * Persistence - Caching blockchain data to speed state restoration.
 * Native Token/NFT - Provide minting and burning support.
-* Staking - Provid stake pool ranking and stake delegation support.
+* Staking - Provide stake pool ranking and stake delegation support.
 * Blockchain Adapter - Abstraction layer to allow multiple blockchain gateways (i.e. Blockfrost, GraphQL, Ogmios and Mithril).
 * Secure storage - Encrypted storage solution for private keys and passwords.
 * Multi-signature - Support multi-party signatures.
@@ -146,7 +146,7 @@ if (result.isOk()) { print("ADA sent"); }
 * DApp Linking - Metamask-like Chrome browser extension.
 
 ### Running Tests
-Many of the unit tests are actualy integration tests that require a blockfrost key to run. Installation steps are as follows:
+Many of the unit tests are actually integration tests that require a blockfrost key to run. Installation steps are as follows:
 * git clone git@github.com:reaster/cardano_wallet_sdk.git
 * register for a free [blockfrost](https://blockfrost.io/) testnet policy-id key.
 * paste the policy-id key into a text file named: blockfrost_project_id.txt in the parent directory of this project.
