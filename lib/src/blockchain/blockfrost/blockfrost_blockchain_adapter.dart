@@ -56,7 +56,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
 
   Future<Result<String, String>> submitTransaction(List<int> cborTransaction) async {
     final result = await dioCall<String>(
-      request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'),
+      request: () =>
+          blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor', data: cborTransaction),
       onSuccess: (data) =>
           print("blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
       errorSubject: 'submit cbor transaction',
@@ -74,12 +75,13 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     if (content.isErr()) {
       return Err(content.unwrapErr());
     }
-    final controlledAmount = content.isOk() ? int.tryParse(content.unwrap().controlledAmount) ?? 0 : 0;
-    final addresses = await _addresses(stakeAddress: stakeAddress.toBech32());
-    if (addresses.isErr()) {
-      return Err(addresses.unwrapErr());
-    }
     final account = content.unwrap();
+    final controlledAmount = content.isOk() ? int.tryParse(content.unwrap().controlledAmount) ?? 0 : 0;
+    final addressesResult = await _addresses(stakeAddress: stakeAddress.toBech32());
+    if (addressesResult.isErr()) {
+      return Err(addressesResult.unwrapErr());
+    }
+    final addresses = addressesResult.unwrap();
     List<StakeAccount> stakeAccounts = []; //TODO should be a list, just show current staked pool for now
     if (account.poolId != null && account.active) {
       final stakeAccountResponse = await _stakeAccount(poolId: account.poolId!, stakeAddress: stakeAddress.toBech32());
@@ -88,19 +90,26 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       }
       stakeAccounts = stakeAccountResponse.unwrap();
     }
-    List<RawTransaction> transactions = [];
+    List<RawTransactionImpl> transactionList = [];
     Set<String> duplicateTxHashes = {}; //track and skip duplicates
-    for (var address in addresses.unwrap()) {
+    //final Set<String> addressSet = addresses.map((a) => a.toBech32()).toSet();
+    for (var address in addresses) {
       final trans = await _transactions(address: address.toBech32(), duplicateTxHashes: duplicateTxHashes);
       if (trans.isErr()) {
         return Err(trans.unwrapErr());
       }
-      transactions.addAll(trans.unwrap());
+      trans.unwrap().forEach((tx) {
+        transactionList.add(tx as RawTransactionImpl);
+      });
     }
-    transactions.sort((d1, d2) =>
+    //set transaction status
+    transactionList = markSpentTransactions(transactionList);
+
+    //sort
+    transactionList.sort((d1, d2) =>
         sortOrder == TemperalSortOrder.descending ? d2.time.compareTo(d1.time) : d1.time.compareTo(d2.time));
     Set<String> allAssetIds =
-        transactions.map((t) => t.assetIds).fold(<String>{}, (result, entry) => result..addAll(entry));
+        transactionList.map((t) => t.assetIds).fold(<String>{}, (result, entry) => result..addAll(entry));
     //print("policyIDs: ${policyIDs.join(',')}");
     Map<String, CurrencyAsset> assets = {};
     for (var assetId in allAssetIds) {
@@ -114,11 +123,38 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     }
     return Ok(WalletUpdate(
         balance: controlledAmount,
-        transactions: transactions,
-        addresses: addresses.unwrap(),
+        transactions: transactionList,
+        addresses: addresses,
         assets: assets,
         stakeAccounts: stakeAccounts));
   }
+
+  List<RawTransactionImpl> markSpentTransactions(List<RawTransactionImpl> transactions) {
+    final Set<String> txIdSet = transactions.map((tx) => tx.txId).toSet();
+    Set<String> spentTransactinos = {};
+    for (final tx in transactions) {
+      for (final input in tx.inputs) {
+        if (txIdSet.contains(input.txHash)) {
+          spentTransactinos.add(input.txHash);
+        }
+      }
+    }
+    return transactions
+        .map((tx) => spentTransactinos.contains(tx.txId) ? tx.toStatus(TransactionStatus.spent) : tx)
+        .toList();
+  }
+
+  // bool _isSpent(RawTransaction tx, Map<String, RawTransaction> txIdLookup) =>
+  //     tx.inputs.any((input) => txIdLookup.containsKey(input.txHash));
+
+  // bool _isSpent2(RawTransaction tx, Map<String, RawTransaction> txIdLookup) {
+  //   for (final input in tx.inputs) {
+  //     if (txIdLookup.containsKey(input.txHash)) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 
   Future<Result<List<StakeAccount>, String>> _stakeAccount(
       {required String poolId, required String stakeAddress}) async {
@@ -256,8 +292,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(transactions);
   }
 
-  List<TransactionIO> _buildIputs(BuiltList<TxContentUtxoInputs> list) {
-    List<TransactionIO> results = [];
+  List<TransactionInput> _buildIputs(BuiltList<TxContentUtxoInputs> list) {
+    List<TransactionInput> results = [];
     for (var input in list) {
       List<TransactionAmount> amounts = [];
       for (var io in input.amount) {
@@ -265,13 +301,18 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         final unit = io.unit == 'lovelace' ? lovelaceHex : io.unit; //translate 'lovelace' to assetId representation
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
-      results.add(TransactionIO(address: input.address, amounts: amounts));
+      results.add(TransactionInput(
+        address: ShelleyAddress.fromBech32(input.address),
+        amounts: amounts,
+        txHash: input.txHash,
+        outputIndex: input.outputIndex,
+      ));
     }
     return results;
   }
 
-  List<TransactionIO> _buildOutputs(BuiltList<TxContentUtxoOutputs> list) {
-    List<TransactionIO> results = [];
+  List<TransactionOutput> _buildOutputs(BuiltList<TxContentUtxoOutputs> list) {
+    List<TransactionOutput> results = [];
     for (var input in list) {
       List<TransactionAmount> amounts = [];
       for (var io in input.amount) {
@@ -279,7 +320,10 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         final unit = io.unit == 'lovelace' ? lovelaceHex : io.unit; //translate 'lovelace' to assetId representation
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
-      results.add(TransactionIO(address: input.address, amounts: amounts));
+      results.add(TransactionOutput(
+        address: ShelleyAddress.fromBech32(input.address),
+        amounts: amounts,
+      ));
     }
     return results;
   }
@@ -335,18 +379,18 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     final fees = int.tryParse(txContentResult.unwrap().fees) ?? 0;
     //final withdrawalCount = txContent.data!.withdrawalCount;
     final addrInputs = txContentUtxoResult.unwrap().inputs;
-    List<TransactionIO> inputs = _buildIputs(addrInputs);
+    List<TransactionInput> inputs = _buildIputs(addrInputs);
     final addrOutputs = txContentUtxoResult.unwrap().outputs;
-    List<TransactionIO> outputs = _buildOutputs(addrOutputs);
+    List<TransactionOutput> outputs = _buildOutputs(addrOutputs);
     //print("deposit: $deposit, fees: $fees, withdrawalCount: $withdrawalCount inputs: ${inputs.length}, outputs: ${outputs.length}");
     //BuiltList<TxContentOutputAmount> amounts = txContent.data!.outputAmount;
     //Map<String, int> currencies = _currencyNets(inputs: inputs, outputs: outputs, addressSet: addressSet);
     //int lovelace = currencies[lovelaceHex] ?? 0;
-    final trans = TransactionImpl(
+    final trans = RawTransactionImpl(
       txId: txHash,
       blockHash: txContent.block,
       blockIndex: txContent.index,
-      status: TransactionStatus.confirmed,
+      status: TransactionStatus.unspent,
       //type: lovelace >= 0 ? TransactionType.deposit : TransactionType.withdrawal,
       fees: fees,
       inputs: inputs,

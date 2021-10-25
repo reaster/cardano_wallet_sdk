@@ -20,6 +20,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   int _balance = 0;
   List<WalletTransaction> _transactions = [];
   List<ShelleyAddress> _usedAddresses = [];
+  //List<Utxo> utxos = [];
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
@@ -66,7 +67,8 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     }
     if (this._transactions.length != transactions.length) {
       change = true;
-      final Set<String> addressSet = usedAddresses.map((a) => a.toBech32()).toSet();
+      //swap raw transactions for wallet-centric transactions:
+      final Set<ShelleyAddress> addressSet = usedAddresses.toSet();
       this._transactions =
           transactions.map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: addressSet)).toList();
     }
@@ -105,4 +107,8 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
 
   @override
   CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) => _assets.values.firstWhere(matcher);
+
+  @override
+  List<WalletTransaction> get unspentTransactions =>
+      transactions.where((tx) => tx.status == TransactionStatus.unspent).toList();
 }

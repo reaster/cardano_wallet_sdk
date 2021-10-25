@@ -1,12 +1,17 @@
 // import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
 enum TransactionType { deposit, withdrawal }
-enum TransactionStatus { pending, confirmed }
+enum TransactionStatus { pending, unspent, spent }
 enum TemperalSortOrder { ascending, descending }
 
+///
+/// Raw transactions mirror the data on the blockchain.
 /// Amounts in lovelace.
+///
 abstract class RawTransaction {
   String get txId;
   String get blockHash;
@@ -16,12 +21,13 @@ abstract class RawTransaction {
   TransactionStatus get status;
   Coin get fees;
   DateTime get time;
-  List<TransactionIO> get inputs;
-  List<TransactionIO> get outputs;
+  List<TransactionInput> get inputs;
+  List<TransactionOutput> get outputs;
 }
 
 ///
-/// Transaction from owning wallet perspective (i.e. deposit or withdrawal specific to owned addresses).
+/// Transaction from owning wallet perspective (i.e. filters raw transaction deposits
+/// and withdrawals specific to owned addresses).
 ///
 abstract class WalletTransaction extends RawTransaction {
   TransactionType get type;
@@ -29,9 +35,13 @@ abstract class WalletTransaction extends RawTransaction {
   Map<String, Coin> get currencies;
   Coin currencyAmount({required String assetId});
   bool containsCurrency({required String assetId});
-  Set<String> get ownedAddresses;
+  Set<ShelleyAddress> get ownedAddresses;
 }
 
+///
+/// Amount and type for a specific native token.
+/// TODO why is there no policyId?
+///
 class TransactionAmount {
   final String unit;
   final Coin quantity;
@@ -40,19 +50,33 @@ class TransactionAmount {
   String toString() => "TransactionAmount(unit: $unit quantity: $quantity)";
 }
 
-class TransactionIO {
-  final String address;
+///
+/// Inputs or outputs for a given transaction.
+///
+class TransactionInput {
+  final ShelleyAddress address;
   final List<TransactionAmount> amounts;
-  TransactionIO({required this.address, required this.amounts});
+  final String txHash;
+  final int outputIndex;
+  TransactionInput({required this.address, required this.amounts, required this.txHash, required this.outputIndex});
   @override
-  String toString() => "TransactionIO(address: $address count: ${amounts.length})";
+  String toString() => "TransactionInput(address: $address count: ${amounts.length})";
+}
+
+class TransactionOutput {
+  final ShelleyAddress address;
+  final List<TransactionAmount> amounts;
+  final bool isChange;
+  TransactionOutput({required this.address, required this.amounts, this.isChange = false});
+  @override
+  String toString() => "TransactionOutput(address: $address, isChange: $isChange, count: ${amounts.length})";
 }
 
 class WalletTransactionImpl implements WalletTransaction {
   final RawTransaction rawTransaction;
   final Map<String, Coin> currencies;
-  final Set<String> ownedAddresses;
-  WalletTransactionImpl({required this.rawTransaction, required Set<String> addressSet})
+  final Set<ShelleyAddress> ownedAddresses;
+  WalletTransactionImpl({required this.rawTransaction, required Set<ShelleyAddress> addressSet})
       : currencies = rawTransaction.sumCurrencies(addressSet: addressSet),
         ownedAddresses = rawTransaction.filterAddresses(addressSet: addressSet);
 
@@ -69,9 +93,9 @@ class WalletTransactionImpl implements WalletTransaction {
   @override
   DateTime get time => rawTransaction.time;
   @override
-  List<TransactionIO> get inputs => rawTransaction.inputs;
+  List<TransactionInput> get inputs => rawTransaction.inputs;
   @override
-  List<TransactionIO> get outputs => rawTransaction.outputs;
+  List<TransactionOutput> get outputs => rawTransaction.outputs;
 
   String currencyBalancesByTicker({required Map<String, CurrencyAsset> assetByAssetId, String? filterAssetId}) =>
       currencies.entries
@@ -88,7 +112,7 @@ class WalletTransactionImpl implements WalletTransaction {
 
   @override
   String toString() =>
-      "Transaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
+      "WalletTransaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
 
   @override
   bool containsCurrency({required String assetId}) => currencies[assetId] != null;
@@ -99,18 +123,18 @@ class WalletTransactionImpl implements WalletTransaction {
   bool get payedFees => type == TransactionType.withdrawal;
 }
 
-class TransactionImpl implements RawTransaction {
+class RawTransactionImpl implements RawTransaction {
   final String txId;
   final String blockHash;
   final int blockIndex;
   final TransactionStatus status;
   final Coin fees;
-  final List<TransactionIO> inputs;
-  final List<TransactionIO> outputs;
+  final List<TransactionInput> inputs;
+  final List<TransactionOutput> outputs;
   final DateTime time;
-  Set<String>? _assetPolicyIds;
-  Map<String, Coin> _cachedSums = {};
-  TransactionImpl({
+  // Set<String>? _assetPolicyIds;
+  // Map<String, Coin> _cachedSums = {};
+  RawTransactionImpl({
     required this.txId,
     required this.blockHash,
     required this.blockIndex,
@@ -121,8 +145,21 @@ class TransactionImpl implements RawTransaction {
     required this.time,
   });
 
+  RawTransactionImpl toStatus(TransactionStatus status) => this.status == status
+      ? this
+      : RawTransactionImpl(
+          txId: this.txId,
+          blockHash: this.blockHash,
+          blockIndex: this.blockIndex,
+          status: status,
+          fees: this.fees,
+          inputs: this.inputs,
+          outputs: this.outputs,
+          time: this.time,
+        );
+
   @override
-  String toString() => "Transaction(fees: $fees status: $status id: $txId)";
+  String toString() => "RawTransaction(fees: $fees status: $status id: $txId)";
 }
 
 ///
@@ -132,10 +169,10 @@ extension TransactionScanner on RawTransaction {
   /// assetIds found in transactioins. TODO confirm unit == assetId
   Set<String> get assetIds {
     Set<String> result = {lovelaceHex};
-    inputs.forEach((tranIO) => tranIO.amounts.forEach((amount) {
+    inputs.forEach((input) => input.amounts.forEach((amount) {
           if (amount.unit.isNotEmpty) result.add(amount.unit);
         }));
-    outputs.forEach((tranIO) => tranIO.amounts.forEach((amount) {
+    outputs.forEach((output) => output.amounts.forEach((amount) {
           if (amount.unit.isNotEmpty) result.add(amount.unit);
         }));
     return result;
@@ -145,28 +182,28 @@ extension TransactionScanner on RawTransaction {
   ///return a map of all currencies with their net quantity change for a given set of
   ///addresses (i.e. a specific wallet).
   ///
-  Map<String, Coin> sumCurrencies({required Set<String> addressSet}) {
+  Map<String, Coin> sumCurrencies({required Set<ShelleyAddress> addressSet}) {
     //if (_cachedSums.isEmpty) {
     Map<String, Coin> result = {lovelaceHex: 0};
-    for (var tranIO in inputs) {
-      final bool myMoney = addressSet.contains(tranIO.address);
+    for (var input in inputs) {
+      final bool myMoney = addressSet.contains(input.address);
       if (myMoney) {
-        for (var amount in tranIO.amounts) {
+        for (var amount in input.amounts) {
           final int beginning = result[amount.unit] ?? 0;
           result[amount.unit] = beginning - amount.quantity;
           print(
-              "${time} tx: ${txId.substring(0, 5)}.. innput: ${tranIO.address.substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
+              "${time} tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
         }
       }
     }
-    for (var tranIO in outputs) {
-      final bool myMoney = addressSet.contains(tranIO.address);
+    for (var output in outputs) {
+      final bool myMoney = addressSet.contains(output.address);
       if (myMoney) {
-        for (var amount in tranIO.amounts) {
+        for (var amount in output.amounts) {
           final Coin beginning = result[amount.unit] ?? 0;
           result[amount.unit] = beginning + amount.quantity;
           print(
-              "${time} tx: ${txId.substring(0, 5)}.. output: ${tranIO.address.substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
+              "${time} tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
         }
       }
     }
@@ -174,23 +211,53 @@ extension TransactionScanner on RawTransaction {
   }
 
   ///
-  ///filter addresses to those found in this transaction
+  /// filter addresses to those found in this wallet
   ///
-  Set<String> filterAddresses({required Set<String> addressSet}) {
-    Set<String> result = {};
-    for (var tranIO in inputs) {
-      if (addressSet.contains(tranIO.address)) {
-        result.add(tranIO.address);
+  Set<ShelleyAddress> filterAddresses({required Set<ShelleyAddress> addressSet}) {
+    Set<ShelleyAddress> result = {};
+    for (var input in inputs) {
+      if (addressSet.contains(input.address)) {
+        result.add(input.address);
       }
     }
-    for (var tranIO in outputs) {
-      if (addressSet.contains(tranIO.address)) {
-        result.add(tranIO.address);
+    for (var output in outputs) {
+      if (addressSet.contains(output.address)) {
+        result.add(output.address);
       }
     }
     return result;
   }
 }
+
+// class UtxoOutputAmount {
+//   /// The unit of the value
+//   final String unit;
+
+//   /// The quantity of the unit
+//   final Coin quantity;
+//   UtxoOutputAmount({required this.unit, required this.quantity});
+// }
+
+// class UtxoInput {
+//   /// Input address
+//   final ShelleyAddress address;
+//   final List<UtxoOutputAmount> amount;
+//   UtxoInput({required this.address, required this.amount});
+// }
+
+// class UtxoOutput {
+//   /// Output address
+//   final ShelleyAddress address;
+//   final List<UtxoOutputAmount> amount;
+//   UtxoOutput({required this.address, required this.amount});
+// }
+
+// /// Unspent transaction output
+// class Utxo {
+//   final List<UtxoInput> inputs;
+//   final List<UtxoOutput> outputs;
+//   Utxo(this.inputs, this.outputs);
+// }
 
 /// Block record
 class Block {

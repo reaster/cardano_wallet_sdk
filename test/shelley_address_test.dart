@@ -1,4 +1,3 @@
-import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
@@ -9,6 +8,8 @@ void main() {
       'addr1qyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sdn8p3d';
   final addr_test =
       'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
+  final addr_test2 =
+      'addr_test1qrqeavr4pa4vtzuf64m9z3cjke582vk7qvc6pcc6e5m9txa24kyuyck0xp0a7n7rah0gxj5mq3zdrc6xnaqph967c2kqcun0nj';
 
   group('shelley address test -', () {
     final testEntropy = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
@@ -41,6 +42,14 @@ void main() {
       expect(a.addressType, AddressType.Base, reason: 'toBaseAddress sets address type');
       a = ShelleyAddress.toRewardAddress(spend: spendPair.verifyKey!);
       expect(a.addressType, AddressType.Reward, reason: 'toRewardAddress sets address type');
+    });
+    test('address equals', () {
+      var a = ShelleyAddress.fromBech32(addr_test);
+      var b = ShelleyAddress.fromBech32(addr_test2);
+      var c = ShelleyAddress.fromBech32(addr_test);
+      expect(a == c, isTrue, reason: 'equals works');
+      Set<ShelleyAddress> set = [a, b].toSet();
+      expect(set.contains(c), isTrue, reason: 'equals works');
     });
 
     // test('bech32', () {

@@ -4,6 +4,7 @@ import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:pinenacl/api.dart';
+import 'package:quiver/core.dart';
 
 ///
 /// Encapsulates Shelley address types. Handles proper bech32 encoding and decoding mainnet and testnet addresses.
@@ -28,7 +29,9 @@ const int rewardDiscrim = 0xe0; //0b1110_0000
 
 class ShelleyAddress extends ByteList {
   final String hrp;
+  // final bool isChange;
   ShelleyAddress(List<int> bytes, {this.hrp = defaultAddrHrp}) : super(bytes);
+  //  {  assert(addressType == AddressType.Base || !isChange); } //change addresses must be base addresses
 
   factory ShelleyAddress.toBaseAddress({
     required Bip32PublicKey spend,
@@ -39,10 +42,11 @@ class ShelleyAddress extends ByteList {
     CredentialType stakeType = CredentialType.Key,
   }) =>
       ShelleyAddress(
-          [(stakeType.index << 5) | (paymentType.index << 4) | (networkId.index & 0x0f)] +
-              blake2bHash224(spend.rawKey) +
-              blake2bHash224(stake.rawKey),
-          hrp: _computeHrp(networkId, hrp));
+        [(stakeType.index << 5) | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+            blake2bHash224(spend.rawKey) +
+            blake2bHash224(stake.rawKey),
+        hrp: _computeHrp(networkId, hrp),
+      );
 
   factory ShelleyAddress.toRewardAddress({
     required Bip32PublicKey spend,
@@ -51,8 +55,9 @@ class ShelleyAddress extends ByteList {
     CredentialType paymentType = CredentialType.Key,
   }) =>
       ShelleyAddress(
-          [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] + blake2bHash224(spend.rawKey),
-          hrp: _computeHrp(networkId, hrp));
+        [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] + blake2bHash224(spend.rawKey),
+        hrp: _computeHrp(networkId, hrp),
+      );
 
   factory ShelleyAddress.fromBech32(String address) {
     final decoded = bech32.decode(address, 256);
@@ -95,8 +100,11 @@ class ShelleyAddress extends ByteList {
   CredentialType get paymentCredentialType => (this[0] & 0x10) >> 4 == 0 ? CredentialType.Key : CredentialType.Script;
 
   @override
-  String toString() =>
-      "${_enumSuffix(addressType.toString())} ${_enumSuffix(networkId.toString())} ${_enumSuffix(paymentCredentialType.toString())} ${toBech32()}";
+  String toString() => toBech32();
+  // "${_enumSuffix(addressType.toString())} ${_enumSuffix(networkId.toString())} ${_enumSuffix(paymentCredentialType.toString())} ${toBech32()}";
+
+  @override
+  int get hashCode => hashObjects(this);
 
   static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
 
