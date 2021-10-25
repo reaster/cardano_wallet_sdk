@@ -11,20 +11,20 @@ Under a [Fund 6 proposal](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flu
 ## Kick the Tires
 To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
 
-## Fund 5 Features
-* Create Wallets - Create and restore both read-only and transactional wallets using staking addresses, mnemonics or private keys.
+## Current ([Fund 5](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088)) Features
+* Create Wallets - Create and restore, both read-only and transactional wallets using staking addresses, mnemonics or private keys.
 * Transaction History - List transactions, rewards and fees for both ADA and Native Tokens.
 * Addresses - Generate and manage Shelley key pairs and addresses.
 * Transactions - Build, sign and submit simple ADA payment transactions.
 * Blockchain API - Cardano blockchain access via the [BlockFrost API package](https://github.com/reaster/blockfrost_api)
-* Binary Encoding - Enough CBOR support is provided to submit simple payment transactions.
+* Binary Encoding - Enough [CBOR](https://cbor.io) support is provided to submit simple payment transactions.
 
 ## Usage
 
 
 ### Wallet Management
 
-Create a wallet factory for testnet or mainnet.
+Create a wallet factory for testnet or mainnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
 ```
 final walletFactory = ShelleyWalletFactory.fromKey(key: myPolicyId, networkId: testnet);
 ```
@@ -146,12 +146,15 @@ if (result.isOk()) { print("ADA sent"); }
 * DApp Linking - Metamask-like Chrome browser extension.
 
 ### Running Tests
-Many of the unit tests are actually integration tests that require a blockfrost key to run. Installation steps are as follows:
+Many of the unit tests are actually integration tests that require a BlockFrost key to run. Installation steps are as follows:
 * git clone git@github.com:reaster/cardano_wallet_sdk.git
-* register for a free [blockfrost](https://blockfrost.io/) testnet policy-id key.
+* register for a free [BlockFrost](https://blockfrost.io/) testnet policy-id key.
 * paste the policy-id key into a text file named: blockfrost_project_id.txt in the parent directory of this project.
 
 ```
 echo "your-project-id" > ../blockfrost_project_id.txt
 ```
-The unit tests should now pass.
+The unit tests should now pass:
+```
+dart test
+```
