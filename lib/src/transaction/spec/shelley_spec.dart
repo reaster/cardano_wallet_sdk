@@ -4,6 +4,7 @@ import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
 // import 'dart:convert';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:typed_data/typed_data.dart'; // as typed;
 // import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
@@ -24,7 +25,7 @@ class CborDeserializationException implements Exception {} //TODO replace with R
 /// an single asset name and value under a MultiAsset policyId
 class ShelleyAsset {
   final String name;
-  final int value;
+  final Coin value;
 
   ShelleyAsset({required this.name, required this.value});
 }
