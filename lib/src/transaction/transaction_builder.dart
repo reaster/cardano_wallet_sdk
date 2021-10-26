@@ -1,5 +1,6 @@
+import 'package:bip32_ed25519/api.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
@@ -7,15 +8,24 @@ import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:oxidized/oxidized.dart';
+// import 'coin_selection.dart';
 
 ///
-/// Manages details of building a correct transaction, including fee calculation, change
-/// callculation, time-to-live constraints (ttl) and signing.
+/// Manages details of building a correct transaction, including coin collection, fee calculation,
+/// change callculation, time-to-live constraints (ttl) and signing.
 ///
 class TransactionBuilder {
   BlockchainAdapter? _blockchainAdapter;
+  ShelleyAddressKit? _kit;
+  // CoinSelectionAlgorithm _coinSelectionFunction = largestFirst;
+  // List<WalletTransaction> _unspentInputsAvailable = [];
+  // List<MultiAssetRequest> _coinSelectionOutputsRequested = [];
+  // Set<ShelleyAddress> _coinSelectionOwnedAddresses = {};
+  // int _coinSelectionLimit = defaultCoinSelectionLimit;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
+  ShelleyAddress? _changeAddress;
+  ShelleyValue _value = ShelleyValue(coin: 0, multiAssets: []);
   Coin _fee = 0;
   int _ttl = 0;
   List<int>? _metadataHash;
@@ -34,18 +44,6 @@ class TransactionBuilder {
   /// How often to check current slot. If 1 minute old, update
   final staleSlotCuttoff = Duration(seconds: 60);
 
-  List<int> transactionBodyHash() => blake2bHash256(buildBody().toCborMap().getData());
-
-  ShelleyTransactionBody buildBody() => ShelleyTransactionBody(
-        inputs: _inputs,
-        outputs: _outputs,
-        fee: _fee,
-        ttl: _ttl,
-        metadataHash: _metadataHash,
-        validityStartInterval: _validityStartInterval,
-        mint: _mint.isEmpty ? null : _mint,
-      );
-
   Future<Result<ShelleyTransaction, String>> build() async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
@@ -57,22 +55,53 @@ class TransactionBuilder {
       }
       _ttl = result.unwrap();
     }
-    var body = buildBody();
+    if (_inputs.isEmpty) return Err("inputs are empty");
+
+    var body = _buildBody();
     var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
     _fee = _calculateMinFee(tx);
-    body = buildBody();
+    body = _buildBody();
+    //sign
+    final bodyData = body.toCborMap().getData();
+    List<int> hash = blake2bHash256(bodyData);
+    final signature = _kit!.signingKey!.sign(hash);
+    final VerifyKey verifyKey = _kit!.verifyKey!.publicKey;
+    final witness = ShelleyVkeyWitness(signature: signature, vkey: verifyKey.toUint8List());
+    _witnessSet = ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
     tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    final txHex = tx.toCborHex;
-    print(txHex);
     return Ok(tx);
   }
 
+  List<int> transactionBodyHash() => blake2bHash256(_buildBody().toCborMap().getData());
+
+  ShelleyTransactionBody _buildBody() => ShelleyTransactionBody(
+        inputs: _inputs,
+        outputs: _outputs,
+        fee: _fee,
+        ttl: _ttl,
+        metadataHash: _metadataHash,
+        validityStartInterval: _validityStartInterval,
+        mint: _mint.isEmpty ? null : _mint,
+      );
+
+  /// TODO
+  Map<AssetId, Price> calculateBalance() {
+    return {};
+  }
+
+  /// TODO
   void _optionallySetupChangeOutput() {
-    //TODO
+    //_changeAddress
   }
 
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) return Err("'blockchainAdapter' property must be set");
+    // if (_inputs.isEmpty && _value.coin == 0) return Err("'value' property must be set");
+    if (_inputs.isEmpty) return Err("'inputs' property must be set");
+    if (_outputs.isEmpty && _value.coin == 0)
+      return Err("when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
+    if (_kit == null) return Err("'kit' (ShelleyAddressKit) property must be set");
+    if (_changeAddress == null) return Err("'changeAddress' property must be set");
     return Ok(true);
   }
 
@@ -116,71 +145,47 @@ class TransactionBuilder {
     return Ok(_currentSlot + defaultTtlDelta);
   }
 
-  TransactionBuilder blockchainAdapter(BlockchainAdapter blockchainAdapter) {
-    _blockchainAdapter = blockchainAdapter;
-    return this;
-  }
+  void blockchainAdapter(BlockchainAdapter blockchainAdapter) => _blockchainAdapter = blockchainAdapter;
 
-  TransactionBuilder currentSlot(int currentSlot) {
-    _currentSlot = currentSlot;
-    return this;
-  }
+  void kit(ShelleyAddressKit kit) => _kit = kit;
 
-  TransactionBuilder minFeeFunction(MinFeeFunction feeFunction) {
-    _minFeeFunction = feeFunction;
-    return this;
-  }
+  void value(ShelleyValue value) => _value = value;
 
-  TransactionBuilder linearFee(LinearFee linearFee) {
-    _linearFee = linearFee;
-    return this;
-  }
+  void changeAddress(ShelleyAddress changeAddress) => _changeAddress = changeAddress;
 
-  TransactionBuilder metadataHash(List<int>? metadataHash) {
-    _metadataHash = metadataHash;
-    return this;
-  }
+  void currentSlot(int currentSlot) => _currentSlot = currentSlot;
 
-  TransactionBuilder validityStartInterval(int validityStartInterval) {
-    _validityStartInterval = validityStartInterval;
-    return this;
-  }
+  void minFeeFunction(MinFeeFunction feeFunction) => _minFeeFunction = feeFunction;
 
-  TransactionBuilder fee(Coin fee) {
-    _fee = fee;
-    return this;
-  }
+  void linearFee(LinearFee linearFee) => _linearFee = linearFee;
 
-  TransactionBuilder mint(ShelleyMultiAsset mint) {
-    _mint.add(mint);
-    return this;
-  }
+  void metadataHash(List<int>? metadataHash) => _metadataHash = metadataHash;
 
-  TransactionBuilder mints(List<ShelleyMultiAsset> mint) {
-    _mint = mint;
-    return this;
-  }
+  void validityStartInterval(int validityStartInterval) => _validityStartInterval = validityStartInterval;
 
-  TransactionBuilder ttl(int ttl) {
-    _ttl = ttl;
-    return this;
-  }
+  void fee(Coin fee) => _fee = fee;
 
-  TransactionBuilder txInput(ShelleyTransactionInput input) {
-    _inputs.add(input);
-    return this;
-  }
+  void mint(ShelleyMultiAsset mint) => _mint.add(mint);
 
-  TransactionBuilder input({required String transactionId, required int index}) {
-    return txInput(ShelleyTransactionInput(transactionId: transactionId, index: index));
-  }
+  void mints(List<ShelleyMultiAsset> mint) => _mint = mint;
 
-  TransactionBuilder txOutput(ShelleyTransactionOutput output) {
-    _outputs.add(output);
-    return this;
-  }
+  void ttl(int ttl) => _ttl = ttl;
 
-  TransactionBuilder output({
+  void inputs(List<ShelleyTransactionInput> inputs) => _inputs = inputs;
+
+  void txInput(ShelleyTransactionInput input) => _inputs.add(input);
+
+  void input({required String transactionId, required int index}) =>
+      txInput(ShelleyTransactionInput(transactionId: transactionId, index: index));
+
+  void txOutput(ShelleyTransactionOutput output) => _outputs.add(output);
+
+  void witnessSet(ShelleyTransactionWitnessSet witnessSet) => _witnessSet = witnessSet;
+
+  void metadata(CBORMetadata metadata) => _metadata = metadata;
+
+  /// build a single ShelleyTransactionOutput, handle complex output construction
+  void output({
     ShelleyAddress? shelleyAddress,
     String? address,
     MultiAssetBuilder? multiAssetBuilder,
@@ -198,26 +203,29 @@ class TransactionBuilder {
     if (autoAddMinting) {
       _mint.addAll(val.multiAssets);
     }
-    return this;
   }
 
-  TransactionBuilder send({ShelleyAddress? shelleyAddress, String? address, Coin lovelace = 0, Coin ada = 0}) {
-    assert(address != null || shelleyAddress != null);
-    assert(!(address != null && shelleyAddress != null));
-    final String addr = shelleyAddress != null ? shelleyAddress.toBech32() : address!;
-    final amount = lovelace + ada * 1000000;
-    return txOutput(ShelleyTransactionOutput(address: addr, value: ShelleyValue(coin: amount, multiAssets: [])));
-  }
+  // void coinSelectionFunction(CoinSelectionAlgorithm coinSelectionFunction) =>
+  //     _coinSelectionFunction = coinSelectionFunction;
 
-  TransactionBuilder witnessSet(ShelleyTransactionWitnessSet witnessSet) {
-    _witnessSet = witnessSet;
-    return this;
-  }
+  // void unspentInputsAvailable(List<WalletTransaction> unspentInputsAvailable) =>
+  //     _unspentInputsAvailable = unspentInputsAvailable;
 
-  TransactionBuilder metadata(CBORMetadata metadata) {
-    _metadata = metadata;
-    return this;
-  }
+  // void coinSelectionOutputsRequested(List<MultiAssetRequest> coinSelectionOutputsRequested) =>
+  //     _coinSelectionOutputsRequested = coinSelectionOutputsRequested;
+
+  // void coinSelectionOwnedAddresses(Set<ShelleyAddress> coinSelectionOwnedAddresses) =>
+  //     _coinSelectionOwnedAddresses = coinSelectionOwnedAddresses;
+
+  // void coinSelectionLimit(int coinSelectionLimit) => _coinSelectionLimit = coinSelectionLimit;
+
+  // TransactionBuilder send({ShelleyAddress? shelleyAddress, String? address, Coin lovelace = 0, Coin ada = 0}) {
+  //   assert(address != null || shelleyAddress != null);
+  //   assert(!(address != null && shelleyAddress != null));
+  //   final String addr = shelleyAddress != null ? shelleyAddress.toBech32() : address!;
+  //   final amount = lovelace + ada * 1000000;
+  //   return txOutput(ShelleyTransactionOutput(address: addr, value: ShelleyValue(coin: amount, multiAssets: [])));
+  // }
 }
 
 typedef CurrentEpochFunction = Future<int> Function();

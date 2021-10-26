@@ -13,5 +13,5 @@ abstract class Wallet extends ReadOnlyWallet {
   Bip32KeyPair get rootKeyPair;
   ShelleyAddress get firstUnusedSpendAddress;
   ShelleyAddress get firstUnusedChangeAddress;
-  Future<Result<RawTransaction, String>> sendAda({required ShelleyAddress toAddress, required Coin lovelaceAmount});
+  Future<Result<ShelleyTransaction, String>> sendAda({required ShelleyAddress toAddress, required Coin lovelaceAmount});
 }

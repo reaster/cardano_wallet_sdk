@@ -21,31 +21,31 @@ void main() {
       BlockchainAdapterFactory(authInterceptor: MyApiKeyAuthInterceptor(), networkId: NetworkId.testnet);
   test('Deserialization', () async {
     final builder = TransactionBuilder()
-        .blockchainAdapter(adapterFactory.adapter())
-        .input(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1)
-        .send(
-            address:
-                'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
-            lovelace: 40000)
-        .output(
+      ..blockchainAdapter(adapterFactory.adapter())
+      ..input(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1)
+      ..output(
           address:
-              'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
-          multiAssetBuilder: MultiAssetBuilder(coin: 340000)
-              .nativeAsset2(
-                policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
-                hexName1: '736174636f696e',
-                value1: 4000,
-                hexName2: '446174636f696e',
-                value2: 1100,
-              )
-              .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 9000)
-              .nativeAsset(
-                  policyId: '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
-                  hexName: '666174636f696e',
-                  value: 5000),
-        )
-        .fee(367965)
-        .ttl(26194586);
+              'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
+          value: ShelleyValue(coin: 40000, multiAssets: []))
+      ..output(
+        address:
+            'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
+        multiAssetBuilder: MultiAssetBuilder(coin: 340000)
+            .nativeAsset2(
+              policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+              hexName1: '736174636f696e',
+              value1: 4000,
+              hexName2: '446174636f696e',
+              value2: 1100,
+            )
+            .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 9000)
+            .nativeAsset(
+                policyId: '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                hexName: '666174636f696e',
+                value: 5000),
+      )
+      ..fee(367965)
+      ..ttl(26194586);
 
     final result = await builder.build();
     if (result.isErr()) fail(result.unwrapErr());

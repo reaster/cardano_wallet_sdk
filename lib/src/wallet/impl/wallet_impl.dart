@@ -14,6 +14,7 @@ import 'package:oxidized/oxidized.dart';
 ///
 class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   final HdWallet hdWallet;
+  final CoinSelectionAlgorithm coinSelectionFunction;
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
   WalletImpl({
@@ -21,6 +22,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     required ShelleyAddress stakeAddress,
     required String walletName,
     required this.hdWallet,
+    this.coinSelectionFunction = largestFirst,
   }) : super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
 
   @override
@@ -37,8 +39,10 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   bool _isUnusedChangeAddress(ShelleyAddress address) => true; //TODO
 
   @override
-  Future<Result<RawTransaction, String>> sendAda(
-      {required ShelleyAddress toAddress, required int lovelaceAmount}) async {
+  Future<Result<ShelleyTransaction, String>> sendAda({
+    required ShelleyAddress toAddress,
+    required int lovelaceAmount,
+  }) async {
     if (lovelaceAmount > balance) {
       return Err('insufficient balance');
     }
@@ -48,9 +52,30 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     if (toAddress.hrp != 'addr' && toAddress.hrp != 'addr_test') {
       return Err("not a valid shelley external addresses, expecting 'addr' or 'addr_test' prefix");
     }
-    final builder = TransactionBuilder().send(shelleyAddress: toAddress, lovelace: lovelaceAmount);
+    //coin selection:
+    final Coin maxFeeGuess = 200000; //0.2 ADA
+    final inputsResult = await coinSelectionFunction(
+      unspentInputsAvailable: this.unspentTransactions,
+      outputsRequested: [MultiAssetRequest.lovelace(lovelaceAmount + maxFeeGuess)],
+      ownedAddresses: this.addresses().toSet(),
+    );
+    if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
+    //use builder to build ShelleyTransaction
+    final builder = TransactionBuilder()
+      ..inputs(inputsResult.unwrap().inputs)
+      ..value(ShelleyValue(coin: lovelaceAmount, multiAssets: []))
+      //..toAddress(toAddress)
+      ..kit(hdWallet.deriveUnusedBaseAddressKit())
+      ..blockchainAdapter(blockchainAdapter);
+    final txResult = await builder.build();
+    if (txResult.isErr()) return Err(txResult.unwrapErr());
+    final ShelleyTransaction tx = txResult.unwrap();
+    print(tx.toCborHex);
+    final submitResult = await blockchainAdapter.submitTransaction(tx.serialize);
+    if (submitResult.isErr()) return Err(submitResult.unwrapErr());
+    return Ok(tx);
     //TODO calculate, fee, make change, sign and send
-    return Err('not yet implmented');
+    //return Err('not yet implmented');
   }
 
   @override
