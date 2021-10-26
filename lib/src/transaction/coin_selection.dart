@@ -27,9 +27,11 @@ import 'package:oxidized/oxidized.dart';
 /// }
 
 typedef CoinSelectionAlgorithm = Future<Result<CoinSelection, CoinSelectionError>> Function({
-  List<WalletTransaction> inputsAvailable,
-  List<MultiAssetRequest> outputsRequested,
+  required List<WalletTransaction> unspentInputsAvailable,
+  required List<MultiAssetRequest> outputsRequested,
+  required Set<ShelleyAddress> ownedAddresses,
   int coinSelectionLimit,
+  bool logSelection,
 });
 
 /// an single asset name and value under a MultiAsset policyId
