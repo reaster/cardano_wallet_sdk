@@ -8,11 +8,42 @@ import 'package:hex/hex.dart';
 import 'package:pinenacl/encoding.dart';
 // import 'package:quiver/strings.dart';
 
+//
+// An AssetId uniquly identifies a native token by combining the policyId with the token name.
+// Some properties name this type 'unit'.
+//
+// class AssetId {
+//   /// Policy ID of the asset as a hex encoded hash. Blank for non-mintable tokens (i.e. ADA).
+//   final String policyId;
+
+//   /// Hex-encoded asset name of the asset
+//   final String name;
+
+//   AssetId({required this.policyId, required this.name});
+
+//   /// ADA assetId has no policyId, just 'lovelace' hex encoded.
+//   factory AssetId.ada() => AssetId(policyId: '', name: lovelaceHex);
+
+//   /// return hex encoded assetId by appending policyId+name
+//   @override
+//   String toString() => policyId + name;
+//   @override
+//   int get hashCode => policyId.hashCode + name.hashCode;
+//   @override
+//   bool operator ==(Object other) {
+//     final isEqual =
+//         identical(this, other) || other is AssetId && runtimeType == other.runtimeType && length == other.length;
+//     return isEqual && this.policyId == (other as AssetId).policyId && this.name == other.name;
+//   }
+
+//   int get length => policyId.length + name.length;
+// }
+
 class CurrencyAsset {
   /// unique ID for this asset (i.e. policyId+assetName)
   final String assetId;
 
-  /// Policy ID of the asset. Blank if not set (only for ADA).
+  /// Policy ID of the asset as a hex encoded hash. Blank for non-mintable tokens (i.e. ADA).
   final String policyId;
 
   /// Hex-encoded asset name of the asset
