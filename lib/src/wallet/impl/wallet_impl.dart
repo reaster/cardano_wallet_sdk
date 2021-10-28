@@ -32,9 +32,9 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   ShelleyAddress get firstUnusedSpendAddress =>
       hdWallet.deriveUnusedBaseAddressKit(networkId: networkId, unusedCallback: _isUnusedChangeAddress).address;
 
-  bool _isUnusedSpendAddress(ShelleyAddress address) => true; //TODO
+  bool _isUnusedSpendAddress(ShelleyAddress address) => !addresses.toSet().contains(address);
 
-  bool _isUnusedChangeAddress(ShelleyAddress address) => true; //TODO
+  bool _isUnusedChangeAddress(ShelleyAddress address) => addresses.toSet().contains(address);
 
   @override
   Future<Result<ShelleyTransaction, String>> sendAda({
@@ -55,33 +55,31 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     final inputsResult = await coinSelectionFunction(
       unspentInputsAvailable: this.unspentTransactions,
       outputsRequested: [MultiAssetRequest.lovelace(lovelaceAmount + maxFeeGuess)],
-      ownedAddresses: this.addresses().toSet(),
+      ownedAddresses: this.addresses.toSet(),
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
     //use builder to build ShelleyTransaction
     final builder = TransactionBuilder()
       ..inputs(inputsResult.unwrap().inputs)
       ..value(ShelleyValue(coin: lovelaceAmount, multiAssets: []))
-      //..toAddress(toAddress)
-      ..kit(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key, verify key & toAddress
+      ..toAddress(toAddress)
+      ..kit(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
       ..changeAddress(this.firstUnusedChangeAddress);
-    final txResult = await builder.build();
+    final txResult = await builder.buildAndSign();
     if (txResult.isErr()) return Err(txResult.unwrapErr());
     final ShelleyTransaction tx = txResult.unwrap();
     print(tx.toCborHex);
     final submitResult = await blockchainAdapter.submitTransaction(tx.serialize);
     if (submitResult.isErr()) return Err(submitResult.unwrapErr());
     return Ok(tx);
-    //TODO calculate, fee, make change, sign and send
-    //return Err('not yet implmented');
   }
 
   @override
   Bip32KeyPair get rootKeyPair => Bip32KeyPair(signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
 }
 
-// Yorio Wallet interface:
+// Yorio Wallet interface for reference:
 
 // id: string;
 

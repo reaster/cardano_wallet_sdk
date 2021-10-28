@@ -56,7 +56,7 @@ Future<Result<ReadOnlyWallet, String>> testWallet(
   result.when(
     ok: (wallet) {
       print("Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
-      wallet.addresses().forEach((addr) {
+      wallet.addresses.forEach((addr) {
         print(addr.toBech32());
       });
       wallet.transactions.forEach((tx) {

@@ -37,7 +37,7 @@ abstract class ReadOnlyWallet {
   List<WalletTransaction> get transactions;
   List<WalletTransaction> get unspentTransactions;
   List<WalletTransaction> filterTransactions({required String assetId});
-  List<ShelleyAddress> addresses({TransactionQueryType type = TransactionQueryType.all});
+  List<ShelleyAddress> get addresses;
   bool refresh(
       {required int balance,
       required List<RawTransaction> transactions,

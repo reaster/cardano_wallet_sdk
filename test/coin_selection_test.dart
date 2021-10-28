@@ -32,7 +32,7 @@ void main() {
       final result = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(100 * ADA)],
-        ownedAddresses: wallet.addresses().toSet(),
+        ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result.isOk(), isTrue);
       final coins = result.unwrap();
@@ -43,7 +43,7 @@ void main() {
       final result2 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
-        ownedAddresses: wallet.addresses().toSet(),
+        ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result2.isOk(), isTrue);
       final coins2 = result2.unwrap();
@@ -57,7 +57,7 @@ void main() {
         unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(201 * ADA)],
         coinSelectionLimit: 4,
-        ownedAddresses: wallet.addresses().toSet(),
+        ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result3.isErr(), isTrue);
       expect(result3.unwrapErr().reason, CoinSelectionErrorEnum.InputValueInsufficient);
@@ -68,7 +68,7 @@ void main() {
         unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
         coinSelectionLimit: 1,
-        ownedAddresses: wallet.addresses().toSet(),
+        ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result4.isErr(), isTrue);
       expect(result4.unwrapErr().reason, CoinSelectionErrorEnum.InputsExhausted);

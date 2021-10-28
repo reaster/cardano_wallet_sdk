@@ -33,7 +33,7 @@ void main() {
 
             //addresses
             update.addresses.forEach((addr) => print(addr.toBech32()));
-            expect(wallet.addresses().length, equals(3));
+            expect(wallet.addresses.length, equals(3));
 
             //assets
             update.assets.forEach((key, value) => print("Asset($key: $key, value: $value"));

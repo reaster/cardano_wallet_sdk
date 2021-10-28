@@ -68,9 +68,9 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     if (this._transactions.length != transactions.length) {
       change = true;
       //swap raw transactions for wallet-centric transactions:
-      final Set<ShelleyAddress> addressSet = usedAddresses.toSet();
-      this._transactions =
-          transactions.map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: addressSet)).toList();
+      this._transactions = transactions
+          .map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: _usedAddresses.toSet()))
+          .toList();
     }
     if (this._stakeAccounts.length != stakeAccounts.length) {
       change = true;
@@ -80,7 +80,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   }
 
   @override
-  List<ShelleyAddress> addresses({TransactionQueryType type = TransactionQueryType.all}) => _usedAddresses;
+  List<ShelleyAddress> get addresses => _usedAddresses;
 
   @override
   String toString() => "Wallet(name: $walletName, balance: $balance lovelace)";
