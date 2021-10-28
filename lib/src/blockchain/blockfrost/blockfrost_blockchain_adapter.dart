@@ -1,4 +1,5 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_cache.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
@@ -8,6 +9,7 @@ import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:blockfrost/blockfrost.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/dio_call.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
 import 'package:dio/dio.dart';
@@ -508,6 +510,22 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     _blockCache.clear();
     _accountContentCache.clear();
   }
+
+  ///BlockchainCache
+  @override
+  AccountContent? cachedAccountContent(Bech32Address stakeAddress) => _accountContentCache[stakeAddress];
+
+  ///BlockchainCache
+  @override
+  Block? cachedBlock(BlockHashHex blockId) => _blockCache[blockId];
+
+  ///BlockchainCache
+  @override
+  CurrencyAsset? cachedCurrencyAsset(String assetId) => _assetCache[assetId];
+
+  ///BlockchainCache
+  @override
+  RawTransaction? cachedTransaction(TxIdHex txId) => _transactionCache[txId];
 }
 
 
