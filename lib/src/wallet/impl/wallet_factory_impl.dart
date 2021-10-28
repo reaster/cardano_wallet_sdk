@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:bip32_ed25519/src/bip32_ed25519/ed25519_bip32.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';

@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
@@ -36,7 +39,8 @@ void main() {
     // print("lovelacePseudoAsset.assetId:${lovelacePseudoAsset.assetId}");
     // print("lovelacePseudoAsset.name:${lovelacePseudoAsset.name}");
     expect(lovelacePseudoAsset.fingerprint, 'asset1cgv8ghtns4cwwprrekqu24zmz9p3t927uet8n8');
-    expect(lovelacePseudoAsset.assetId, lovelacePseudoAsset.assetName, reason: 'if no policyId, assetId is just assetName hex');
+    expect(lovelacePseudoAsset.assetId, lovelacePseudoAsset.assetName,
+        reason: 'if no policyId, assetId is just assetName hex');
     expect(lovelacePseudoAsset.name, 'lovelace');
     expect(lovelacePseudoAsset.metadata?.decimals, 6);
     expect(lovelacePseudoAsset.isADA, true);

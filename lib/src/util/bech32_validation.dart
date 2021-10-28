@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:oxidized/oxidized.dart';
 import 'package:quiver/strings.dart';
 
@@ -5,7 +8,8 @@ import 'package:quiver/strings.dart';
 /// if bech32 string has the correct prefix, '1' seperator, legal data characters and optionaly correct length,
 /// the normalized correct form is returned. If it's not legal, then an explanation is return in the error message.
 ///
-Result<String, String> validBech32({required String bech32, required List<String> hrpPrefixes, int? dataPartRequiredLength}) {
+Result<String, String> validBech32(
+    {required String bech32, required List<String> hrpPrefixes, int? dataPartRequiredLength}) {
   if (hrpPrefixes.isEmpty) {
     throw Exception("validBech32 hrpPrefixes array must not be empty");
   }
@@ -15,7 +19,8 @@ Result<String, String> validBech32({required String bech32, required List<String
   print(hrpPrefixes);
   final prefix = hrpPrefixes.firstWhere((prefix) => lowerCase.startsWith(prefix), orElse: () => '');
   if (isBlank(prefix)) return Err("must start with ${hrpPrefixes.join(' or ')}");
-  if (lowerCase.length > prefix.length && lowerCase.codeUnitAt(prefix.length) != '1'.codeUnitAt(0)) return Err("missing '1' after prefix");
+  if (lowerCase.length > prefix.length && lowerCase.codeUnitAt(prefix.length) != '1'.codeUnitAt(0))
+    return Err("missing '1' after prefix");
   final data = lowerCase.length > prefix.length ? lowerCase.substring(prefix.length + 1) : '';
   int invalidCharIndex = _firstIllegalDataChar(data);
   if (invalidCharIndex > -1) return Err("invalid character: ${data.substring(invalidCharIndex, invalidCharIndex + 1)}");

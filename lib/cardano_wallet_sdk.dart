@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 library cardano_wallet_sdk;
 
 export './src/address/hd_wallet.dart';

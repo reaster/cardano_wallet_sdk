@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:test/test.dart';
 

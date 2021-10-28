@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:test/test.dart';
 import 'package:cardano_wallet_sdk/src/price/price_service.dart';
 import 'package:cardano_wallet_sdk/src/price/coingecko_price_service.dart';
@@ -6,7 +9,8 @@ void main() {
   PriceService service = CoingeckoPriceService();
   group('test CoingeckoPriceService', () {
     // Future<Result<double, String>> currentPrice({String from, String to});
-    test('test currentPrice - calls https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=USD', () async {
+    test('test currentPrice - calls https://api.coingecko.com/api/v3/simple/price?ids=cardano&vs_currencies=USD',
+        () async {
       final result1 = await service.currentPrice(from: 'ada', to: 'usd');
       result1.when(
           ok: (price) {

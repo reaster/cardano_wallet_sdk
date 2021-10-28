@@ -1,5 +1,7 @@
-import 'dart:convert';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
 
+import 'dart:convert';
 import 'dart:math';
 
 ///
@@ -55,7 +57,8 @@ int epochToMilliseconds({int epoch = 0}) =>
 ///
 /// convert epoch to UTC timestamp
 ///
-DateTime epochToDateTime({int epoch = 0}) => DateTime.fromMillisecondsSinceEpoch(epochToMilliseconds(epoch: epoch), isUtc: true);
+DateTime epochToDateTime({int epoch = 0}) =>
+    DateTime.fromMillisecondsSinceEpoch(epochToMilliseconds(epoch: epoch), isUtc: true);
 
 ///
 /// convert slot to unix time in milliseconds
@@ -68,7 +71,8 @@ int slotToMilliseconds({int slot = 0}) =>
 ///
 /// convert slot to UTC timestamp
 ///
-DateTime slotToDateTime({int slot = 0}) => DateTime.fromMillisecondsSinceEpoch(slotToMilliseconds(slot: slot), isUtc: true);
+DateTime slotToDateTime({int slot = 0}) =>
+    DateTime.fromMillisecondsSinceEpoch(slotToMilliseconds(slot: slot), isUtc: true);
 
 ///
 /// Convert Cardano epoch (epoch * 432000 + 1506203091 in UTC) to DateTime and back.

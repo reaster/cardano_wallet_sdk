@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:intl/intl.dart';
 
 ///
@@ -52,14 +55,21 @@ class AdaFormattter {
   /// unsupported formats (e.g. accounting format for currencies.)
   // TODO(alanknight): Should we allow decimalDigits on other numbers.
   factory AdaFormattter.currency(
-          {String? locale = 'en', String? name = ADA, String? symbol = symbol, int? decimalDigits = 6, String? customPattern}) =>
+          {String? locale = 'en',
+          String? name = ADA,
+          String? symbol = symbol,
+          int? decimalDigits = 6,
+          String? customPattern}) =>
       AdaFormattter(
           formatter: NumberFormat.currency(
               locale: locale, name: name, symbol: symbol, decimalDigits: decimalDigits, customPattern: customPattern));
 
   /// A number format for compact currency representations, e.g. "₳1.2M" instead of "₳1,200,000".
-  factory AdaFormattter.compactCurrency({String? locale = 'en', String? name = ADA, String? symbol = symbol, int? decimalDigits = 6}) =>
-      AdaFormattter(formatter: NumberFormat.compactCurrency(locale: locale, name: name, symbol: symbol, decimalDigits: decimalDigits));
+  factory AdaFormattter.compactCurrency(
+          {String? locale = 'en', String? name = ADA, String? symbol = symbol, int? decimalDigits = 6}) =>
+      AdaFormattter(
+          formatter:
+              NumberFormat.compactCurrency(locale: locale, name: name, symbol: symbol, decimalDigits: decimalDigits));
 
   /// Creates a [NumberFormat] for currencies, using the simple symbol for the
   /// currency if one is available (e.g. $, €), so it should only be used if the
@@ -92,7 +102,8 @@ class AdaFormattter {
   /// based on the currency name or the locale. See
   /// [NumberFormat.simpleCurrency].
   factory AdaFormattter.compactSimpleCurrency({String? locale = 'en', String? name = ADA, int? decimalDigits = 6}) =>
-      AdaFormattter(formatter: NumberFormat.compactSimpleCurrency(locale: locale, name: name, decimalDigits: decimalDigits));
+      AdaFormattter(
+          formatter: NumberFormat.compactSimpleCurrency(locale: locale, name: name, decimalDigits: decimalDigits));
 
   /// Convert lovelace to ADA and format [number] according to our pattern and return the formatted string.
   String format(lovelace) => formatter.format(lovelace / 1000000.0);

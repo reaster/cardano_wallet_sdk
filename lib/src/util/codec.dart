@@ -1,5 +1,7 @@
-import 'dart:typed_data';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
 
+import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'dart:convert';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';

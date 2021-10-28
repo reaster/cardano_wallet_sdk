@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:hex/hex.dart';
@@ -14,7 +17,8 @@ void main() {
   test('validateMnemonic', () {
     expect(bip39.validateMnemonic('sleep kitten'), isFalse, reason: 'fails for a mnemonic that is too short');
 
-    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten'), isFalse, reason: 'fails for a mnemonic that is too short');
+    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten'), isFalse,
+        reason: 'fails for a mnemonic that is too short');
 
     expect(
         bip39.validateMnemonic(
@@ -22,10 +26,12 @@ void main() {
         isFalse,
         reason: 'fails for a mnemonic that is too long');
 
-    expect(bip39.validateMnemonic('turtle front uncle idea crush write shrug there lottery flower risky shell'), isFalse,
+    expect(
+        bip39.validateMnemonic('turtle front uncle idea crush write shrug there lottery flower risky shell'), isFalse,
         reason: 'fails if mnemonic words are not in the word list');
 
-    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten'), isFalse,
+    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten'),
+        isFalse,
         reason: 'fails for invalid checksum');
 
     expect(bip39.validateMnemonic(testMnemonic1), isTrue, reason: "testMnemonic1 valid");

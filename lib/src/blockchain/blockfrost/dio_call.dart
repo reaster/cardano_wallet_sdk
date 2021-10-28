@@ -1,5 +1,7 @@
-import 'dart:io';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
 
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:quiver/strings.dart';
 import 'package:oxidized/oxidized.dart';
@@ -12,7 +14,10 @@ typedef void ResponseFunction({Response? response, DioError? dioError, Exception
 /// DIO network request wrapper that handles checking response and packaging result or error message. Returns an oxidizer Result.
 ///
 Future<Result<T, String>> dioCall<T>(
-    {required NetworkRquest request, OneArgFunction? onSuccess, ResponseFunction? onError, String? errorSubject}) async {
+    {required NetworkRquest request,
+    OneArgFunction? onSuccess,
+    ResponseFunction? onError,
+    String? errorSubject}) async {
   try {
     final response = await request();
     if (response.statusCode != 200 || response.data == null) {

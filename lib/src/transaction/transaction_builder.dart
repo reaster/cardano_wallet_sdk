@@ -1,6 +1,9 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:bip32_ed25519/api.dart';
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
@@ -10,7 +13,6 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:pinenacl/tweetnacl.dart';
-// import 'coin_selection.dart';
 
 ///
 /// Manages details of building a correct transaction, including coin collection, fee calculation,
