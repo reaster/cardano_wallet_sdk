@@ -1,5 +1,3 @@
-// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-// import 'package:cardano_wallet_sdk/src/bip32_ed25519/api.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
@@ -106,7 +104,7 @@ class ShelleyAddress extends ByteList {
   @override
   int get hashCode => hashObjects(this);
 
-  static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
+  //static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
 
   static String _computeHrp(NetworkId id, String prefix) =>
       id == NetworkId.testnet ? (prefix.endsWith(testnetHrpSuffix) ? prefix : prefix + testnetHrpSuffix) : prefix;

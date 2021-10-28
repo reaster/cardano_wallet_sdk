@@ -1,16 +1,12 @@
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter_factory.dart';
-// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cardano_wallet_sdk/src/util/misc.dart';
-// import 'package:cbor/cbor.dart';
-// import 'package:hex/hex.dart';
 import 'package:test/test.dart';
-
 import 'my_api_key_auth.dart';
 
 ///
@@ -47,9 +43,7 @@ void main() {
       ..fee(367965)
       ..ttl(26194586);
 
-    final result = await builder.build();
-    if (result.isErr()) fail(result.unwrapErr());
-    ShelleyTransaction tx = result.unwrap();
+    final ShelleyTransaction tx = await builder.build();
     final txHex = tx.toCborHex;
     //print(txHex);
     final expectedHex =
@@ -61,7 +55,6 @@ void main() {
     //print(txHex2);
     expect(txHex, txHex2);
     // print(codec.decodedPrettyPrint(false));
-    //print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
 
   /// from fees.rs tests
@@ -98,8 +91,10 @@ void main() {
     ShelleyAddressKit kit = hdWallet.deriveUnusedBaseAddressKit();
     final input = ShelleyTransactionInput(
         transactionId: '3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7', index: 0);
-    final output =
-        ShelleyTransactionOutput(address: kit.address.toBech32(), value: ShelleyValue(coin: 1, multiAssets: []));
+    final output = ShelleyTransactionOutput(
+        address:
+            'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt',
+        value: ShelleyValue(coin: 1, multiAssets: []));
     final body = ShelleyTransactionBody(inputs: [input], outputs: [output], fee: 94002, ttl: 10);
     final bodyData = body.toCborMap().getData();
     print(b2s(bodyData));
