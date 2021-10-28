@@ -6,7 +6,8 @@ SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutt
 
 Currently this project is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
 
-Under a [Fund 6 proposal](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK-Fund6/368970-48088) this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management, hardware wallets and other essential features needed to write dApps and other types of Cardano clients.
+Under a Fund 7 proposal this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management, hardware wallets and other essential features needed to write dApps and other types of Cardano clients. If you'd like to support this project, be sure to 
+vote for it in Catalyst Fund 7!
 
 ## Kick the Tires
 To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
@@ -78,7 +79,7 @@ wallet.transactions.forEach((tx) => print(tx));
 
 List addresses.
 ```
-wallet.addresses().forEach((addr) => print(addr.toBech32()));
+wallet.addresses.forEach((addr) => print(addr.toBech32()));
 ```
 
 List currency balances.
@@ -133,7 +134,7 @@ if (result.isOk()) { print("ADA sent"); }
 ```
 
 
-### Planned [Fund 6 Features](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK-Fund6/368970-48088)
+### Planned Features
 * Smart Contracts - Consisting of examples and supporting code.
 * Persistence - Caching blockchain data to speed state restoration.
 * Native Token/NFT - Provide minting and burning support.
@@ -158,3 +159,7 @@ The unit tests should now pass:
 ```
 dart test
 ```
+
+***
+Copyright 2021 Richard Easterling\
+SPDX-License-Identifier: Apache-2.0
