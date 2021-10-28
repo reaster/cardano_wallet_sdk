@@ -89,7 +89,7 @@ class WalletTransactionImpl implements WalletTransaction {
   @override
   TransactionStatus get status => rawTransaction.status;
   @override
-  Coin get fees => payedFees ? rawTransaction.fees : 0;
+  Coin get fees => payedFees ? rawTransaction.fees : coinZero;
   @override
   DateTime get time => rawTransaction.time;
   @override
@@ -105,10 +105,10 @@ class WalletTransactionImpl implements WalletTransaction {
           .join(', ');
 
   @override
-  Coin get amount => currencies[lovelaceHex] ?? 0;
+  Coin get amount => currencies[lovelaceHex] ?? coinZero;
 
   @override
-  TransactionType get type => amount >= 0 ? TransactionType.deposit : TransactionType.withdrawal;
+  TransactionType get type => amount >= coinZero ? TransactionType.deposit : TransactionType.withdrawal;
 
   @override
   String toString() =>
@@ -118,7 +118,7 @@ class WalletTransactionImpl implements WalletTransaction {
   bool containsCurrency({required String assetId}) => currencies[assetId] != null;
 
   @override
-  Coin currencyAmount({required String assetId}) => currencies[assetId] ?? 0;
+  Coin currencyAmount({required String assetId}) => currencies[assetId] ?? coinZero;
 
   bool get payedFees => type == TransactionType.withdrawal;
 }
@@ -179,17 +179,19 @@ extension TransactionScanner on RawTransaction {
   }
 
   ///
-  ///return a map of all currencies with their net quantity change for a given set of
-  ///addresses (i.e. a specific wallet).
+  /// return a map of all currencies with their net quantity change for a given set of
+  /// addresses (i.e. a specific wallet).
+  /// An AssetId is the hex representation of a policyId concatenated to the coin name
+  /// in hex (i.e. unit).
   ///
-  Map<String, Coin> sumCurrencies({required Set<ShelleyAddress> addressSet}) {
+  Map<AssetId, Coin> sumCurrencies({required Set<ShelleyAddress> addressSet}) {
     //if (_cachedSums.isEmpty) {
-    Map<String, Coin> result = {lovelaceHex: 0};
+    Map<String, Coin> result = {lovelaceHex: coinZero};
     for (var input in inputs) {
       final bool myMoney = addressSet.contains(input.address);
       if (myMoney) {
         for (var amount in input.amounts) {
-          final int beginning = result[amount.unit] ?? 0;
+          final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning - amount.quantity;
           print(
               "${time} tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
@@ -200,7 +202,7 @@ extension TransactionScanner on RawTransaction {
       final bool myMoney = addressSet.contains(output.address);
       if (myMoney) {
         for (var amount in output.amounts) {
-          final Coin beginning = result[amount.unit] ?? 0;
+          final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning + amount.quantity;
           print(
               "${time} tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
@@ -212,6 +214,7 @@ extension TransactionScanner on RawTransaction {
 
   ///
   /// filter addresses to those found in this wallet
+  /// TODO does this actually do anything?
   ///
   Set<ShelleyAddress> filterAddresses({required Set<ShelleyAddress> addressSet}) {
     Set<ShelleyAddress> result = {};
@@ -225,6 +228,7 @@ extension TransactionScanner on RawTransaction {
         result.add(output.address);
       }
     }
+    print("filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
     return result;
   }
 }
