@@ -223,6 +223,9 @@ BlockfrostBlockchainAdapter buildMockWallet2() {
   when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx3)).thenAnswer((_) async => txContentUtxo(tx3));
   when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx4)).thenAnswer((_) async => txContentUtxo(tx4));
 
+  when(cardanoTransactionsApi.txSubmitPost(contentType: 'application/cbor', data: anyNamed('data')))
+      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: 'success'));
+
   //native assets
   when(cardanoAssetsApi.assetsAssetGet(asset: asset1)).thenAnswer((_) async => asset);
 
