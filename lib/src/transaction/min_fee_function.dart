@@ -25,3 +25,6 @@ class LinearFee {
 /// TODO update this from blockchain
 /// TODO verify fee calculation context of this values
 const defaultLinearFee = LinearFee(constant: 2, coefficient: 500);
+
+/// default fee for simple ADA transaction
+const defaultFee = 200000; // 0.2 ADA

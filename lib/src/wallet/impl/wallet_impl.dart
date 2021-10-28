@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
@@ -65,8 +63,9 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ..inputs(inputsResult.unwrap().inputs)
       ..value(ShelleyValue(coin: lovelaceAmount, multiAssets: []))
       //..toAddress(toAddress)
-      ..kit(hdWallet.deriveUnusedBaseAddressKit())
-      ..blockchainAdapter(blockchainAdapter);
+      ..kit(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key, verify key & toAddress
+      ..blockchainAdapter(blockchainAdapter)
+      ..changeAddress(this.firstUnusedChangeAddress);
     final txResult = await builder.build();
     if (txResult.isErr()) return Err(txResult.unwrapErr());
     final ShelleyTransaction tx = txResult.unwrap();

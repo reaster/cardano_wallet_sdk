@@ -4,10 +4,12 @@ import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
+import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_tx_body_logic_ext.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:pinenacl/tweetnacl.dart';
 // import 'coin_selection.dart';
 
 ///
@@ -17,16 +19,12 @@ import 'package:oxidized/oxidized.dart';
 class TransactionBuilder {
   BlockchainAdapter? _blockchainAdapter;
   ShelleyAddressKit? _kit;
-  // CoinSelectionAlgorithm _coinSelectionFunction = largestFirst;
-  // List<WalletTransaction> _unspentInputsAvailable = [];
-  // List<MultiAssetRequest> _coinSelectionOutputsRequested = [];
-  // Set<ShelleyAddress> _coinSelectionOwnedAddresses = {};
-  // int _coinSelectionLimit = defaultCoinSelectionLimit;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
   ShelleyAddress? _changeAddress;
   ShelleyValue _value = ShelleyValue(coin: 0, multiAssets: []);
-  Coin _fee = 0;
+  Coin _fee = defaultFee;
+  Coin _minFee = coinZero;
   int _ttl = 0;
   List<int>? _metadataHash;
   int? _validityStartInterval;
@@ -44,10 +42,10 @@ class TransactionBuilder {
   /// How often to check current slot. If 1 minute old, update
   final staleSlotCuttoff = Duration(seconds: 60);
 
-  Future<Result<ShelleyTransaction, String>> build() async {
+  Future<Result<ShelleyTransaction, String>> build({bool mustBalance = true}) async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
-    _optionallySetupChangeOutput();
+    //calculate time to live if not supplied
     if (_ttl == 0) {
       final result = await _calculateTimeToLive();
       if (result.isErr()) {
@@ -56,20 +54,56 @@ class TransactionBuilder {
       _ttl = result.unwrap();
     }
     if (_inputs.isEmpty) return Err("inputs are empty");
-
+    //convert value into spend output if not zero
+    if (_value.coin > coinZero) {
+      ShelleyTransactionOutput spendOutput = ShelleyTransactionOutput(address: _kit!.address.toBech32(), value: _value);
+      _outputs.add(spendOutput);
+    }
     var body = _buildBody();
-    var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    _fee = _calculateMinFee(tx);
+    //adjust change to balance transaction
+    final balanceResult =
+        body.balancedOutputsWithChange(changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+    if (balanceResult.isErr()) return Err(balanceResult.unwrapErr());
+    _outputs = balanceResult.unwrap();
+    //build the complete signed transaction so we can calculate a more accurate fee
     body = _buildBody();
-    //sign
+    _witnessSet = _sign(body: body, kit: _kit!, fakeSignature: true);
+    var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    _fee = _calculateMinFee(tx: tx, minFee: _minFee);
+    //rebalance change to fit the new fee
+    final balanceResult2 =
+        body.balancedOutputsWithChange(changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+    if (balanceResult2.isErr()) return Err(balanceResult2.unwrapErr());
+    _outputs = balanceResult2.unwrap();
+    body = _buildBody();
+    //re-sign to capture changes
+    _witnessSet = _sign(body: body, kit: _kit!);
+    tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    if (mustBalance) {
+      final balancedResult = tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
+      if (balancedResult.isErr()) return Err(balancedResult.unwrapErr());
+    }
+    return Ok(tx);
+  }
+
+  ShelleyTransactionWitnessSet _sign({
+    required ShelleyTransactionBody body,
+    required ShelleyAddressKit kit,
+    bool fakeSignature = false,
+  }) {
     final bodyData = body.toCborMap().getData();
     List<int> hash = blake2bHash256(bodyData);
-    final signature = _kit!.signingKey!.sign(hash);
-    final VerifyKey verifyKey = _kit!.verifyKey!.publicKey;
+    final signature = fakeSignature ? _fakeSign(hash) : kit.signingKey!.sign(hash);
+    final VerifyKey verifyKey = kit.verifyKey!.publicKey;
     final witness = ShelleyVkeyWitness(signature: signature, vkey: verifyKey.toUint8List());
-    _witnessSet = ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
-    tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    return Ok(tx);
+    return ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
+  }
+
+  /// just has to be correct length for size calculation
+  SignedMessage _fakeSign(List<int> message) {
+    var sm = Uint8List(message.length + TweetNaCl.signatureLength);
+    sm.fillRange(0, sm.length, 42);
+    return SignedMessage.fromList(signedMessage: sm);
   }
 
   List<int> transactionBodyHash() => blake2bHash256(_buildBody().toCborMap().getData());
@@ -84,16 +118,6 @@ class TransactionBuilder {
         mint: _mint.isEmpty ? null : _mint,
       );
 
-  /// TODO
-  Map<AssetId, Price> calculateBalance() {
-    return {};
-  }
-
-  /// TODO
-  void _optionallySetupChangeOutput() {
-    //_changeAddress
-  }
-
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) return Err("'blockchainAdapter' property must be set");
     // if (_inputs.isEmpty && _value.coin == 0) return Err("'value' property must be set");
@@ -107,9 +131,10 @@ class TransactionBuilder {
 
   /// Because transaction size effects fees, this method should be called last, after all other
   /// ShelleyTransactionBody properties are set.
-  Coin _calculateMinFee(ShelleyTransaction tx) {
+  /// if minFee is set, then this determines the lower minimum fee bound.
+  Coin _calculateMinFee({required ShelleyTransaction tx, Coin minFee = coinZero}) {
     Coin calculatedFee = _minFeeFunction(transaction: tx, linearFee: _linearFee);
-    final fee = (calculatedFee < _fee) ? _fee : calculatedFee;
+    final fee = (calculatedFee < minFee) ? minFee : calculatedFee;
     return fee;
   }
 
@@ -164,6 +189,8 @@ class TransactionBuilder {
   void validityStartInterval(int validityStartInterval) => _validityStartInterval = validityStartInterval;
 
   void fee(Coin fee) => _fee = fee;
+
+  void minFee(Coin minFee) => _minFee = minFee;
 
   void mint(ShelleyMultiAsset mint) => _mint.add(mint);
 
