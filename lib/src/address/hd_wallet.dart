@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:bip39/bip39.dart' as bip39;
@@ -7,9 +10,11 @@ import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 
 ///
-/// This class generates cryptographic keys and addresses given a secret set of nmemonic BIP-39 words.
-/// It generates Cardano Shelley addresses by default, but can be used to generate and/or restore any wallet
-/// based on the BIP32-ED25519 standard.
+/// This class implements a hierarchical deterministic wallet that generates cryptographic keys and
+/// addresses given a root signing key. It also supports the creation/restoration of the root signing
+/// key from a set of nmemonic BIP-39 words.
+/// Cardano Shelley addresses are supported by default, but the code is general enough to support any
+/// wallet based on the BIP32-ED25519 standard.
 ///
 /// This code builds on following standards:
 ///
@@ -82,13 +87,13 @@ import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 ///
 ///
 class HdWallet {
-  //final Uint8List seed;
   final Bip32SigningKey rootSigningKey;
   final _derivator = Bip32Ed25519KeyDerivation.instance;
-  //final Map<int, Bip32KeyPair> _roleKeysCache = {};
 
+  /// root constructor taking a root signing key
   HdWallet({required this.rootSigningKey});
 
+  ///
   factory HdWallet.fromSeed(Uint8List seed) => HdWallet(rootSigningKey: _bip32signingKey(seed));
 
   factory HdWallet.fromHexEntropy(String hexEntropy) =>
@@ -96,14 +101,19 @@ class HdWallet {
 
   factory HdWallet.fromMnemonic(String mnemonic) => HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
 
+  /// return the root signing key
   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
 
+  /// derive root signing key given a seed
   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
     final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
     final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
     return root_xsk;
   }
 
+  /// The magic of parent-to-child key-pair derivation happens here. If a parent signing key is
+  /// provided, a child signing key is generated. If a parent verify key is provided and the index
+  /// is NOT hardened, then a child verify key is also included.
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
     Bip32SigningKey? signingKey =
@@ -116,17 +126,7 @@ class HdWallet {
     return Bip32KeyPair(signingKey: signingKey, verifyKey: verifyKey);
   }
 
-  Bip32KeyPair2 derive2({required Bip32KeyPair2 keys, required int index}) {
-    // computes a child extended private key from the parent extended private key.
-    Bip32PrivateKey? privateKey = keys.privateKey != null ? _derivator.ckdPriv(keys.privateKey!, index) : null;
-    Bip32PublicKey? publicKey = isHardened(index)
-        ? null
-        : keys.publicKey != null
-            ? _derivator.ckdPub(keys.publicKey!, index)
-            : _derivator.neuterPriv(privateKey!);
-    return Bip32KeyPair2(privateKey: privateKey, publicKey: publicKey);
-  }
-
+  /// run down the 5 level hierarchical chain to derive a new address key pair.
   Bip32KeyPair deriveAddressKeys(
       {int purpose = defaultPurpose,
       int coinType = defaultCoinType,
@@ -178,10 +178,12 @@ class HdWallet {
     return result;
   }
 
+  /// construct a Shelley base address give a public spend key, public stake key and networkId
   ShelleyAddress toBaseAddress(
           {required Bip32PublicKey spend, required Bip32PublicKey stake, NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toBaseAddress(spend: spend, stake: stake, networkId: networkId);
 
+  /// construct a Shelley staking address give a public spend key and networkId
   ShelleyAddress toRewardAddress({required Bip32PublicKey spend, NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
@@ -191,16 +193,6 @@ class Bip32KeyPair {
   final Bip32SigningKey? signingKey;
   final Bip32VerifyKey? verifyKey;
   const Bip32KeyPair({this.signingKey, this.verifyKey});
-}
-
-// final decoded = bech32.decode(address, 256);
-// final hrp = decoded.hrp;
-// final bytes = Bech32Coder(hrp: hrp).decode(address);
-/// Private/signing and public/varification key pair.
-class Bip32KeyPair2 {
-  final Bip32PrivateKey? privateKey;
-  final Bip32PublicKey? publicKey;
-  const Bip32KeyPair2({this.privateKey, this.publicKey});
 }
 
 /// Everything you need to add a spend (or change) address to a UTxO transaction.
