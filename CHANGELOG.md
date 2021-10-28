@@ -1,3 +1,10 @@
+## [0.1.0-alpha.6] - 2021-10-28
+
+* add coin selection 
+* tx balance and change calculation
+* TransactionBuilder.buildAndSign working!
+* coin selection & buildAndSign tests
+
 ## [0.1.0-alpha.5] - 2021-10-14
 
 * document use-cases in readme
