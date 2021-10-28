@@ -21,6 +21,7 @@ class TransactionBuilder {
   ShelleyAddressKit? _kit;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
+  ShelleyAddress? _toAddress;
   ShelleyAddress? _changeAddress;
   ShelleyValue _value = ShelleyValue(coin: 0, multiAssets: []);
   Coin _fee = defaultFee;
@@ -42,7 +43,20 @@ class TransactionBuilder {
   /// How often to check current slot. If 1 minute old, update
   final staleSlotCuttoff = Duration(seconds: 60);
 
-  Future<Result<ShelleyTransaction, String>> build({bool mustBalance = true}) async {
+  /// simple build - assemble transaction without any validation
+  ShelleyTransaction build() => ShelleyTransaction(body: _buildBody(), witnessSet: _witnessSet, metadata: _metadata);
+
+  ///
+  /// Builds valid, signed transaction inlcuding checking required inputs, calculating ttl, fee and change.
+  /// The fee is automaticly calculated and adjusted based on the final transaction size.
+  ///
+  /// Coin selection must be done externally and assigned to 'inputs' property.
+  /// If no outputs are supplied, a toAddress and value are required instead.
+  /// A changeAddress is required.
+  /// ShelleyAddressKit is required for signing the transaction
+  /// A BlockchainAdapter must be supplied for blockchain access and cache.
+  ///
+  Future<Result<ShelleyTransaction, String>> buildAndSign({bool mustBalance = true}) async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
     //calculate time to live if not supplied
@@ -55,8 +69,8 @@ class TransactionBuilder {
     }
     if (_inputs.isEmpty) return Err("inputs are empty");
     //convert value into spend output if not zero
-    if (_value.coin > coinZero) {
-      ShelleyTransactionOutput spendOutput = ShelleyTransactionOutput(address: _kit!.address.toBech32(), value: _value);
+    if (_value.coin > coinZero && _toAddress != null) {
+      ShelleyTransactionOutput spendOutput = ShelleyTransactionOutput(address: _toAddress!.toBech32(), value: _value);
       _outputs.add(spendOutput);
     }
     var body = _buildBody();
@@ -120,9 +134,8 @@ class TransactionBuilder {
 
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) return Err("'blockchainAdapter' property must be set");
-    // if (_inputs.isEmpty && _value.coin == 0) return Err("'value' property must be set");
     if (_inputs.isEmpty) return Err("'inputs' property must be set");
-    if (_outputs.isEmpty && _value.coin == 0)
+    if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null))
       return Err("when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
     if (_kit == null) return Err("'kit' (ShelleyAddressKit) property must be set");
     if (_changeAddress == null) return Err("'changeAddress' property must be set");
@@ -177,6 +190,8 @@ class TransactionBuilder {
   void value(ShelleyValue value) => _value = value;
 
   void changeAddress(ShelleyAddress changeAddress) => _changeAddress = changeAddress;
+
+  void toAddress(ShelleyAddress toAddress) => _toAddress = toAddress;
 
   void currentSlot(int currentSlot) => _currentSlot = currentSlot;
 
