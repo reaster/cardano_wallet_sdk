@@ -4,7 +4,6 @@ import 'mock_wallet_2.dart';
 
 const ADA = 1000000;
 void main() {
-  //final formatter = AdaFormattter.compactCurrency();
   final mockWalletAdapter = buildMockWallet2();
   final address = ShelleyAddress.fromBech32(stakeAddr2);
   final wallet = ReadOnlyWalletImpl(
@@ -12,8 +11,8 @@ void main() {
     stakeAddress: address,
     walletName: 'mock wallet',
   );
-  group('MockPublicWallet -', () {
-    test('create testnet wallet 2', () async {
+  group('coin slection: largestFirst -', () {
+    setUp(() async {
       //setup wallet
       final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: address);
       expect(updateResult.isOk(), isTrue);
@@ -28,9 +27,10 @@ void main() {
       expect(filteredTxs.length, equals(4));
       final unspentTxs = wallet.unspentTransactions;
       expect(unspentTxs.length, equals(2));
-      //setup coin selection - 100 ADA
+    });
+    test('setup coin selection - 100 ADA', () async {
       final result = await largestFirst(
-        unspentInputsAvailable: unspentTxs,
+        unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(100 * ADA)],
         ownedAddresses: wallet.addresses().toSet(),
       );
@@ -38,9 +38,10 @@ void main() {
       final coins = result.unwrap();
       expect(coins.inputs.length, 1);
       expect(coins.inputs[0].index, 0);
-      //setup coin selection - 101 ADA
+    });
+    test('setup coin selection - 101 ADA', () async {
       final result2 = await largestFirst(
-        unspentInputsAvailable: unspentTxs,
+        unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
         ownedAddresses: wallet.addresses().toSet(),
       );
@@ -49,18 +50,22 @@ void main() {
       expect(coins2.inputs.length, 2);
       expect(coins2.inputs[0].index, 0);
       expect(coins2.inputs[1].index, 1);
+    });
+    test('insufficient funds error', () async {
       //setup coin selection - 201 ADA, which will result in insufficient funds error
       final result3 = await largestFirst(
-        unspentInputsAvailable: unspentTxs,
+        unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(201 * ADA)],
         coinSelectionLimit: 4,
         ownedAddresses: wallet.addresses().toSet(),
       );
       expect(result3.isErr(), isTrue);
       expect(result3.unwrapErr().reason, CoinSelectionErrorEnum.InputValueInsufficient);
+    });
+    test('InputsExhausted', () async {
       //setup coin selection - 101 ADA and coinSelectionLimit = 1 - which will give InputsExhausted
       final result4 = await largestFirst(
-        unspentInputsAvailable: unspentTxs,
+        unspentInputsAvailable: wallet.unspentTransactions,
         outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
         coinSelectionLimit: 1,
         ownedAddresses: wallet.addresses().toSet(),
