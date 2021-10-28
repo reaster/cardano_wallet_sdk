@@ -51,6 +51,31 @@ class MultiAssetRequest {
       MultiAssetRequest(policyId: '', assets: [AssetRequest(name: lovelaceHex, value: amount)]);
 }
 
+///
+/// Special builder for creating ShelleyValue objects containing multi-asset transactions.
+///
+class MultiAssetRequestBuilder {
+  List<MultiAssetRequest> _multiAssets = [];
+
+  MultiAssetRequestBuilder({required Coin coin})
+      : _multiAssets = [
+          MultiAssetRequest(policyId: '', assets: [AssetRequest(name: lovelaceHex, value: coin)])
+        ];
+
+  List<MultiAssetRequest> build() => _multiAssets;
+
+  MultiAssetRequestBuilder multiAssetRequest(MultiAssetRequest multiAssetRequest) {
+    _multiAssets.add(multiAssetRequest);
+    return this;
+  }
+
+  MultiAssetRequestBuilder nativeAsset({required String policyId, String? hexName, required Coin value}) {
+    final assetRequest =
+        MultiAssetRequest(policyId: policyId, assets: [AssetRequest(name: hexName ?? '', value: value)]);
+    return multiAssetRequest(assetRequest);
+  }
+}
+
 class CoinSelection {
   final List<ShelleyTransactionInput> inputs;
   CoinSelection({required this.inputs});
