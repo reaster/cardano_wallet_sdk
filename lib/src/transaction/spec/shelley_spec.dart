@@ -1,5 +1,6 @@
 // import 'package:cardano_wallet_sdk/src/address/addresses.dart';
 // import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
@@ -165,6 +166,25 @@ class ShelleyTransactionBody {
     this.validityStartInterval,
     this.mint,
   });
+
+  ShelleyTransactionBody update({
+    List<ShelleyTransactionInput>? inputs,
+    List<ShelleyTransactionOutput>? outputs,
+    int? fee,
+    int? ttl,
+    List<int>? metadataHash,
+    int? validityStartInterval,
+    List<ShelleyMultiAsset>? mint,
+  }) =>
+      ShelleyTransactionBody(
+        inputs: inputs ?? this.inputs,
+        outputs: outputs ?? this.outputs,
+        fee: fee ?? this.fee,
+        ttl: ttl ?? this.ttl,
+        metadataHash: metadataHash ?? this.metadataHash,
+        validityStartInterval: validityStartInterval ?? this.validityStartInterval,
+        mint: mint ?? this.mint,
+      );
 
   factory ShelleyTransactionBody.deserialize2(
       {required List inputs,
