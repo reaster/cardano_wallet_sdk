@@ -19,13 +19,14 @@ import 'package:oxidized/oxidized.dart';
 ///   https://hackage.haskell.org/package/cardano-coin-selection-1.0.1/docs/src/Cardano.CoinSelection.Algorithm.RandomImprove.html
 ///
 /// The result of this method will ultimatly be a list of ShelleyTransactionInput
-/// which point to an UTXO unspent change entry using a transactionId and index.
+/// which point to an UTXO unspent change entry using a transactionId and index:
 ///
 /// class ShelleyTransactionInput {
 ///  final String transactionId;
 ///  final int index;
 /// }
 
+/// coin selection function type
 typedef CoinSelectionAlgorithm = Future<Result<CoinSelection, CoinSelectionError>> Function({
   required List<WalletTransaction> unspentInputsAvailable,
   required List<MultiAssetRequest> outputsRequested,
@@ -80,8 +81,6 @@ class CoinSelection {
   final List<ShelleyTransactionInput> inputs;
   CoinSelection({required this.inputs});
 }
-
-class CardanoInput {}
 
 enum CoinSelectionErrorEnum {
   Unsupported,
