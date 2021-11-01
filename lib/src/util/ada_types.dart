@@ -21,3 +21,6 @@ typedef TxIdHex = String;
 
 /// Hex encoded block hash ID
 typedef BlockHashHex = String;
+
+/// Wallet ID - stakingPublicKey for Shelley wallets
+typedef WalletId = String;
