@@ -8,6 +8,7 @@ import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
+import 'package:oxidized/src/result.dart';
 import 'package:quiver/strings.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
@@ -83,6 +84,12 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   }
 
   @override
+  WalletId get walletId => stakeAddress.toBech32();
+
+  @override
+  bool get readOnly => true;
+
+  @override
   List<ShelleyAddress> get addresses => _usedAddresses;
 
   @override
@@ -114,4 +121,24 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   @override
   List<WalletTransaction> get unspentTransactions =>
       transactions.where((tx) => tx.status == TransactionStatus.unspent).toList();
+
+  @override
+  Future<Result<bool, String>> update() async {
+    final result = await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
+    bool changed = false;
+    result.when(
+      ok: (update) {
+        changed = refresh(
+            balance: update.balance,
+            transactions: update.transactions,
+            usedAddresses: update.addresses,
+            assets: update.assets,
+            stakeAccounts: update.stakeAccounts);
+      },
+      err: (err) {
+        return Err(err);
+      },
+    );
+    return Ok(changed);
+  }
 }
