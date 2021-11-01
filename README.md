@@ -42,9 +42,9 @@ result.when(
 
 Restore existing wallet using 24 word mnemonic.
 ```
-var mnemonic = 'rude stadium move...gallery receive just';
+var mnemonic = 'rude stadium move...gallery receive just'.split(' ');
 var result = await walletFactory.createWalletFromMnemonic(
-    mnemonic: mnemonic.split(' ')
+    mnemonic: mnemonic
 );
 if (result.isOk()) {
     var w = result.unwrap();
