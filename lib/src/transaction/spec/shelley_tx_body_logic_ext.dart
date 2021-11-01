@@ -26,7 +26,8 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
       RawTransaction? tx = cache.cachedTransaction(input.transactionId);
       if (tx == null) return Err("transaction '${input.transactionId}' not in cache");
       if (tx.inputs.length <= input.index)
-        return Err("transaction '${input.transactionId}' index[${input.index}] out of range[0..${tx.inputs.length}]");
+        return Err(
+            "transaction '${input.transactionId}' index[${input.index}] out of range[0..${tx.inputs.length - 1}]");
       final output = tx.outputs[input.index];
       for (final amount in output.amounts) {
         sums[amount.unit] = amount.quantity + (sums[amount.unit] ?? coinZero);
