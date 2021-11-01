@@ -18,6 +18,9 @@ import 'my_api_key_auth.dart';
 void main() {
   final adapterFactory =
       BlockchainAdapterFactory(authInterceptor: MyApiKeyAuthInterceptor(), networkId: NetworkId.testnet);
+  final interceptor = MyApiKeyAuthInterceptor();
+  final ADA = 1000000;
+
   test('Deserialization', () async {
     final builder = TransactionBuilder()
       ..blockchainAdapter(adapterFactory.adapter())
@@ -119,15 +122,64 @@ void main() {
     expect(bodyData2, bodyData);
     final hash2 = blake2bHash256(bodyData2);
     expect(hash2, hash);
-    final sig = Signature(uint8ListFromBytes(signature2));
-    final verified = verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
-    expect(verified, isTrue);
+    //final sig = Signature(uint8ListFromBytes(signature2));
+    // final verified = verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
+    // expect(verified, isTrue);
     // final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
     // final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
     // expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');
     // final Bip32KeyPair spendAddress0Pair = hdWallet.deriveAddressKeys();
     // final addr_test = hdWallet.toBaseAddress(spend: spendAddress0Pair.publicKey!, stake: stakeAddress0Pair.publicKey!);
     // expect(addr_test.toBech32(), addr0Testnet);
+  });
+
+  test('manually build and sign', () async {
+    final mnemonic =
+        "alpha desert more credit sad balance receive sand someone correct used castle present bar shop borrow inmate estate year flip theory recycle measure silk"
+            .split(' ');
+    final expectedTxHex =
+        '83a40081825820d65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e010182825839001d3c7cb138111826ba11e67f1c4ad2660aab4b593a3646f6a1ed9208269a1cdb0100c324b16c5a555baca45af12098d0beb2abc20808a6171a001e848082583900cb50b9f579320a1bd4444f29c2482d06cd18959116bcb796eafe16aaaaad89c262cf305fdf4fc3edde834a9b0444d1e3469f401b975ec2ac1a3b589fbe021a000290a1031a02745f28a0f6';
+    final expectedSignedTx =
+        '83a40081825820d65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e010182825839001d3c7cb138111826ba11e67f1c4ad2660aab4b593a3646f6a1ed9208269a1cdb0100c324b16c5a555baca45af12098d0beb2abc20808a6171a001e848082583900cb50b9f579320a1bd4444f29c2482d06cd18959116bcb796eafe16aaaaad89c262cf305fdf4fc3edde834a9b0444d1e3469f401b975ec2ac1a3b589fbe021a000290a1031a02745f28a10081825820f94431a84c877cac81092cca3448219808111398021a2c3dbb30ba5be289ec5b584043b43c33619852eb4ca45573eac05c62a32557e5ff78d2a7b0af3b47bae2b77ca82cb02bd03cb6cd2dc416de24ed9560b2afb5c78e46a4df02a4b67ca2aa280cf6';
+    final privateKey =
+        "xprv1jz89agqn8utrqypwsmmwhalwv8uzadvxj7s0jwrx94xzvv8t64fwghtnct8um3sxq9xspvprw8v4u94mu6jxh7esalk77z537kyvcr0hz7jjgg2fx6mfj9se3tt4f39ldqy644e4mv3xy05l5g8mdvl94srxh7hd";
+
+    final walletBuilder = WalletBuilder()
+      ..networkId = NetworkId.testnet
+      ..testnetAdapterKey = interceptor.apiKey
+      ..mnemonic = mnemonic;
+    final createResult = await walletBuilder.buildAndSync();
+    if (createResult.isOk()) {
+      var walley = createResult.unwrap();
+      const decoder = Bech32Coder(hrp: 'xprv');
+      expect(decoder.encode(walley.addressKeyPair.signingKey!.toList()), privateKey);
+      final builder = TransactionBuilder()
+        ..input(transactionId: 'd65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e', index: 1)
+        ..output(
+            address:
+                'addr_test1qqwncl938qg3sf46z8n878z26fnq426ttyarv3hk58keyzpxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsq32vnr',
+            value: ShelleyValue(coin: 2000000, multiAssets: []))
+        ..output(
+            address:
+                'addr_test1qr94pw040yeq5x75g38jnsjg95rv6xy4jyttedukatlpd2424kyuyck0xp0a7n7rah0gxj5mq3zdrc6xnaqph967c2kqja24jq',
+            value: ShelleyValue(coin: 995663806, multiAssets: []))
+        ..fee(168097)
+        ..ttl(41180968)
+        ..blockchainAdapter(walley.blockchainAdapter)
+        ..keyPair(walley.addressKeyPair);
+      //expect(builder.isBalanced, isTrue);
+      ShelleyTransaction tx = builder.build();
+      // print("expectCborHex: $expectedTxHex");
+      // print("tx.toCborHex:  ${tx.toCborHex}");
+      expect(tx.toCborHex, expectedTxHex);
+      ShelleyTransaction signedTx = builder.sign();
+      print("fee: ${builder.calculateMinFee(tx: tx)}");
+      // print("expectedSignedTx  : $expectedSignedTx");
+      // print("signedTx.toCborHex:  ${signedTx.toCborHex}");
+      expect(signedTx.toCborHex, expectedSignedTx);
+    } else {
+      print("error creating wallet: ${createResult.unwrapErr()}");
+    }
   });
 }
 

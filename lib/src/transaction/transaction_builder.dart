@@ -15,12 +15,19 @@ import 'package:oxidized/oxidized.dart';
 import 'package:pinenacl/tweetnacl.dart';
 
 ///
-/// Manages details of building a correct transaction, including coin collection, fee calculation,
-/// change callculation, time-to-live constraints (ttl) and signing.
+/// This builder manages the details of assembling a balanced transaction, including
+/// fee calculation, change callculation, time-to-live constraints (ttl) and signing.
+///
+/// Using the build() and sign() methods, transactions can be built manually. However,
+/// you have to ensure the inputs, outputs and fee add up to zero (i.e. the isBalanced
+/// property should be true). Using the buildAndSign() method automates this process
+/// given a recipient and amount.
+///
+/// Coin selection is not currently handled internally, see CoinSelectionAlgorithm.
 ///
 class TransactionBuilder {
   BlockchainAdapter? _blockchainAdapter;
-  ShelleyAddressKit? _kit;
+  Bip32KeyPair? _keyPair;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
   ShelleyAddress? _toAddress;
@@ -48,22 +55,37 @@ class TransactionBuilder {
   /// simple build - assemble transaction without any validation
   ShelleyTransaction build() => ShelleyTransaction(body: _buildBody(), witnessSet: _witnessSet, metadata: _metadata);
 
+  /// manually sign transacion and set single witnessSet.
+  ShelleyTransaction sign() {
+    final body = _buildBody();
+    _witnessSet = _sign(body: body, keyPair: _keyPair!);
+    return ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+  }
+
+  /// Check if inputs and outputs including fee, add up to zero or balance out.
+  bool get isBalanced {
+    final result = _buildBody().transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
+    return result.isOk() && result.unwrap();
+  }
+
   ///
-  /// Builds valid, signed transaction inlcuding checking required inputs, calculating ttl, fee and change.
+  /// Automates building a valid, signed transaction inlcuding checking required inputs, calculating
+  /// ttl, fee and change.
+  ///
+  /// Coin selection must be done externally and assigned to the 'inputs' property.
   /// The fee is automaticly calculated and adjusted based on the final transaction size.
-  ///
-  /// Coin selection must be done externally and assigned to 'inputs' property.
   /// If no outputs are supplied, a toAddress and value are required instead.
-  /// A changeAddress is required.
-  /// ShelleyAddressKit is required for signing the transaction
-  /// A BlockchainAdapter must be supplied for blockchain access and cache.
+  /// An unused changeAddress should be supplied weather it's needed or not.
+  /// Bip32KeyPair is required for signing the transaction and supplying the public key to the witness.
+  /// The same instance of BlockchainAdapter must be supplied that read the blockchain balances as
+  /// it will contain the cached Utx0s needed to calculate the input amounts.
   ///
   Future<Result<ShelleyTransaction, String>> buildAndSign({bool mustBalance = true}) async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
     //calculate time to live if not supplied
     if (_ttl == 0) {
-      final result = await _calculateTimeToLive();
+      final result = await calculateTimeToLive();
       if (result.isErr()) {
         return Err(result.unwrapErr());
       }
@@ -83,9 +105,9 @@ class TransactionBuilder {
     _outputs = balanceResult.unwrap();
     //build the complete signed transaction so we can calculate a more accurate fee
     body = _buildBody();
-    _witnessSet = _sign(body: body, kit: _kit!, fakeSignature: true);
+    _witnessSet = _sign(body: body, keyPair: _keyPair!, fakeSignature: true);
     var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    _fee = _calculateMinFee(tx: tx, minFee: _minFee);
+    _fee = calculateMinFee(tx: tx, minFee: _minFee);
     //rebalance change to fit the new fee
     final balanceResult2 =
         body.balancedOutputsWithChange(changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
@@ -93,7 +115,7 @@ class TransactionBuilder {
     _outputs = balanceResult2.unwrap();
     body = _buildBody();
     //re-sign to capture changes
-    _witnessSet = _sign(body: body, kit: _kit!);
+    _witnessSet = _sign(body: body, keyPair: _keyPair!);
     tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
     if (mustBalance) {
       final balancedResult = tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
@@ -104,25 +126,24 @@ class TransactionBuilder {
 
   ShelleyTransactionWitnessSet _sign({
     required ShelleyTransactionBody body,
-    required ShelleyAddressKit kit,
+    required Bip32KeyPair keyPair,
     bool fakeSignature = false,
   }) {
     final bodyData = body.toCborMap().getData();
     List<int> hash = blake2bHash256(bodyData);
-    final signature = fakeSignature ? _fakeSign(hash) : kit.signingKey!.sign(hash);
-    final VerifyKey verifyKey = kit.verifyKey!.publicKey;
-    final witness = ShelleyVkeyWitness(signature: signature, vkey: verifyKey.toUint8List());
+    final signedMessage = fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
+    final witness = ShelleyVkeyWitness(vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
     return ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
   }
 
-  /// just has to be correct length for size calculation
+  /// Generate fake signature that just has to be correct length for size calculation.
   SignedMessage _fakeSign(List<int> message) {
     var sm = Uint8List(message.length + TweetNaCl.signatureLength);
     sm.fillRange(0, sm.length, 42);
     return SignedMessage.fromList(signedMessage: sm);
   }
 
-  List<int> transactionBodyHash() => blake2bHash256(_buildBody().toCborMap().getData());
+  //List<int> get transactionBodyHash => blake2bHash256(_buildBody().toCborMap().getData());
 
   ShelleyTransactionBody _buildBody() => ShelleyTransactionBody(
         inputs: _inputs,
@@ -139,7 +160,7 @@ class TransactionBuilder {
     if (_inputs.isEmpty) return Err("'inputs' property must be set");
     if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null))
       return Err("when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
-    if (_kit == null) return Err("'kit' (ShelleyAddressKit) property must be set");
+    if (_keyPair == null) return Err("'kit' (ShelleyAddressKit) property must be set");
     if (_changeAddress == null) return Err("'changeAddress' property must be set");
     return Ok(true);
   }
@@ -147,13 +168,14 @@ class TransactionBuilder {
   /// Because transaction size effects fees, this method should be called last, after all other
   /// ShelleyTransactionBody properties are set.
   /// if minFee is set, then this determines the lower minimum fee bound.
-  Coin _calculateMinFee({required ShelleyTransaction tx, Coin minFee = coinZero}) {
+  Coin calculateMinFee({required ShelleyTransaction tx, Coin minFee = coinZero}) {
     Coin calculatedFee = _minFeeFunction(transaction: tx, linearFee: _linearFee);
     final fee = (calculatedFee < minFee) ? minFee : calculatedFee;
     return fee;
   }
 
-  bool get currentSlotUnsetOrStale {
+  /// return true if the ttl-focused current slot is stale or needs to be refreshed based on the current time and staleSlotCuttoff.
+  bool get isCurrentSlotUnsetOrStale {
     if (currentSlot == 0) return true; //not set
     final now = DateTime.now().toUtc();
     return _currentSlotTimestamp.add(staleSlotCuttoff).isBefore(now); //cuttoff reached?
@@ -164,8 +186,8 @@ class TransactionBuilder {
   /// The TTL is an absolute slot number, rather than a relative one, which means that the ttl value
   /// should be greater than the current slot number. A transaction becomes invalid once its ttl expires.
   /// Currently each slot is one second and each epoch currently includes 432,000 slots (5 days).
-  Future<Result<int, String>> _calculateTimeToLive() async {
-    if (currentSlotUnsetOrStale) {
+  Future<Result<int, String>> calculateTimeToLive() async {
+    if (isCurrentSlotUnsetOrStale) {
       final result = await _blockchainAdapter!.latestBlock();
       if (result.isErr()) {
         return Err(result.unwrapErr());
@@ -187,7 +209,7 @@ class TransactionBuilder {
 
   void blockchainAdapter(BlockchainAdapter blockchainAdapter) => _blockchainAdapter = blockchainAdapter;
 
-  void kit(ShelleyAddressKit kit) => _kit = kit;
+  void keyPair(Bip32KeyPair keyPair) => _keyPair = keyPair;
 
   void value(ShelleyValue value) => _value = value;
 

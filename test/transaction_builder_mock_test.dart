@@ -14,9 +14,13 @@ void main() {
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
   final mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin';
+  final hdWallet = HdWallet.fromMnemonic(mnemonic);
+  final accountIndex = defaultAccountIndex;
+  final addressKeyPair = hdWallet!.deriveAddressKeys(account: accountIndex);
   final wallet = WalletImpl(
     blockchainAdapter: mockWalletAdapter,
     stakeAddress: stakeAddress,
+    addressKeyPair: addressKeyPair,
     walletName: 'mock wallet',
     hdWallet: HdWallet.fromMnemonic(mnemonic),
   );
@@ -58,7 +62,7 @@ void main() {
       final balResult = tx.body.transactionIsBalanced(cache: mockWalletAdapter, fee: tx.body.fee);
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
-      expect(tx.body.fee, greaterThan(defaultFee));
+      expect(tx.body.fee, lessThan(defaultFee));
     });
     test('sendAda - 200 ADA - insufficient balance', () async {
       Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelaceAmount: ADA * 200);
