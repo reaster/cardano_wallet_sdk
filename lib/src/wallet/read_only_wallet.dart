@@ -3,10 +3,12 @@
 
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:oxidized/oxidized.dart';
 
 enum TransactionQueryType { all, used, unused }
 
@@ -14,8 +16,14 @@ enum TransactionQueryType { all, used, unused }
 /// public Cardano wallet holding stakingAddress and associated public tranaction addresses.
 ///
 abstract class ReadOnlyWallet {
+  /// Return walletId. ID is public staking address for Shelley wallets.
+  WalletId get walletId;
+
   /// networkId is either mainnet or nestnet
   NetworkId get networkId;
+
+  /// return true if this is read-only wallet that can't sign transactions and send funds.
+  bool get readOnly;
 
   /// name of wallet
   String get walletName;
@@ -35,6 +43,9 @@ abstract class ReadOnlyWallet {
   /// staking address
   ShelleyAddress get stakeAddress;
 
+  /// access to the bockchain
+  BlockchainAdapter get blockchainAdapter;
+
   /// assets present in this wallet indexed by assetId
   Map<String, CurrencyAsset> get assets;
   List<WalletTransaction> get transactions;
@@ -50,4 +61,6 @@ abstract class ReadOnlyWallet {
 
   CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher);
   CurrencyAsset? findAssetByTicker(String ticker);
+
+  Future<Result<bool, String>> update();
 }

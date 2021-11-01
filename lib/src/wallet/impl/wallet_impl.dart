@@ -15,27 +15,31 @@ import 'package:oxidized/oxidized.dart';
 ///
 class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   final HdWallet hdWallet;
+  final int accountIndex;
+  final Bip32KeyPair addressKeyPair;
   final CoinSelectionAlgorithm coinSelectionFunction;
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
   WalletImpl({
     required BlockchainAdapter blockchainAdapter,
     required ShelleyAddress stakeAddress,
+    required this.addressKeyPair,
     required String walletName,
     required this.hdWallet,
+    this.accountIndex = defaultAddressIndex,
     this.coinSelectionFunction = largestFirst,
   }) : super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
 
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
-      .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: _isUnusedSpendAddress)
+      .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: _isUnusedReceiveAddress)
       .address;
 
   @override
-  ShelleyAddress get firstUnusedSpendAddress =>
+  ShelleyAddress get firstUnusedReceiveAddress =>
       hdWallet.deriveUnusedBaseAddressKit(networkId: networkId, unusedCallback: _isUnusedChangeAddress).address;
 
-  bool _isUnusedSpendAddress(ShelleyAddress address) => !addresses.toSet().contains(address);
+  bool _isUnusedReceiveAddress(ShelleyAddress address) => !addresses.toSet().contains(address);
 
   bool _isUnusedChangeAddress(ShelleyAddress address) => addresses.toSet().contains(address);
 
@@ -66,7 +70,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ..inputs(inputsResult.unwrap().inputs)
       ..value(ShelleyValue(coin: lovelaceAmount, multiAssets: []))
       ..toAddress(toAddress)
-      ..kit(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key & verify key
+      ..keyPair(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
       ..changeAddress(this.firstUnusedChangeAddress);
     final txResult = await builder.buildAndSign();
@@ -77,6 +81,9 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     if (submitResult.isErr()) return Err(submitResult.unwrapErr());
     return Ok(tx);
   }
+
+  @override
+  bool get readOnly => false;
 
   @override
   Bip32KeyPair get rootKeyPair => Bip32KeyPair(signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
