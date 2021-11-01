@@ -24,10 +24,14 @@ class LinearFee {
   const LinearFee({required this.constant, required this.coefficient});
 }
 
+const minFeeA = 44;
+const minFeeB = 155381;
+
 /// fee calculation factors
 /// TODO update this from blockchain
 /// TODO verify fee calculation context of this values
-const defaultLinearFee = LinearFee(constant: 2, coefficient: 500);
-
+// const defaultLinearFee = LinearFee(constant: 2, coefficient: 500);
+const defaultLinearFee = LinearFee(coefficient: minFeeA, constant: minFeeB);
+//
 /// default fee for simple ADA transaction
 const defaultFee = 200000; // 0.2 ADA
