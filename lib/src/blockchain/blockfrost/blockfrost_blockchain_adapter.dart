@@ -8,17 +8,17 @@ import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
-import 'package:blockfrost/blockfrost.dart';
+import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/dio_call.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_update.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:cardano_wallet_sdk/src/wallet/wallet_factory.dart';
+import 'package:blockfrost/blockfrost.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 
 ///
 /// Loads BlockFrost data into this wallet model
@@ -64,7 +64,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
           blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor', data: cborTransaction),
       onSuccess: (data) =>
           print("blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
-      errorSubject: 'submit cbor transaction',
+      errorSubject: 'submit cbor transaction: ',
     );
     if (result.isErr()) return Err(result.unwrapErr());
     return Ok(result.unwrap());
