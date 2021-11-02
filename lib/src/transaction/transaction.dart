@@ -154,8 +154,8 @@ class RawTransactionImpl implements RawTransaction {
           blockIndex: this.blockIndex,
           status: status,
           fees: this.fees,
-          inputs: this.inputs,
-          outputs: this.outputs,
+          inputs: List.from(this.inputs),
+          outputs: List.from(this.outputs),
           time: this.time,
         );
 

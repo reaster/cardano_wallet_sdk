@@ -142,10 +142,16 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   Coin selectedAmount = 0;
   int coinsSelected = 0;
   for (final tx in sortedInputs) {
-    int index = 0;
-    for (final output in tx.outputs) {
+    if (tx.status != TransactionStatus.unspent) {
+      print("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
+    }
+    // int index = 0;
+    for (int index = 0; index < tx.outputs.length; index++) {
+      final output = tx.outputs[index];
       //Coin coinAmount = tx.currencyAmount(assetId: hardCodedUnit);
-      if (ownedAddresses.contains(output.address)) {
+      final contains = ownedAddresses.contains(output.address);
+      print("contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
+      if (contains) {
         for (final txAmount in output.amounts) {
           if (txAmount.quantity > 0 && txAmount.unit == hardCodedUnit) {
             selectedAmount += txAmount.quantity;
@@ -163,7 +169,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
           }
         }
       }
-      index++;
+      //index++;
     }
     if (selectedAmount >= amount) {
       break;
