@@ -176,9 +176,11 @@ class TransactionBuilder {
 
   /// return true if the ttl-focused current slot is stale or needs to be refreshed based on the current time and staleSlotCuttoff.
   bool get isCurrentSlotUnsetOrStale {
-    if (currentSlot == 0) return true; //not set
+    if (_currentSlot == 0) return true; //not set
     final now = DateTime.now().toUtc();
-    return _currentSlotTimestamp.add(staleSlotCuttoff).isBefore(now); //cuttoff reached?
+    final cutoff = _currentSlotTimestamp.add(staleSlotCuttoff);
+    final isStale = cutoff.isBefore(now); //cuttoff reached?
+    return isStale;
   }
 
   /// Set the time range in which this transaction is valid.
