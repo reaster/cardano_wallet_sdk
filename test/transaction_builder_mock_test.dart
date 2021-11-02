@@ -8,7 +8,10 @@ import 'mock_wallet_2.dart';
 
 const ADA = 1000000;
 void main() {
-  final mockWalletAdapter = buildMockWallet2();
+  final mockAdapter = BlockfrostBlockchainAdapter(
+    blockfrost: buildMockBlockfrostWallet2(),
+    networkId: NetworkId.testnet,
+  );
   final stakeAddress = ShelleyAddress.fromBech32(stakeAddr2);
   final toAddress = ShelleyAddress.fromBech32(
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
@@ -16,9 +19,9 @@ void main() {
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin';
   final hdWallet = HdWallet.fromMnemonic(mnemonic);
   final accountIndex = defaultAccountIndex;
-  final addressKeyPair = hdWallet!.deriveAddressKeys(account: accountIndex);
+  final addressKeyPair = hdWallet.deriveAddressKeys(account: accountIndex);
   final wallet = WalletImpl(
-    blockchainAdapter: mockWalletAdapter,
+    blockchainAdapter: mockAdapter,
     stakeAddress: stakeAddress,
     addressKeyPair: addressKeyPair,
     walletName: 'mock wallet',
@@ -27,8 +30,16 @@ void main() {
 
   group('TransactionBuilder -', () {
     setUp(() async {
+      // final builder = WalletBuilder()
+      //   ..stakeAddress = stakeAddress
+      //   ..networkId = NetworkId.testnet
+      //   ..adapter = mockWalletAdapter
+      //   ..mnemonic = mnemonic.split(' ')
+      //   ..walletName = 'mock wallet';
+      // final result = await builder.buildAndSync();
+      // expect(result.isOk(), isTrue);
       //setup wallet
-      final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: stakeAddress);
+      final updateResult = await mockAdapter.updateWallet(stakeAddress: stakeAddress);
       expect(updateResult.isOk(), isTrue);
       final update = updateResult.unwrap();
       wallet.refresh(
@@ -43,29 +54,29 @@ void main() {
       expect(unspentTxs.length, equals(2));
     });
     test('sendAda - 99 ADA - 1 UTxOs', () async {
-      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelaceAmount: ADA * 99);
+      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 99);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
       expect(tx.body.inputs.length, 1, reason: 'the largest Utxo 100ADA > spend + fee');
       expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
-      final balResult = tx.body.transactionIsBalanced(cache: mockWalletAdapter, fee: tx.body.fee);
+      final balResult = tx.body.transactionIsBalanced(cache: mockAdapter, fee: tx.body.fee);
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
       expect(tx.body.fee, lessThan(defaultFee));
     });
     test('sendAda - 100 ADA - 2 UTxOs', () async {
-      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelaceAmount: ADA * 100);
+      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 100);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
       expect(tx.body.inputs.length, 2, reason: 'the largest Utxo 100ADA will not cover fee');
       expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
-      final balResult = tx.body.transactionIsBalanced(cache: mockWalletAdapter, fee: tx.body.fee);
+      final balResult = tx.body.transactionIsBalanced(cache: mockAdapter, fee: tx.body.fee);
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
       expect(tx.body.fee, lessThan(defaultFee));
     });
     test('sendAda - 200 ADA - insufficient balance', () async {
-      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelaceAmount: ADA * 200);
+      Result<ShelleyTransaction, String> result = await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 200);
       expect(result.isErr(), isTrue);
       print("Error: ${result.unwrapErr()}");
     });

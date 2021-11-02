@@ -7,17 +7,20 @@ import 'mock_wallet_2.dart';
 
 const ADA = 1000000;
 void main() {
-  final mockWalletAdapter = buildMockWallet2();
+  final mockAdapter = BlockfrostBlockchainAdapter(
+    blockfrost: buildMockBlockfrostWallet2(),
+    networkId: NetworkId.testnet,
+  );
   final address = ShelleyAddress.fromBech32(stakeAddr2);
   final wallet = ReadOnlyWalletImpl(
-    blockchainAdapter: mockWalletAdapter,
+    blockchainAdapter: mockAdapter,
     stakeAddress: address,
     walletName: 'mock wallet',
   );
   group('coin slection: largestFirst -', () {
     setUp(() async {
       //setup wallet
-      final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: address);
+      final updateResult = await mockAdapter.updateWallet(stakeAddress: address);
       expect(updateResult.isOk(), isTrue);
       final update = updateResult.unwrap();
       wallet.refresh(

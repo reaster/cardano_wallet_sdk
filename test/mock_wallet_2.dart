@@ -1,10 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
@@ -174,7 +171,7 @@ blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:dd45074a89c51562cf68
   CardanoMetadataApi,
   CardanoTransactionsApi
 ])
-BlockfrostBlockchainAdapter buildMockWallet2() {
+Blockfrost buildMockBlockfrostWallet2() {
   var cardanoAccountsApi = MockCardanoAccountsApi();
   var cardanoAddressesApi = MockCardanoAddressesApi();
   var cardanoTransactionsApi = MockCardanoTransactionsApi();
@@ -234,6 +231,5 @@ BlockfrostBlockchainAdapter buildMockWallet2() {
 
   //when(cardanoTransactionsApi.txsHashGet(hash: tx1)).thenAnswer((realInvocation) => null)
 
-  final mockWalletAdapter = BlockfrostBlockchainAdapter(blockfrost: blockfrost, networkId: NetworkId.testnet);
-  return mockWalletAdapter;
+  return blockfrost;
 }

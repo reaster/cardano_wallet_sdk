@@ -7,23 +7,26 @@ import 'mock_wallet_2.dart';
 
 void main() {
   final formatter = AdaFormattter.compactCurrency();
-  final mockWalletAdapter = buildMockWallet2();
+  final mockAdapter = BlockfrostBlockchainAdapter(
+    blockfrost: buildMockBlockfrostWallet2(),
+    networkId: NetworkId.testnet,
+  );
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
       final address = ShelleyAddress.fromBech32(stakeAddr2);
       final wallet = ReadOnlyWalletImpl(
-        blockchainAdapter: mockWalletAdapter,
+        blockchainAdapter: mockAdapter,
         stakeAddress: address,
         walletName: 'mock wallet',
       );
-      final latestBlockResult = await mockWalletAdapter.latestBlock();
+      final latestBlockResult = await mockAdapter.latestBlock();
       latestBlockResult.when(
           ok: (block) {
             print("Block(time: ${block.time}, slot: ${block.slot})");
             expect(block.slot, greaterThanOrEqualTo(39241175));
           },
           err: (err) => print(err));
-      final updateResult = await mockWalletAdapter.updateWallet(stakeAddress: address);
+      final updateResult = await mockAdapter.updateWallet(stakeAddress: address);
       updateResult.when(
           ok: (update) {
             print("Wallet(balance: ${update.balance}, formatted: ${formatter.format(update.balance)})");
