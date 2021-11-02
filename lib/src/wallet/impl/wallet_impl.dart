@@ -46,9 +46,11 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   @override
   Future<Result<ShelleyTransaction, String>> sendAda({
     required ShelleyAddress toAddress,
-    required int lovelaceAmount,
+    required int lovelace,
+    int ttl = 0,
+    int fee = 0,
   }) async {
-    if (lovelaceAmount > balance) {
+    if (lovelace > balance) {
       return Err('insufficient balance');
     }
     if (toAddress.addressType != AddressType.Base) {
@@ -61,18 +63,20 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     final Coin maxFeeGuess = 200000; //0.2 ADA
     final inputsResult = await coinSelectionFunction(
       unspentInputsAvailable: this.unspentTransactions,
-      outputsRequested: [MultiAssetRequest.lovelace(lovelaceAmount + maxFeeGuess)],
+      outputsRequested: [MultiAssetRequest.lovelace(lovelace + maxFeeGuess)],
       ownedAddresses: this.addresses.toSet(),
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
     //use builder to build ShelleyTransaction
     final builder = TransactionBuilder()
       ..inputs(inputsResult.unwrap().inputs)
-      ..value(ShelleyValue(coin: lovelaceAmount, multiAssets: []))
+      ..value(ShelleyValue(coin: lovelace, multiAssets: []))
       ..toAddress(toAddress)
       ..keyPair(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
-      ..changeAddress(this.firstUnusedChangeAddress);
+      ..changeAddress(this.firstUnusedChangeAddress)
+      ..ttl(ttl)
+      ..fee(fee);
     final txResult = await builder.buildAndSign();
     if (txResult.isErr()) return Err(txResult.unwrapErr());
     final ShelleyTransaction tx = txResult.unwrap();

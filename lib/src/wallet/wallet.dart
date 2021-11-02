@@ -31,5 +31,10 @@ abstract class Wallet extends ReadOnlyWallet {
   ShelleyAddress get firstUnusedChangeAddress;
 
   /// send ADA to another address.
-  Future<Result<ShelleyTransaction, String>> sendAda({required ShelleyAddress toAddress, required Coin lovelaceAmount});
+  Future<Result<ShelleyTransaction, String>> sendAda({
+    required ShelleyAddress toAddress,
+    required Coin lovelace,
+    int ttl = 0,
+    int fee = 0,
+  });
 }
