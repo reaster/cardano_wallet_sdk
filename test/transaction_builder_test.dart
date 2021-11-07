@@ -10,15 +10,15 @@ import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cardano_wallet_sdk/src/util/misc.dart';
 import 'package:test/test.dart';
-import 'my_api_key_auth.dart';
+import 'blockfrost_test_auth_interceptor.dart';
 
 ///
 /// mostly recycled tests from cbor
 ///
 void main() {
   final adapterFactory =
-      BlockchainAdapterFactory(authInterceptor: MyApiKeyAuthInterceptor(), networkId: NetworkId.testnet);
-  final interceptor = MyApiKeyAuthInterceptor();
+      BlockchainAdapterFactory(authInterceptor: BlockfrostTestAuthInterceptor(), networkId: NetworkId.testnet);
+  final interceptor = BlockfrostTestAuthInterceptor();
   final ADA = 1000000;
 
   test('Deserialization', () async {

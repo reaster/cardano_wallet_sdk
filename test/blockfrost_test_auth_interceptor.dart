@@ -13,10 +13,10 @@ import 'package:blockfrost/src/auth/auth.dart';
 /// Once you have a key, place it in a text file in the parent directory of this project,
 /// in a file named: blockfrost_project_id.txt
 ///
-class MyApiKeyAuthInterceptor extends AuthInterceptor {
+class BlockfrostTestAuthInterceptor extends AuthInterceptor {
   late final String apiKey;
 
-  MyApiKeyAuthInterceptor() : apiKey = _readApiKey();
+  BlockfrostTestAuthInterceptor() : apiKey = _readApiKey();
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {

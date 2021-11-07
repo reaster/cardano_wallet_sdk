@@ -4,13 +4,13 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
-import 'my_api_key_auth.dart';
+import 'blockfrost_test_auth_interceptor.dart';
 
 ///
 /// insure documented tests are actually working code.
 ///
 void main() {
-  final interceptor = MyApiKeyAuthInterceptor();
+  final interceptor = BlockfrostTestAuthInterceptor();
   final blockfrostKey = interceptor.apiKey;
   final mnemonic =
       "rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just"

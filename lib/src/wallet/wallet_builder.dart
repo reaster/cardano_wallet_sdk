@@ -10,7 +10,6 @@ import 'package:dio/dio.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:pinenacl/key_derivation.dart';
 
 ///
 /// Creates wallets from provided properties.

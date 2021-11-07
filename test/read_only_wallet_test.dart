@@ -3,7 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:test/test.dart';
-import './my_api_key_auth.dart';
+import 'blockfrost_test_auth_interceptor.dart';
 import 'package:oxidized/oxidized.dart';
 
 void main() {
@@ -11,7 +11,7 @@ void main() {
   final wallet2 = 'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
   final wallet3 = 'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
   final wallet4 = 'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
-  final interceptor = MyApiKeyAuthInterceptor();
+  final interceptor = BlockfrostTestAuthInterceptor();
   final builder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = interceptor.apiKey;
