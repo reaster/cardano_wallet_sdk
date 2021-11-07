@@ -29,6 +29,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   static const mainnetUrl = 'https://cardano-mainnet.blockfrost.io/api/v0';
   static const testnetUrl = 'https://cardano-testnet.blockfrost.io/api/v0';
 
+  static const txContentType = 'application/cbor';
+
   /// return base URL for blockfrost service given the network type.
   static String urlFromNetwork(NetworkId networkId) => networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
 
@@ -61,7 +63,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   Future<Result<String, String>> submitTransaction(List<int> cborTransaction) async {
     final result = await dioCall<String>(
       request: () =>
-          blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor', data: cborTransaction),
+          blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: txContentType, data: cborTransaction),
       onSuccess: (data) =>
           print("blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
       errorSubject: 'submit cbor transaction: ',
