@@ -80,6 +80,8 @@ class TransactionBuilder {
   /// The same instance of BlockchainAdapter must be supplied that read the blockchain balances as
   /// it will contain the cached Utx0s needed to calculate the input amounts.
   ///
+  /// TODO handle edge case where selectd coins have to be changed based on fee adjustment.
+  ///
   Future<Result<ShelleyTransaction, String>> buildAndSign({bool mustBalance = true}) async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
@@ -139,7 +141,7 @@ class TransactionBuilder {
   /// Generate fake signature that just has to be correct length for size calculation.
   SignedMessage _fakeSign(List<int> message) {
     var sm = Uint8List(message.length + TweetNaCl.signatureLength);
-    sm.fillRange(0, sm.length, 42);
+    sm.fillRange(0, sm.length, 42); //file fake sig with meaning of life & everything.
     return SignedMessage.fromList(signedMessage: sm);
   }
 
@@ -174,7 +176,8 @@ class TransactionBuilder {
     return fee;
   }
 
-  /// return true if the ttl-focused current slot is stale or needs to be refreshed based on the current time and staleSlotCuttoff.
+  /// return true if the ttl-focused current slot is stale or needs to be refreshed based
+  /// on the current time and staleSlotCuttoff.
   bool get isCurrentSlotUnsetOrStale {
     if (_currentSlot == 0) return true; //not set
     final now = DateTime.now().toUtc();
