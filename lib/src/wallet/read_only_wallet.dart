@@ -10,10 +10,10 @@ import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:oxidized/oxidized.dart';
 
-enum TransactionQueryType { all, used, unused }
-
 ///
-/// public Cardano wallet holding stakingAddress and associated public tranaction addresses.
+/// Cardano read-only wallet that holds transactions, staking rewards and their associated
+/// addresses.  A public, read-ony wallet can be built given a stakingAddress and a networkId.
+/// All blockchain data retrieval is delegated to the BlockchainAdapter.
 ///
 abstract class ReadOnlyWallet {
   /// Return walletId. ID is public staking address for Shelley wallets.
@@ -35,7 +35,7 @@ abstract class ReadOnlyWallet {
   Coin get calculatedBalance;
 
   /// balances of native tokens indexed by assetId
-  Map<String, Coin> get currencies;
+  Map<AssetId, Coin> get currencies;
 
   /// optional stake pool details
   List<StakeAccount> get stakeAccounts;

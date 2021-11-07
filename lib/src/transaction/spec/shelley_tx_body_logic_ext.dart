@@ -19,7 +19,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   ///
   Result<Map<AssetId, Coin>, String> sumCurrencyIO({
     required BlockchainCache cache,
-    Coin fee = coinZero,
+    Coin fee = 0,
   }) {
     Map<AssetId, Coin> sums = {};
     for (final input in inputs) {
@@ -60,7 +60,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   ///
   Result<bool, String> transactionIsBalanced({
     required BlockchainCache cache,
-    Coin fee = coinZero,
+    Coin fee = 0,
   }) {
     final result = sumCurrencyIO(cache: cache, fee: fee);
     if (result.isErr()) return Err(result.unwrapErr());
@@ -78,7 +78,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   Result<List<ShelleyTransactionOutput>, String> balancedOutputsWithChange({
     required ShelleyAddress changeAddress,
     required BlockchainCache cache,
-    Coin fee = coinZero,
+    Coin fee = 0,
   }) {
     //get the differences for each native token:
     final sumResult = sumCurrencyIO(cache: cache, fee: fee);

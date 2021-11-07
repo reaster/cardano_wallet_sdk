@@ -9,7 +9,10 @@ import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
 ///
-/// Extend ReadOnlyWallet with transactional capabilities.
+/// Extend ReadOnlyWallet with signing and transactional capabilities. Signing (private),
+/// key, verify (public) key and address generation is handled by the HdWallet instance.
+///
+/// This is currently a prototype wallet and only supports sending simple ADA transactions.
 ///
 abstract class Wallet extends ReadOnlyWallet {
   /// hierarchical deterministic wallet

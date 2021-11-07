@@ -83,7 +83,8 @@ class CurrencyAsset {
       "CurrencyAsset(policyId: $policyId assetName: $assetName fingerprint: $fingerprint quantity: $quantity initialMintTxHash: $initialMintTxHash, metadata: $metadata)";
 }
 
-final lovelaceHex = str2hex.encode('lovelace');
+/// 'lovelace' encoded as a hex string (i.e. str2hex.encode('lovelace') or '6c6f76656c616365').
+final lovelaceHex = '6c6f76656c616365';
 final lovelaceAssetId = lovelaceHex;
 
 class CurrencyAssetMetadata {

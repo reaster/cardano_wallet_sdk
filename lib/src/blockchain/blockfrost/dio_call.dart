@@ -11,7 +11,8 @@ typedef void OneArgFunction(dynamic);
 typedef void ResponseFunction({Response? response, DioError? dioError, Exception? exception});
 
 ///
-/// DIO network request wrapper that handles checking response and packaging result or error message. Returns an oxidizer Result.
+/// DIO network request wrapper that handles checking response and packaging result or
+/// error message. Returns an oxidizer Result.
 ///
 Future<Result<T, String>> dioCall<T>(
     {required NetworkRquest request,

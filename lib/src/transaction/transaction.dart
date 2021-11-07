@@ -41,7 +41,6 @@ abstract class WalletTransaction extends RawTransaction {
 
 ///
 /// Amount and type for a specific native token.
-/// TODO why is there no policyId?
 ///
 class TransactionAmount {
   final String unit;

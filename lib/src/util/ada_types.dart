@@ -4,13 +4,16 @@
 ///
 /// Represents ADA amount in lovelace.
 ///
-/// TODO migrate to BigInt in second beta release.
+/// TODO migrate to BigInt in future release.
 ///
 typedef Coin = int;
 
-const Coin coinZero = 0;
+/// placeholder for future BigInt.zero
+final Coin coinZero = 0;
 
-/// Native Token policyId+coinName all in hex. Alternatly called 'unit'.
+/// Native Token policyId appended to hex encoded coin name. ADA has no policyId
+/// so its assetId is just 'lovelace' in hex: '6c6f76656c616365'. Simalur to 'unit'
+/// but 'lovelace' is not hex encoded.
 typedef AssetId = String;
 
 /// String representation of bech32 address

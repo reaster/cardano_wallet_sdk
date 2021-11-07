@@ -168,7 +168,7 @@ class TransactionBuilder {
   /// Because transaction size effects fees, this method should be called last, after all other
   /// ShelleyTransactionBody properties are set.
   /// if minFee is set, then this determines the lower minimum fee bound.
-  Coin calculateMinFee({required ShelleyTransaction tx, Coin minFee = coinZero}) {
+  Coin calculateMinFee({required ShelleyTransaction tx, Coin minFee = 0}) {
     Coin calculatedFee = _minFeeFunction(transaction: tx, linearFee: _linearFee);
     final fee = (calculatedFee < minFee) ? minFee : calculatedFee;
     return fee;

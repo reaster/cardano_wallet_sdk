@@ -257,7 +257,6 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
 
   Future<Result<List<ShelleyAddress>, String>> _addresses({
     required String stakeAddress,
-    TransactionQueryType type = TransactionQueryType.used,
   }) async {
     Response<BuiltList<JsonObject>> result = await blockfrost
         .getCardanoAccountsApi()
