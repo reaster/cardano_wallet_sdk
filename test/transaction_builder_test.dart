@@ -1,16 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter_factory.dart';
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
-import 'package:cardano_wallet_sdk/src/util/misc.dart';
-import 'package:test/test.dart';
 import 'blockfrost_test_auth_interceptor.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:test/test.dart';
 
 ///
 /// mostly recycled tests from cbor
@@ -111,8 +105,8 @@ void main() {
     final witnessSet = ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
     final transaction = ShelleyTransaction(body: body, witnessSet: witnessSet);
     final txHex = transaction.toCborHex;
-    print(txHex);
-    //deserialize, verify data and signature
+    print("transaction.toCborHex: $txHex");
+    //deserialize, manually verify data and signature
     final transaction2 = ShelleyTransaction.deserializeFromHex(txHex);
     final signature2 = transaction2.witnessSet!.vkeyWitnesses[0].signature;
     expect(signature2, signature);
@@ -122,9 +116,11 @@ void main() {
     expect(bodyData2, bodyData);
     final hash2 = blake2bHash256(bodyData2);
     expect(hash2, hash);
-    //final sig = Signature(uint8ListFromBytes(signature2));
-    // final verified = verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
-    // expect(verified, isTrue);
+    final sig = kit.signingKey!.sign(hash2).signature;
+    final verified = verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
+    expect(verified, isTrue);
+    // now ask the transaction to verify itself
+    expect(transaction2.verify, isTrue);
     // final Bip32KeyPair stakeAddress0Pair = hdWallet.deriveAddressKeys(role: stakingRole);
     // final stake_test = hdWallet.toRewardAddress(spend: stakeAddress0Pair.publicKey!);
     // expect(stake_test.toBech32(), 'stake_test1uzgkwv76l9sgct5xq4gldxe6g93x39yvjh4a7wu8hk2ufeqx3aar6');

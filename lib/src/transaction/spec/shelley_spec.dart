@@ -4,8 +4,9 @@
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
-// import 'dart:convert';
+import 'dart:convert' as convertor;
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:typed_data/typed_data.dart'; // as typed;
 // import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
@@ -399,6 +400,23 @@ class ShelleyTransaction {
   }
 
   List<int> get serialize => toCborList().getData();
+
+  Result<String, String> toJson({bool prettyPrint = false}) {
+    try {
+      final codec = Cbor()..decodeFromBuffer(this.body.toCborMap().getData());
+      final json = convertor.json.encode(codec.getDecodedData());
+      // Remove the [] from the JSON string
+      final result = json.substring(1, json.length - 1);
+      if (prettyPrint) {
+        final encoder = convertor.JsonEncoder.withIndent('  ');
+        return Ok(encoder.convert(result));
+      } else {
+        return Ok(result);
+      }
+    } on Exception catch (e) {
+      return Err(e.toString());
+    }
+  }
 
   String get toCborHex => HEX.encode(serialize);
 }

@@ -22,6 +22,7 @@ export './src/stake/stake_pool_metadata.dart';
 export './src/stake/stake_pool.dart';
 export './src/transaction/spec/shelley_spec.dart';
 export './src/transaction/spec/shelley_tx_body_logic_ext.dart';
+export './src/transaction/spec/shelley_tx_logic.dart';
 export './src/transaction/coin_selection.dart';
 export './src/transaction/min_fee_function.dart';
 export './src/transaction/transaction_builder.dart';
