@@ -6,7 +6,7 @@ import 'package:quiver/strings.dart';
 
 ///
 /// if bech32 string has the correct prefix, '1' seperator, legal data characters and optionaly correct length,
-/// the normalized correct form is returned. If it's not legal, then an explanation is return in the error message.
+/// the normalized correct form is returned. If it's not legal, then an explanation is returned in the error message.
 ///
 Result<String, String> validBech32(
     {required String bech32, required List<String> hrpPrefixes, int? dataPartRequiredLength}) {
