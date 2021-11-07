@@ -1,12 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
-import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:hex/hex.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:test/test.dart';

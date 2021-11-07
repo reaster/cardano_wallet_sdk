@@ -1,11 +1,9 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
-import 'package:cbor/cbor.dart';
-import 'package:test/test.dart';
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cbor/cbor.dart' as cbor;
+import 'package:test/test.dart';
 
 ///
 /// CBOR output can be validated here: http://cbor.me
@@ -102,24 +100,24 @@ void main() {
     );
 
     //metadata
-    final metadataMap = MapBuilder.builder()
+    final metadataMap = cbor.MapBuilder.builder()
       ..writeInt(1978) //key
       ..writeString('201value') //value
       ..writeInt(197819) //key
       ..writeInt(200001) //value
       ..writeString('203') //key
       ..writeBytes(unit8BufferFromBytes([11, 11, 10])); //value
-    final metadataList = ListBuilder.builder()
+    final metadataList = cbor.ListBuilder.builder()
       ..writeString('301value')
       ..writeInt(300001)
       ..writeBytes(unit8BufferFromBytes([11, 11, 10]))
-      ..addBuilderOutput((MapBuilder.builder()
+      ..addBuilderOutput((cbor.MapBuilder.builder()
             ..writeInt(401) //key
             ..writeString('401str') //value
             ..writeString('hello') //key
             ..writeString('hellovalue')) //value
           .getData());
-    final metadata = CBORMetadata(MapBuilder.builder()
+    final metadata = CBORMetadata(cbor.MapBuilder.builder()
           ..writeInt(197819781978) //key
           ..writeString('John') //value
           ..writeInt(197819781979) //key

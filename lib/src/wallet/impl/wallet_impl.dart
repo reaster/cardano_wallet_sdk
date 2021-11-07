@@ -1,11 +1,14 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/transaction/coin_selection.dart';
+import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
 import 'package:oxidized/oxidized.dart';
 
@@ -80,7 +83,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     final txResult = await builder.buildAndSign();
     if (txResult.isErr()) return Err(txResult.unwrapErr());
     final ShelleyTransaction tx = txResult.unwrap();
-    print(tx.toCborHex);
+    print("signed tx: ${tx.toString()}");
     final submitResult = await blockchainAdapter.submitTransaction(tx.serialize);
     if (submitResult.isErr()) return Err(submitResult.unwrapErr());
     return Ok(tx);

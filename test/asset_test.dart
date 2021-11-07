@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 import 'dart:convert';

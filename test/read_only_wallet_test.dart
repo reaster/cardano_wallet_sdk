@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:test/test.dart';
 import 'blockfrost_test_auth_interceptor.dart';
+import 'package:test/test.dart';
 import 'package:oxidized/oxidized.dart';
 
 void main() {
