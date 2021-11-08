@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/reaster/cardano_wallet_sdk/workflows/Dart%20CI/badge.svg)](https://github.com/reaster/cardano_wallet_sdk/actions?query=workflow%3A"Dart+CI"+branch%3Amaster)
+
 # cardano_wallet_sdk
 
 SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutter](https://flutter.dev) using the [Dart](https://dart.dev) programming language.
