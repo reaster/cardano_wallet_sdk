@@ -1,15 +1,13 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:quiver/strings.dart';
 import 'package:oxidized/oxidized.dart';
 
 typedef Future<Response<dynamic>> NetworkRquest();
 typedef void OneArgFunction(dynamic);
-typedef void ResponseFunction(
-    {Response? response, DioError? dioError, Exception? exception});
+typedef void ResponseFunction({Response? response, DioError? dioError, Exception? exception});
 
 ///
 /// DIO network request wrapper that handles checking response and packaging result or
@@ -34,7 +32,7 @@ Future<Result<T, String>> dioCall<T extends Object>(
     return Ok(response.data!);
   } on DioError catch (dioError) {
     //print("DioError: ${dioError.message}");
-    if (dioError.error is SocketException) {
+    if (dioError.error is Exception) {
       if (onError != null) {
         onError(exception: dioError.error);
       }
@@ -43,8 +41,7 @@ Future<Result<T, String>> dioCall<T extends Object>(
     if (onError != null) {
       onError(dioError: dioError);
     }
-    return Err(
-        translateErrorMessage(dioError: dioError, subject: errorSubject));
+    return Err(translateErrorMessage(dioError: dioError, subject: errorSubject));
     // } on SocketException catch (e) {
     //   print("SocketException: ${e.message}");
     //   if (onError != null) {
