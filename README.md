@@ -25,17 +25,23 @@ To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](
 
 ### Wallet Management
 
-Create a wallet factory for testnet or mainnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
+Create a wallet builder for testnet or mainnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
 ```
-final walletFactory = ShelleyWalletFactory.fromKey(key: myPolicyId, networkId: testnet);
+final walletBuilder = WalletBuilder()
+    ..networkId = NetworkId.testnet
+    ..testnetAdapterKey = blockfrostKey;
 ```
 
 Create a read-only wallet using a staking address.
 ```
 var address = ShelleyAddress.fromBech32('stake_test1uq...vwl7a');
-var result = await walletFactory.createReadOnlyWallet(stakeAddress: address);
+final walletBuilder = WalletBuilder()
+    ..networkId = NetworkId.testnet
+    ..testnetAdapterKey = blockfrostKey
+    ..stakeAddress = address;
+Result<ReadOnlyWallet, String> result = await walletBuilder.readOnlyBuildAndSync();
 result.when(
-    ok: (w) => print("${w.walletName}: ${w.balance}"),
+    ok: (wallet) => print("${wallet.walletName}: ${wallet.balance}"),
     err: (err) => print("Error: ${err}"),
 );
 ```
@@ -43,30 +49,36 @@ result.when(
 Restore existing wallet using 24 word mnemonic.
 ```
 var mnemonic = 'rude stadium move...gallery receive just'.split(' ');
-var result = await walletFactory.createWalletFromMnemonic(
-    mnemonic: mnemonic
-);
+final walletBuilder = WalletBuilder()
+    ..networkId = NetworkId.testnet
+    ..testnetAdapterKey = blockfrostKey
+    ..mnemonic = mnemonic;
+Result<Wallet, String> result = await walletBuilder.buildAndSync();
 if (result.isOk()) {
-    var w = result.unwrap();
-    print("${w.walletName}: ${w.balance}"),
+    var wallet = result.unwrap();
+    print("${wallet.walletName}: ${wallet.balance}");
 }
 ```
 
 Update existing wallet.
 ```
-var result = await walletFactory.createReadOnlyWallet(stakeAddress: stakeAddress, load: false);
-ReadOnlyWallet wallet = result.unwrap();
-Coin zeroBalance = wallet.balance;
-await walletFactory.updateWallet(wallet: wallet);
-result.when(
-    ok: (w) => print("old:$zeroBalance ADA, new: ${w.balance} ADA"),
+final walletBuilder = WalletBuilder()
+    ..networkId = NetworkId.testnet
+    ..testnetAdapterKey = blockfrostKey
+    ..mnemonic = mnemonic;
+Result<Wallet, String> result = walletBuilder.build();
+Wallet wallet = result.unwrap();
+Coin oldBalance = wallet.balance;
+var result2 = await wallet.update();
+result2.when(
+    ok: (_) => print("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
     err: (err) => print("Error: ${err}"),
 );
 ```
 
 Create a new 24 word mnemonic.
 ```
-var mnemonic = walletFactory.generateMnemonic();
+List<String> mnemonic = WalletBuilder().generateNewMnemonic();
 print("mnemonic: ${mnemonic.join(' ')}");
 ```
 
@@ -126,11 +138,17 @@ print(wallet.firstUnusedSpendAddress));
 
 ### Submit Transactions
 
-Send ADA to address.
+Send 3 ADA to Bob.
 ```
-var to = ShelleyAddress.fromBech32('addr1qyy6...');
-var result = await wallet.sendAda(toAddress: to, lovelace:1000000)
-if (result.isOk()) { print("ADA sent"); }
+var bobsAddress = ShelleyAddress.fromBech32('addr1qyy6...');
+final Result<ShelleyTransaction, String> result = await wallet.sendAda(
+    toAddress: bobsAddress,
+    lovelace: 3 * 1000000,
+);
+if (result.isOk()) {
+    final tx = result.unwrap();
+    print("ADA sent. Fee: ${tx.body.fee} lovelace");
+}
 ```
 
 

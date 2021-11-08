@@ -22,34 +22,34 @@ void main() {
     test('Create a read-only wallet using a staking address', () async {
       final bechAddr = 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl';
       var address = ShelleyAddress.fromBech32(bechAddr);
-      final builder = WalletBuilder()
+      final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
-        ..testnetAdapterKey = interceptor.apiKey
+        ..testnetAdapterKey = blockfrostKey
         ..stakeAddress = address;
-      Result<ReadOnlyWallet, String> result = builder.readOnlyBuild();
+      Result<ReadOnlyWallet, String> result = await walletBuilder.readOnlyBuildAndSync();
       result.when(
-        ok: (w) => print("${w.walletName}: ${w.balance}"),
+        ok: (wallet) => print("${wallet.walletName}: ${wallet.balance}"),
         err: (err) => print("Error: ${err}"),
       );
     });
     test('Restore existing wallet using 24 word mnemonic', () async {
       //List<String> mnemonic = 'rude stadium move...gallery receive just'.split(' ');
-      final builder = WalletBuilder()
+      final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic;
-      Result<Wallet, String> result = await builder.buildAndSync();
+      Result<Wallet, String> result = await walletBuilder.buildAndSync();
       if (result.isOk()) {
-        var w = result.unwrap();
-        print("${w.walletName}: ${w.balance}");
+        var wallet = result.unwrap();
+        print("${wallet.walletName}: ${wallet.balance}");
       }
     });
     test('Update existing wallet', () async {
-      final builder = WalletBuilder()
+      final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic;
-      Result<Wallet, String> result = builder.build();
+      Result<Wallet, String> result = walletBuilder.build();
       Wallet wallet = result.unwrap();
       Coin oldBalance = wallet.balance;
       var result2 = await wallet.update();
@@ -62,5 +62,24 @@ void main() {
       List<String> mnemonic = WalletBuilder().generateNewMnemonic();
       print("mnemonic: ${mnemonic.join(' ')}");
     });
+    test('Send 3 ADA to Bob', () async {
+      var bobsAddress = ShelleyAddress.fromBech32('addr1qyy6...');
+      final walletBuilder = WalletBuilder()
+        ..networkId = NetworkId.testnet
+        ..testnetAdapterKey = interceptor.apiKey
+        ..mnemonic = mnemonic;
+      final walletResult = await walletBuilder.buildAndSync();
+      if (walletResult.isOk()) {
+        var wallet = walletResult.unwrap();
+        final Result<ShelleyTransaction, String> result = await wallet.sendAda(
+          toAddress: bobsAddress,
+          lovelace: 3 * 1000000,
+        );
+        if (result.isOk()) {
+          final tx = result.unwrap();
+          print("ADA sent. Fee: ${tx.body.fee} lovelace");
+        }
+      }
+    }, skip: "not working yet");
   });
 }
