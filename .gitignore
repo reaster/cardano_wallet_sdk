@@ -9,6 +9,8 @@
 .history
 .svn/
 
+test/wallet_send_itest.dart
+
 # IntelliJ related
 *.iml
 *.ipr

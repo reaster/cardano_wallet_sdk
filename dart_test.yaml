@@ -1,0 +1,10 @@
+tags:
+  # blockfrost tests require authorization and access to the blockfrost service.
+  blockfrost:
+  # coingecko tests require access to the coingecko service.
+  coingecko:
+
+presets:
+  # to include integration tests run: dart test -P itest
+  itest:
+    filename: "*test.dart"

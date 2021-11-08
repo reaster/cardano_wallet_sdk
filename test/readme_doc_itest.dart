@@ -1,6 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+@Tags(['blockfrost'])
+
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'blockfrost_test_auth_interceptor.dart';
 import 'package:oxidized/oxidized.dart';
@@ -18,8 +20,7 @@ void main() {
 
   group('wallet management -', () {
     test('Create a read-only wallet using a staking address', () async {
-      final bechAddr =
-          'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl';
+      final bechAddr = 'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl';
       var address = ShelleyAddress.fromBech32(bechAddr);
       final builder = WalletBuilder()
         ..networkId = NetworkId.testnet

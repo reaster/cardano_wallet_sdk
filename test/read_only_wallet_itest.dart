@@ -1,20 +1,18 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+@Tags(['blockfrost'])
+
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'blockfrost_test_auth_interceptor.dart';
 import 'package:test/test.dart';
 import 'package:oxidized/oxidized.dart';
 
 void main() {
-  final wallet1 =
-      'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
-  final wallet2 =
-      'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
-  final wallet3 =
-      'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
-  final wallet4 =
-      'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
+  final wallet1 = 'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
+  final wallet2 = 'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
+  final wallet3 = 'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
+  final wallet4 = 'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
   final interceptor = BlockfrostTestAuthInterceptor();
   final builder = WalletBuilder()
     ..networkId = NetworkId.testnet
@@ -58,14 +56,12 @@ void main() {
 
 final formatter = AdaFormattter.compactCurrency();
 
-Future<Result<ReadOnlyWallet, String>> testWalletFromBuilder(
-    WalletBuilder builder) async {
+Future<Result<ReadOnlyWallet, String>> testWalletFromBuilder(WalletBuilder builder) async {
   final result = await builder.readOnlyBuildAndSync();
   bool error = false;
   result.when(
     ok: (wallet) {
-      print(
-          "Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
+      print("Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
       wallet.addresses.forEach((addr) {
         print(addr.toBech32());
       });
@@ -76,16 +72,12 @@ Future<Result<ReadOnlyWallet, String>> testWalletFromBuilder(
         print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
       });
       wallet.stakeAccounts.forEach((acct) {
-        final ticker = acct.poolMetadata?.ticker ??
-            acct.poolMetadata?.name ??
-            acct.poolId!;
+        final ticker = acct.poolMetadata?.ticker ?? acct.poolMetadata?.name ?? acct.poolId!;
         acct.rewards.forEach((reward) {
-          print(
-              "epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
+          print("epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
         });
       });
-      final int calculatSum =
-          wallet.calculatedBalance; //TODO figure out the math
+      final int calculatSum = wallet.calculatedBalance; //TODO figure out the math
       expect(wallet.balance, equals(calculatSum));
     },
     err: (err) {

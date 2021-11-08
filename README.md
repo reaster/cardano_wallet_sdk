@@ -146,8 +146,8 @@ if (result.isOk()) { print("ADA sent"); }
 * Hardware Wallets - Support key storage and signing delegation.
 * DApp Linking - Metamask-like Chrome browser extension.
 
-### Running Tests
-Many of the unit tests are actually integration tests that require a BlockFrost key to run. Installation steps are as follows:
+### Running Integration Tests
+Several of the integration tests (suffixed with '_itest.dart') require a BlockFrost key to run. Installation steps are as follows:
 * git clone git@github.com:reaster/cardano_wallet_sdk.git
 * register for a free [BlockFrost](https://blockfrost.io/) testnet policy-id key.
 * paste the policy-id key into a text file named: blockfrost_project_id.txt in the parent directory of this project.
@@ -155,9 +155,9 @@ Many of the unit tests are actually integration tests that require a BlockFrost 
 ```
 echo "your-project-id" > ../blockfrost_project_id.txt
 ```
-The unit tests should now pass:
+Now you can include the integration tests:
 ```
-dart test
+dart test -P itest
 ```
 
 ***

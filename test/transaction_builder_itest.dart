@@ -1,6 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+@Tags(['blockfrost'])
+
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'blockfrost_test_auth_interceptor.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
@@ -10,19 +12,15 @@ import 'package:test/test.dart';
 /// mostly recycled tests from cbor
 ///
 void main() {
-  final adapterFactory = BlockchainAdapterFactory(
-      authInterceptor: BlockfrostTestAuthInterceptor(),
-      networkId: NetworkId.testnet);
   final interceptor = BlockfrostTestAuthInterceptor();
-  final ADA = 1000000;
+  final adapterFactory = BlockchainAdapterFactory(authInterceptor: interceptor, networkId: NetworkId.testnet);
+
+  // final ADA = 1000000;
 
   test('Deserialization', () async {
     final builder = TransactionBuilder()
       ..blockchainAdapter(adapterFactory.adapter())
-      ..input(
-          transactionId:
-              '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002',
-          index: 1)
+      ..input(transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1)
       ..output(
           address:
               'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v',
@@ -32,20 +30,15 @@ void main() {
             'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
         multiAssetBuilder: MultiAssetBuilder(coin: 340000)
             .nativeAsset2(
-              policyId:
-                  '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+              policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
               hexName1: '736174636f696e',
               value1: 4000,
               hexName2: '446174636f696e',
               value2: 1100,
             )
+            .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 9000)
             .nativeAsset(
-                policyId:
-                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
-                value: 9000)
-            .nativeAsset(
-                policyId:
-                    '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                policyId: '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
                 hexName: '666174636f696e',
                 value: 5000),
       )
@@ -99,24 +92,19 @@ void main() {
     final hdWallet = HdWallet.fromMnemonic(mnemonic);
     ShelleyAddressKit kit = hdWallet.deriveUnusedBaseAddressKit();
     final input = ShelleyTransactionInput(
-        transactionId:
-            '3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7',
-        index: 0);
+        transactionId: '3b40265111d8bb3c3c608d95b3a0bf83461ace32d79336579a1939b3aad1c0b7', index: 0);
     final output = ShelleyTransactionOutput(
         address:
             'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt',
         value: ShelleyValue(coin: 1, multiAssets: []));
-    final body = ShelleyTransactionBody(
-        inputs: [input], outputs: [output], fee: 94002, ttl: 10);
+    final body = ShelleyTransactionBody(inputs: [input], outputs: [output], fee: 94002, ttl: 10);
     final bodyData = body.toCborMap().getData();
     print(b2s(bodyData));
     List<int> hash = blake2bHash256(bodyData);
     final signature = kit.signingKey!.sign(hash);
     final verifyKey = kit.verifyKey!.publicKey;
-    final witness =
-        ShelleyVkeyWitness(signature: signature, vkey: verifyKey.toUint8List());
-    final witnessSet = ShelleyTransactionWitnessSet(
-        vkeyWitnesses: [witness], nativeScripts: []);
+    final witness = ShelleyVkeyWitness(signature: signature, vkey: verifyKey.toUint8List());
+    final witnessSet = ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
     final transaction = ShelleyTransaction(body: body, witnessSet: witnessSet);
     final txHex = transaction.toCborHex;
     print("transaction.toCborHex: $txHex");
@@ -124,16 +112,14 @@ void main() {
     final transaction2 = ShelleyTransaction.deserializeFromHex(txHex);
     final signature2 = transaction2.witnessSet!.vkeyWitnesses[0].signature;
     expect(signature2, signature);
-    final verifyKey2 = Bip32VerifyKey(
-        uint8ListFromBytes(transaction2.witnessSet!.vkeyWitnesses[0].vkey));
+    final verifyKey2 = Bip32VerifyKey(uint8ListFromBytes(transaction2.witnessSet!.vkeyWitnesses[0].vkey));
     expect(verifyKey2, verifyKey);
     final bodyData2 = transaction2.body.toCborMap().getData();
     expect(bodyData2, bodyData);
     final hash2 = blake2bHash256(bodyData2);
     expect(hash2, hash);
     final sig = kit.signingKey!.sign(hash2).signature;
-    final verified =
-        verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
+    final verified = verifyKey2.verify(signature: sig, message: uint8ListFromBytes(hash2));
     expect(verified, isTrue);
     // now ask the transaction to verify itself
     expect(transaction2.verify, isTrue);
@@ -164,13 +150,9 @@ void main() {
     if (createResult.isOk()) {
       var walley = createResult.unwrap();
       const decoder = Bech32Coder(hrp: 'xprv');
-      expect(decoder.encode(walley.addressKeyPair.signingKey!.toList()),
-          privateKey);
+      expect(decoder.encode(walley.addressKeyPair.signingKey!.toList()), privateKey);
       final builder = TransactionBuilder()
-        ..input(
-            transactionId:
-                'd65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e',
-            index: 1)
+        ..input(transactionId: 'd65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e', index: 1)
         ..output(
             address:
                 'addr_test1qqwncl938qg3sf46z8n878z26fnq426ttyarv3hk58keyzpxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsq32vnr',
