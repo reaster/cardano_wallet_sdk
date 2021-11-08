@@ -7,16 +7,11 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  blockfrost:
-    ^1.0.0-dev.7
-    # git: git@github.com:reaster/blockfrost_api.git
-    # path: ../blockfrost_api
+  blockfrost: ^1.0.0-dev.7
   bip32_ed25519: ^0.2.1
   pinenacl: ^0.3.3
   bip39: ^1.0.6
-  cbor:
-    ^4.1.0
-    # path: ../cbor
+  cbor: ^4.1.0
   dio: ^4.0.1
   convert: ^3.0.0
   intl: ^0.17.0
@@ -25,13 +20,16 @@ dependencies:
   built_value: ^8.1.0
   hex: ^0.2.0
   quiver: ^3.0.1+1
-  #TODO swap oxidized Result for dartz Either?
-  oxidized: ^5.1.0
-  #TODO remove coingecko_dart
-  coingecko_dart: ^0.1.0
+  oxidized: ^5.1.0  #TODO swap oxidized Result for dartz Either?
+  coingecko_dart: ^0.1.0  #TODO remove coingecko_dart
 
 dev_dependencies:
   test: any
   mockito: ^5.0.10
   build_runner: ^2.0.3
   lints: ^1.0.1
+
+dependency_overrides:
+#    blockfrost:
+    # git: git@github.com:reaster/blockfrost_api.git
+    # path: ../blockfrost_api
