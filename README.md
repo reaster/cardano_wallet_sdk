@@ -24,6 +24,7 @@ To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](
 
 ## Usage
 
+Installation details can be found on [pub.dev](https://pub.dev/packages/cardano_wallet_sdk/install).
 
 ### Wallet Management
 
