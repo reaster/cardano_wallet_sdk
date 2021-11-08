@@ -31,7 +31,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   static const txContentType = 'application/cbor';
 
   /// return base URL for blockfrost service given the network type.
-  static String urlFromNetwork(NetworkId networkId) => networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
+  static String urlFromNetwork(NetworkId networkId) =>
+      networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
 
   final NetworkId networkId;
   //final CardanoNetwork cardanoNetwork;
@@ -41,7 +42,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   Map<String, AccountContent> _accountContentCache = {};
   Map<String, CurrencyAsset> _assetCache = {lovelaceHex: lovelacePseudoAsset};
 
-  BlockfrostBlockchainAdapter({required this.networkId, required this.blockfrost});
+  BlockfrostBlockchainAdapter(
+      {required this.networkId, required this.blockfrost});
 
   @override
   Future<Result<Block, String>> latestBlock() async {
@@ -53,18 +55,25 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     );
     if (blockResult.isErr()) return Err(blockResult.unwrapErr());
     final b = blockResult.unwrap();
-    var dateTime = DateTime.fromMillisecondsSinceEpoch(b.time * 1000, isUtc: true);
-    final block =
-        Block(time: dateTime, hash: b.hash, slot: b.slot ?? 0, epoch: b.epoch ?? 0, epochSlot: b.epochSlot ?? 0);
+    var dateTime =
+        DateTime.fromMillisecondsSinceEpoch(b.time * 1000, isUtc: true);
+    final block = Block(
+        time: dateTime,
+        hash: b.hash,
+        slot: b.slot ?? 0,
+        epoch: b.epoch ?? 0,
+        epochSlot: b.epochSlot ?? 0);
     return Ok(block);
   }
 
-  Future<Result<String, String>> submitTransaction(List<int> cborTransaction) async {
+  Future<Result<String, String>> submitTransaction(
+      List<int> cborTransaction) async {
     final result = await dioCall<String>(
-      request: () =>
-          blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: txContentType, data: cborTransaction),
-      onSuccess: (data) =>
-          print("blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
+      request: () => blockfrost
+          .getCardanoTransactionsApi()
+          .txSubmitPost(contentType: txContentType, data: cborTransaction),
+      onSuccess: (data) => print(
+          "blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
       errorSubject: 'submit cbor transaction: ',
     );
     if (result.isErr()) return Err(result.unwrapErr());
@@ -76,20 +85,26 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     required ShelleyAddress stakeAddress,
     TemperalSortOrder sortOrder = TemperalSortOrder.descending,
   }) async {
-    final content = await _loadAccountContent(stakeAddress: stakeAddress.toBech32());
+    final content =
+        await _loadAccountContent(stakeAddress: stakeAddress.toBech32());
     if (content.isErr()) {
       return Err(content.unwrapErr());
     }
     final account = content.unwrap();
-    final controlledAmount = content.isOk() ? int.tryParse(content.unwrap().controlledAmount) ?? 0 : 0;
-    final addressesResult = await _addresses(stakeAddress: stakeAddress.toBech32());
+    final controlledAmount = content.isOk()
+        ? int.tryParse(content.unwrap().controlledAmount) ?? 0
+        : 0;
+    final addressesResult =
+        await _addresses(stakeAddress: stakeAddress.toBech32());
     if (addressesResult.isErr()) {
       return Err(addressesResult.unwrapErr());
     }
     final addresses = addressesResult.unwrap();
-    List<StakeAccount> stakeAccounts = []; //TODO should be a list, just show current staked pool for now
+    List<StakeAccount> stakeAccounts =
+        []; //TODO should be a list, just show current staked pool for now
     if (account.poolId != null && account.active) {
-      final stakeAccountResponse = await _stakeAccount(poolId: account.poolId!, stakeAddress: stakeAddress.toBech32());
+      final stakeAccountResponse = await _stakeAccount(
+          poolId: account.poolId!, stakeAddress: stakeAddress.toBech32());
       if (stakeAccountResponse.isErr()) {
         return Err(stakeAccountResponse.unwrapErr());
       }
@@ -99,7 +114,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     Set<String> duplicateTxHashes = {}; //track and skip duplicates
     //final Set<String> addressSet = addresses.map((a) => a.toBech32()).toSet();
     for (var address in addresses) {
-      final trans = await _transactions(address: address.toBech32(), duplicateTxHashes: duplicateTxHashes);
+      final trans = await _transactions(
+          address: address.toBech32(), duplicateTxHashes: duplicateTxHashes);
       if (trans.isErr()) {
         return Err(trans.unwrapErr());
       }
@@ -111,10 +127,12 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     transactionList = markSpentTransactions(transactionList);
 
     //sort
-    transactionList.sort((d1, d2) =>
-        sortOrder == TemperalSortOrder.descending ? d2.time.compareTo(d1.time) : d1.time.compareTo(d2.time));
-    Set<String> allAssetIds =
-        transactionList.map((t) => t.assetIds).fold(<String>{}, (result, entry) => result..addAll(entry));
+    transactionList.sort((d1, d2) => sortOrder == TemperalSortOrder.descending
+        ? d2.time.compareTo(d1.time)
+        : d1.time.compareTo(d2.time));
+    Set<String> allAssetIds = transactionList
+        .map((t) => t.assetIds)
+        .fold(<String>{}, (result, entry) => result..addAll(entry));
     //print("policyIDs: ${policyIDs.join(',')}");
     Map<String, CurrencyAsset> assets = {};
     for (var assetId in allAssetIds) {
@@ -134,7 +152,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         stakeAccounts: stakeAccounts));
   }
 
-  List<RawTransactionImpl> markSpentTransactions(List<RawTransactionImpl> transactions) {
+  List<RawTransactionImpl> markSpentTransactions(
+      List<RawTransactionImpl> transactions) {
     final Set<String> txIdSet = transactions.map((tx) => tx.txId).toSet();
     Set<String> spentTransactinos = {};
     for (final tx in transactions) {
@@ -145,7 +164,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       }
     }
     return transactions
-        .map((tx) => spentTransactinos.contains(tx.txId) ? tx.toStatus(TransactionStatus.spent) : tx)
+        .map((tx) => spentTransactinos.contains(tx.txId)
+            ? tx.toStatus(TransactionStatus.spent)
+            : tx)
         .toList();
   }
 
@@ -164,7 +185,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   Future<Result<List<StakeAccount>, String>> _stakeAccount(
       {required String poolId, required String stakeAddress}) async {
     StakePool stakePool;
-    final Response<Pool> poolResponse = await blockfrost.getCardanoPoolsApi().poolsPoolIdGet(poolId: poolId);
+    final Response<Pool> poolResponse =
+        await blockfrost.getCardanoPoolsApi().poolsPoolIdGet(poolId: poolId);
     if (poolResponse.statusCode == 200 && poolResponse.data != null) {
       final p = poolResponse.data!;
       stakePool = StakePool(
@@ -187,12 +209,14 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       );
     } else {
       return poolResponse.statusMessage != null
-          ? Err("${poolResponse.statusMessage}, code: ${poolResponse.statusCode}")
+          ? Err(
+              "${poolResponse.statusMessage}, code: ${poolResponse.statusCode}")
           : Err('problem loading stake pool: ${poolId}');
     }
     StakePoolMetadata stakePoolMetadata;
-    final Response<AnyOfpoolMetadataobject> metadataResponse =
-        await blockfrost.getCardanoPoolsApi().poolsPoolIdMetadataGet(poolId: poolId); //TODO replace with dioCall
+    final Response<AnyOfpoolMetadataobject> metadataResponse = await blockfrost
+        .getCardanoPoolsApi()
+        .poolsPoolIdMetadataGet(poolId: poolId); //TODO replace with dioCall
     if (metadataResponse.statusCode == 200 && metadataResponse.data != null) {
       final m = metadataResponse.data!;
       stakePoolMetadata = StakePoolMetadata(
@@ -205,31 +229,38 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       );
     } else {
       return metadataResponse.statusMessage != null
-          ? Err("${metadataResponse.statusMessage}, code: ${metadataResponse.statusCode}")
+          ? Err(
+              "${metadataResponse.statusMessage}, code: ${metadataResponse.statusCode}")
           : Err('problem loading stake pool metadata: ${poolId}');
     }
     List<StakeReward> rewards = [];
     final Response<BuiltList<JsonObject>> rewardResponse = await blockfrost
         .getCardanoAccountsApi()
-        .accountsStakeAddressRewardsGet(stakeAddress: stakeAddress, count: 100); //TODO replace with dioCall
+        .accountsStakeAddressRewardsGet(
+            stakeAddress: stakeAddress, count: 100); //TODO replace with dioCall
     if (rewardResponse.statusCode == 200 && rewardResponse.data != null) {
       rewardResponse.data!.forEach((reward) {
         if (reward.isMap) {
           final map = reward.asMap;
-          rewards.add(
-              StakeReward(epoch: map['epoch'], amount: int.tryParse(map['amount']) ?? 0, poolId: map['pool_id'] ?? ''));
-          print("amount: ${map['amount']}, epoch: ${map['epoch']}, pool_id: ${map['pool_id']}");
+          rewards.add(StakeReward(
+              epoch: map['epoch'],
+              amount: int.tryParse(map['amount']) ?? 0,
+              poolId: map['pool_id'] ?? ''));
+          print(
+              "amount: ${map['amount']}, epoch: ${map['epoch']}, pool_id: ${map['pool_id']}");
         }
       });
     } else {
       return rewardResponse.statusMessage != null
-          ? Err("${rewardResponse.statusMessage}, code: ${rewardResponse.statusCode}")
+          ? Err(
+              "${rewardResponse.statusMessage}, code: ${rewardResponse.statusCode}")
           : Err('problem loading staking rewards: ${stakeAddress}');
     }
     StakeAccount stakeAccount;
     final Response<AccountContent> accountResponse = await blockfrost
         .getCardanoAccountsApi()
-        .accountsStakeAddressGet(stakeAddress: stakeAddress); //TODO replace with dioCall
+        .accountsStakeAddressGet(
+            stakeAddress: stakeAddress); //TODO replace with dioCall
     if (accountResponse.statusCode == 200 && accountResponse.data != null) {
       final a = accountResponse.data!;
       stakeAccount = StakeAccount(
@@ -248,7 +279,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       );
     } else {
       return accountResponse.statusMessage != null
-          ? Err("${accountResponse.statusMessage}, code: ${accountResponse.statusCode}")
+          ? Err(
+              "${accountResponse.statusMessage}, code: ${accountResponse.statusCode}")
           : Err('problem loading staking account: ${stakeAddress}');
     }
     return Ok([stakeAccount]);
@@ -259,7 +291,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   }) async {
     Response<BuiltList<JsonObject>> result = await blockfrost
         .getCardanoAccountsApi()
-        .accountsStakeAddressAddressesGet(stakeAddress: stakeAddress, count: 50);
+        .accountsStakeAddressAddressesGet(
+            stakeAddress: stakeAddress, count: 50);
     List<ShelleyAddress> addresses = [];
     if (result.statusCode != 200 || result.data == null) {
       return Err("${result.statusCode}: ${result.statusMessage}");
@@ -284,7 +317,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     List<String> txHashes = await _transactionsHashes(address: address);
     List<RawTransaction> transactions = [];
     for (var txHash in txHashes) {
-      if (duplicateTxHashes.contains(txHash)) continue; //skip already processed transactions
+      if (duplicateTxHashes.contains(txHash))
+        continue; //skip already processed transactions
       final result = await _loadTransaction(txHash: txHash);
       duplicateTxHashes.add(txHash);
       if (result.isOk()) {
@@ -302,7 +336,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       List<TransactionAmount> amounts = [];
       for (var io in input.amount) {
         final quantity = int.tryParse(io.quantity) ?? 0;
-        final unit = io.unit == 'lovelace' ? lovelaceHex : io.unit; //translate 'lovelace' to assetId representation
+        final unit = io.unit == 'lovelace'
+            ? lovelaceHex
+            : io.unit; //translate 'lovelace' to assetId representation
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
       results.add(TransactionInput(
@@ -321,7 +357,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       List<TransactionAmount> amounts = [];
       for (var io in input.amount) {
         final quantity = int.tryParse(io.quantity) ?? 0;
-        final unit = io.unit == 'lovelace' ? lovelaceHex : io.unit; //translate 'lovelace' to assetId representation
+        final unit = io.unit == 'lovelace'
+            ? lovelaceHex
+            : io.unit; //translate 'lovelace' to assetId representation
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
       results.add(TransactionOutput(
@@ -333,21 +371,28 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   }
 
   Future<List<String>> _transactionsHashes({required String address}) async {
-    Response<BuiltList<String>> result =
-        await blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address: address); //TODO replace with dioCall
-    final isData = result.statusCode == 200 && result.data != null && result.data!.isNotEmpty;
-    final List<String> list = isData ? result.data!.map((tx) => tx).toList() : [];
-    print("blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address:$address) -> ${list.join(',')}");
+    Response<BuiltList<String>> result = await blockfrost
+        .getCardanoAddressesApi()
+        .addressesAddressTxsGet(address: address); //TODO replace with dioCall
+    final isData = result.statusCode == 200 &&
+        result.data != null &&
+        result.data!.isNotEmpty;
+    final List<String> list =
+        isData ? result.data!.map((tx) => tx).toList() : [];
+    print(
+        "blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address:$address) -> ${list.join(',')}");
     return list;
   }
 
-  Future<Result<RawTransaction, String>> _loadTransaction({required String txHash}) async {
+  Future<Result<RawTransaction, String>> _loadTransaction(
+      {required String txHash}) async {
     final cachedTx = _transactionCache[txHash];
     if (cachedTx != null) {
       return Ok(cachedTx);
     }
     final txContentResult = await dioCall<TxContent>(
-      request: () => blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash),
+      request: () =>
+          blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash),
       onSuccess: (data) => print(
           "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, data)}"),
       errorSubject: 'transaction content',
@@ -365,12 +410,14 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return Err(block.unwrapErr());
     }
     final txContentUtxoResult = await dioCall<TxContentUtxo>(
-      request: () => blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash),
+      request: () =>
+          blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash),
       onSuccess: (data) => print(
           "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, data)}"),
       errorSubject: 'UTXO',
     );
-    if (txContentUtxoResult.isErr()) return Err(txContentUtxoResult.unwrapErr());
+    if (txContentUtxoResult.isErr())
+      return Err(txContentUtxoResult.unwrapErr());
 
     // Response<TxContentUtxo> txUtxo = await blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash);
     // if (txUtxo.statusCode != 200 || txUtxo.data == null) {
@@ -406,13 +453,16 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(trans);
   }
 
-  Future<Result<CurrencyAsset, String>> _loadAsset({required String assetId}) async {
+  Future<Result<CurrencyAsset, String>> _loadAsset(
+      {required String assetId}) async {
     final cachedAsset = _assetCache[assetId];
     if (cachedAsset != null) {
       return Ok(cachedAsset);
     }
     try {
-      final result = await blockfrost.getCardanoAssetsApi().assetsAssetGet(asset: assetId); //TODO replace with dioCall
+      final result = await blockfrost
+          .getCardanoAssetsApi()
+          .assetsAssetGet(asset: assetId); //TODO replace with dioCall
       if (result.statusCode != 200 || result.data == null) {
         return Err("${result.statusCode}: ${result.statusMessage}");
       }
@@ -465,13 +515,16 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   //   }
   // }
 
-  Future<Result<AccountContent, String>> _loadAccountContent({required String stakeAddress}) async {
+  Future<Result<AccountContent, String>> _loadAccountContent(
+      {required String stakeAddress}) async {
     final cachedAccountContent = _accountContentCache[stakeAddress];
     if (cachedAccountContent != null) {
       return Ok(cachedAccountContent);
     }
     return dioCall<AccountContent>(
-      request: () => blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress: stakeAddress),
+      request: () => blockfrost
+          .getCardanoAccountsApi()
+          .accountsStakeAddressGet(stakeAddress: stakeAddress),
       onSuccess: (data) {
         _accountContentCache[stakeAddress] = data;
         print(
@@ -481,14 +534,16 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     );
   }
 
-  Future<Result<Block, String>> _loadBlock({required String hashOrNumber}) async {
+  Future<Result<Block, String>> _loadBlock(
+      {required String hashOrNumber}) async {
     final cachedBlock = _blockCache[hashOrNumber];
     if (cachedBlock != null) {
       return Ok(cachedBlock);
     }
     Response<BlockContent> result = await blockfrost
         .getCardanoBlocksApi()
-        .blocksHashOrNumberGet(hashOrNumber: hashOrNumber); //TODO replace with dioCall
+        .blocksHashOrNumberGet(
+            hashOrNumber: hashOrNumber); //TODO replace with dioCall
     final isData = result.statusCode == 200 && result.data != null;
     if (isData) {
       final b = result.data!;
@@ -515,7 +570,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
 
   ///BlockchainCache
   @override
-  AccountContent? cachedAccountContent(Bech32Address stakeAddress) => _accountContentCache[stakeAddress];
+  AccountContent? cachedAccountContent(Bech32Address stakeAddress) =>
+      _accountContentCache[stakeAddress];
 
   ///BlockchainCache
   @override
