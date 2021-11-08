@@ -7,7 +7,8 @@ import 'package:oxidized/oxidized.dart';
 
 typedef Future<Response<dynamic>> NetworkRquest();
 typedef void OneArgFunction(dynamic);
-typedef void ResponseFunction({Response? response, DioError? dioError, Exception? exception});
+typedef void ResponseFunction(
+    {Response? response, DioError? dioError, Exception? exception});
 
 ///
 /// DIO network request wrapper that handles checking response and packaging result or
@@ -41,7 +42,8 @@ Future<Result<T, String>> dioCall<T extends Object>(
     if (onError != null) {
       onError(dioError: dioError);
     }
-    return Err(translateErrorMessage(dioError: dioError, subject: errorSubject));
+    return Err(
+        translateErrorMessage(dioError: dioError, subject: errorSubject));
     // } on SocketException catch (e) {
     //   print("SocketException: ${e.message}");
     //   if (onError != null) {

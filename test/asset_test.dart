@@ -13,7 +13,8 @@ void main() {
       assetName: '',
       //fingerprint: 'asset1cvmyrfrc7lpht2hcjwr9lulzyyjv27uxh3kcz0',
       quantity: '100042',
-      initialMintTxHash: 'abfda1ba36b9ee541516fda311319f7bdb3e3928776c2982d2f027f3e8fa54c7',
+      initialMintTxHash:
+          'abfda1ba36b9ee541516fda311319f7bdb3e3928776c2982d2f027f3e8fa54c7',
       metadata: CurrencyAssetMetadata(
         name: 'Testcoin',
         description: 'Testcoin cyrpto powered by Cardano testnet',
@@ -25,8 +26,10 @@ void main() {
 
     // print("testcoin.fingerprint:${testcoin.fingerprint}");
     // print("testcoin.assetId:${testcoin.assetId}");
-    expect(testcoin.fingerprint, 'asset1cvmyrfrc7lpht2hcjwr9lulzyyjv27uxh3kcz0');
-    expect(testcoin.assetId, testcoin.policyId, reason: 'if no assetName, assetId is just policyId');
+    expect(
+        testcoin.fingerprint, 'asset1cvmyrfrc7lpht2hcjwr9lulzyyjv27uxh3kcz0');
+    expect(testcoin.assetId, testcoin.policyId,
+        reason: 'if no assetName, assetId is just policyId');
     expect(testcoin.name, '');
     expect(testcoin.metadata?.decimals, 0);
     expect(testcoin.isADA, false);
@@ -37,7 +40,8 @@ void main() {
     // print("lovelacePseudoAsset.fingerprint:${lovelacePseudoAsset.fingerprint}");
     // print("lovelacePseudoAsset.assetId:${lovelacePseudoAsset.assetId}");
     // print("lovelacePseudoAsset.name:${lovelacePseudoAsset.name}");
-    expect(lovelacePseudoAsset.fingerprint, 'asset1cgv8ghtns4cwwprrekqu24zmz9p3t927uet8n8');
+    expect(lovelacePseudoAsset.fingerprint,
+        'asset1cgv8ghtns4cwwprrekqu24zmz9p3t927uet8n8');
     expect(lovelacePseudoAsset.assetId, lovelacePseudoAsset.assetName,
         reason: 'if no policyId, assetId is just assetName hex');
     expect(lovelacePseudoAsset.name, 'lovelace');
@@ -64,7 +68,8 @@ void main() {
     //print("testcoin.fingerprint:${dudecoin.fingerprint}");
     //print("testcoin.assetId:${dudecoin.assetId}");
     //print("testcoin.assetName:${dudecoin.assetName}");
-    expect(dudecoin.fingerprint, 'asset167jdqhflz5xjeqhy5esrmg2j7uwv3ghxlqsgv7');
+    expect(
+        dudecoin.fingerprint, 'asset167jdqhflz5xjeqhy5esrmg2j7uwv3ghxlqsgv7');
     expect(dudecoin.assetId, '${dudecoin.policyId}${dudecoin.assetName}');
     expect(dudecoin.name, 'dude');
     expect(dudecoin.metadata?.decimals, 0);
@@ -136,7 +141,8 @@ void main() {
   test('calculateFingerprint8', () {
     final fingerPrint = calculateFingerprint(
       policyId: '7eae28af2208be856f7a119668ae52a49b73725e326dc16579dcc373',
-      assetNameHex: '0000000000000000000000000000000000000000000000000000000000000000',
+      assetNameHex:
+          '0000000000000000000000000000000000000000000000000000000000000000',
     );
     expect(fingerPrint, 'asset1pkpwyknlvul7az0xx8czhl60pyel45rpje4z8w');
   });

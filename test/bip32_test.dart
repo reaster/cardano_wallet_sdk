@@ -64,7 +64,8 @@ void main() {
   // final entropyPlusCs24Words = 256;
   final testMnemonic1 =
       "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
-  final testEntropy1 = "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
+  final testEntropy1 =
+      "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
   final testHexSeed1 =
       '3e545a8c7aed6e4e0a152a4884ab53b6f1f0d7916f22793c7618949d891a1a80772b7a2e27dbf9b1a8027c4c481a1f423b7da3f4bf6ee70d4a3a2e940c87d74f';
   // final masterPrv =
@@ -120,7 +121,8 @@ void main() {
       expect(entropy, equals(testEntropy1));
     });
     test('mnemonic to seed hex', () {
-      final seedHex = bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
+      final seedHex =
+          bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
       print("seedHex: $seedHex");
       expect(seedHex, equals(testHexSeed1));
     });
