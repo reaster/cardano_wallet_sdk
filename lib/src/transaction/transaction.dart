@@ -58,25 +58,33 @@ class TransactionInput {
   final List<TransactionAmount> amounts;
   final String txHash;
   final int outputIndex;
-  TransactionInput({required this.address, required this.amounts, required this.txHash, required this.outputIndex});
+  TransactionInput(
+      {required this.address,
+      required this.amounts,
+      required this.txHash,
+      required this.outputIndex});
   @override
-  String toString() => "TransactionInput(address: $address count: ${amounts.length})";
+  String toString() =>
+      "TransactionInput(address: $address count: ${amounts.length})";
 }
 
 class TransactionOutput {
   final ShelleyAddress address;
   final List<TransactionAmount> amounts;
   final bool isChange;
-  TransactionOutput({required this.address, required this.amounts, this.isChange = false});
+  TransactionOutput(
+      {required this.address, required this.amounts, this.isChange = false});
   @override
-  String toString() => "TransactionOutput(address: $address, isChange: $isChange, count: ${amounts.length})";
+  String toString() =>
+      "TransactionOutput(address: $address, isChange: $isChange, count: ${amounts.length})";
 }
 
 class WalletTransactionImpl implements WalletTransaction {
   final RawTransaction rawTransaction;
   final Map<String, Coin> currencies;
   final Set<ShelleyAddress> ownedAddresses;
-  WalletTransactionImpl({required this.rawTransaction, required Set<ShelleyAddress> addressSet})
+  WalletTransactionImpl(
+      {required this.rawTransaction, required Set<ShelleyAddress> addressSet})
       : currencies = rawTransaction.sumCurrencies(addressSet: addressSet),
         ownedAddresses = rawTransaction.filterAddresses(addressSet: addressSet);
 
@@ -97,9 +105,14 @@ class WalletTransactionImpl implements WalletTransaction {
   @override
   List<TransactionOutput> get outputs => rawTransaction.outputs;
 
-  String currencyBalancesByTicker({required Map<String, CurrencyAsset> assetByAssetId, String? filterAssetId}) =>
+  String currencyBalancesByTicker(
+          {required Map<String, CurrencyAsset> assetByAssetId,
+          String? filterAssetId}) =>
       currencies.entries
-          .where((e) => filterAssetId == null || e.key != filterAssetId || assetByAssetId[e.key] != null)
+          .where((e) =>
+              filterAssetId == null ||
+              e.key != filterAssetId ||
+              assetByAssetId[e.key] != null)
           .map((e) => MapEntry(assetByAssetId[e.key]!, e.value))
           .map((e) => "${e.key.symbol}:${e.value}")
           .join(', ');
@@ -108,17 +121,20 @@ class WalletTransactionImpl implements WalletTransaction {
   Coin get amount => currencies[lovelaceHex] ?? coinZero;
 
   @override
-  TransactionType get type => amount >= coinZero ? TransactionType.deposit : TransactionType.withdrawal;
+  TransactionType get type =>
+      amount >= coinZero ? TransactionType.deposit : TransactionType.withdrawal;
 
   @override
   String toString() =>
       "WalletTransaction(amount: $amount fees: $fees status: $status type: $type coins: ${currencies.length} id: $txId)";
 
   @override
-  bool containsCurrency({required String assetId}) => currencies[assetId] != null;
+  bool containsCurrency({required String assetId}) =>
+      currencies[assetId] != null;
 
   @override
-  Coin currencyAmount({required String assetId}) => currencies[assetId] ?? coinZero;
+  Coin currencyAmount({required String assetId}) =>
+      currencies[assetId] ?? coinZero;
 
   bool get payedFees => type == TransactionType.withdrawal;
 }
@@ -216,7 +232,8 @@ extension TransactionScanner on RawTransaction {
   /// filter addresses to those found in this wallet
   /// TODO does this actually do anything?
   ///
-  Set<ShelleyAddress> filterAddresses({required Set<ShelleyAddress> addressSet}) {
+  Set<ShelleyAddress> filterAddresses(
+      {required Set<ShelleyAddress> addressSet}) {
     Set<ShelleyAddress> result = {};
     for (var input in inputs) {
       if (addressSet.contains(input.address)) {
@@ -228,7 +245,8 @@ extension TransactionScanner on RawTransaction {
         result.add(output.address);
       }
     }
-    print("filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
+    print(
+        "filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
     return result;
   }
 }

@@ -12,7 +12,8 @@ import 'package:intl/intl.dart';
 /// The currency factory method allows complete customization.
 ///
 class AdaFormattter {
-  static const symbol = '₳'; // https://github.com/yonilevy/crypto-currency-symbols
+  static const symbol =
+      '₳'; // https://github.com/yonilevy/crypto-currency-symbols
   static const ADA = 'ADA ';
   final NumberFormat formatter;
 
@@ -62,14 +63,24 @@ class AdaFormattter {
           String? customPattern}) =>
       AdaFormattter(
           formatter: NumberFormat.currency(
-              locale: locale, name: name, symbol: symbol, decimalDigits: decimalDigits, customPattern: customPattern));
+              locale: locale,
+              name: name,
+              symbol: symbol,
+              decimalDigits: decimalDigits,
+              customPattern: customPattern));
 
   /// A number format for compact currency representations, e.g. "₳1.2M" instead of "₳1,200,000".
   factory AdaFormattter.compactCurrency(
-          {String? locale = 'en', String? name = ADA, String? symbol = symbol, int? decimalDigits = 6}) =>
+          {String? locale = 'en',
+          String? name = ADA,
+          String? symbol = symbol,
+          int? decimalDigits = 6}) =>
       AdaFormattter(
-          formatter:
-              NumberFormat.compactCurrency(locale: locale, name: name, symbol: symbol, decimalDigits: decimalDigits));
+          formatter: NumberFormat.compactCurrency(
+              locale: locale,
+              name: name,
+              symbol: symbol,
+              decimalDigits: decimalDigits));
 
   /// Creates a [NumberFormat] for currencies, using the simple symbol for the
   /// currency if one is available (e.g. $, €), so it should only be used if the
@@ -94,16 +105,25 @@ class AdaFormattter {
   /// currency's default takes priority over the locale's default.
   ///       NumberFormat.simpleCurrency(locale: 'en_US')
   /// will format with two, which is the default for that locale.
-  factory AdaFormattter.simpleCurrency({String? locale = 'en', String? name = ADA, int? decimalDigits = 6}) =>
-      AdaFormattter(formatter: NumberFormat.simpleCurrency(locale: locale, name: name, decimalDigits: decimalDigits));
+  factory AdaFormattter.simpleCurrency(
+          {String? locale = 'en',
+          String? name = ADA,
+          int? decimalDigits = 6}) =>
+      AdaFormattter(
+          formatter: NumberFormat.simpleCurrency(
+              locale: locale, name: name, decimalDigits: decimalDigits));
 
   /// A number format for compact currency representations, e.g. "$1.2M" instead
   /// of "$1,200,000", and which will automatically determine a currency symbol
   /// based on the currency name or the locale. See
   /// [NumberFormat.simpleCurrency].
-  factory AdaFormattter.compactSimpleCurrency({String? locale = 'en', String? name = ADA, int? decimalDigits = 6}) =>
+  factory AdaFormattter.compactSimpleCurrency(
+          {String? locale = 'en',
+          String? name = ADA,
+          int? decimalDigits = 6}) =>
       AdaFormattter(
-          formatter: NumberFormat.compactSimpleCurrency(locale: locale, name: name, decimalDigits: decimalDigits));
+          formatter: NumberFormat.compactSimpleCurrency(
+              locale: locale, name: name, decimalDigits: decimalDigits));
 
   /// Convert lovelace to ADA and format [number] according to our pattern and return the formatted string.
   String format(lovelace) => formatter.format(lovelace / 1000000.0);

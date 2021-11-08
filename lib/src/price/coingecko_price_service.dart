@@ -21,7 +21,8 @@ class CoinGeckoApiFix extends CoinGeckoApi {
   ///
   @override
   Future<CoinGeckoResult<bool>> ping() async {
-    Response response = await dio!.get("/ping", options: Options(contentType: 'application/json'));
+    Response response = await dio!
+        .get("/ping", options: Options(contentType: 'application/json'));
     return CoinGeckoResult(response.statusCode == 200,
         errorCode: response.statusCode ?? -1,
         errorMessage: (response.statusMessage ?? ""),
@@ -60,22 +61,28 @@ class CoingeckoPriceService extends PriceService {
   CoingeckoPriceService() : coingecko = CoinGeckoApiFix(); //CoinGeckoApi
 
   @override
-  Future<Result<Price, String>> currentPrice({String from = 'ada', String to = 'usd'}) async {
+  Future<Result<Price, String>> currentPrice(
+      {String from = 'ada', String to = 'usd'}) async {
     final fromId = await _toId(from);
     if (fromId == null) {
       return Err("can't convert symbol($from) to ID");
     }
-    final CoinGeckoResult<List<PricedCoin>> list = await coingecko.simplePrice(ids: [fromId], vs_currencies: [to]);
+    final CoinGeckoResult<List<PricedCoin>> list =
+        await coingecko.simplePrice(ids: [fromId], vs_currencies: [to]);
     if (list.isError) {
       return Err(list.errorMessage);
     } else if (list.data.isEmpty || list.data.first.data[to] == null) {
       return Err("no data");
     } else {
       PricedCoin pricedCoin = list.data.first;
-      final timestamp =
-          DateTime.now().millisecondsSinceEpoch; // pricedCoin.lastUpdatedAtTimeStamp.millisecondsSinceEpoch;
+      final timestamp = DateTime.now()
+          .millisecondsSinceEpoch; // pricedCoin.lastUpdatedAtTimeStamp.millisecondsSinceEpoch;
       Map<String, double> pair = pricedCoin.data;
-      return Ok(Price(fromTicker: from, toTicker: to, timestamp: timestamp, value: pair[to]!));
+      return Ok(Price(
+          fromTicker: from,
+          toTicker: to,
+          timestamp: timestamp,
+          value: pair[to]!));
     }
   }
 
@@ -95,7 +102,8 @@ class CoingeckoPriceService extends PriceService {
     if (result.isError) {
       return Err(result.errorMessage);
     } else {
-      Map<String, String> map = Map.fromIterable(result.data, key: (c) => c.symbol, value: (c) => c.id);
+      Map<String, String> map = Map.fromIterable(result.data,
+          key: (c) => c.symbol, value: (c) => c.id);
       return Ok(map);
     }
   }

@@ -55,7 +55,8 @@ class BlockfrostTestAuthInterceptor extends AuthInterceptor {
 
 final mainnet = 'https://cardano-mainnet.blockfrost.io/api/v0';
 final testnet = 'https://cardano-testnet.blockfrost.io/api/v0';
-final IPFS = 'https://ipfs.blockfrost.io/api/v0'; //InterPlanetary File System, 100MB max upload size
+final IPFS =
+    'https://ipfs.blockfrost.io/api/v0'; //InterPlanetary File System, 100MB max upload size
 
 final asc = 'asc'; //?order=asc, oldest first (default)
 final desc = 'desc'; //?order=desc, newest first

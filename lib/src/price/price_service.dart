@@ -11,9 +11,14 @@ class Price {
   final int timestamp;
   final double value;
 
-  Price({this.fromTicker = 'ADA', this.toTicker = 'USD', this.timestamp = 0, this.value = 0.0});
+  Price(
+      {this.fromTicker = 'ADA',
+      this.toTicker = 'USD',
+      this.timestamp = 0,
+      this.value = 0.0});
 
-  DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+  DateTime get dateTime =>
+      DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
 
   @override
   String toString() {

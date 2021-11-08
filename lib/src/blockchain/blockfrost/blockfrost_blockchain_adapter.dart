@@ -13,7 +13,6 @@ import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/dio_call.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_update.dart';
-import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:blockfrost/blockfrost.dart';
 import 'package:dio/dio.dart';
 import 'package:built_value/json_object.dart';
@@ -530,7 +529,6 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   @override
   RawTransaction? cachedTransaction(TxIdHex txId) => _transactionCache[txId];
 }
-
 
 // void main() async {
 //   final wallet1 = 'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';

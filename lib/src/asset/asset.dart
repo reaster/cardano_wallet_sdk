@@ -69,8 +69,10 @@ class CurrencyAsset {
     required this.initialMintTxHash,
     this.metadata,
   })  : this.assetId = '$policyId$assetName',
-        this.name = hex2str.encode(assetName), //if assetName is not hex, this will usualy fail
-        this.fingerprint = fingerprint ?? calculateFingerprint(policyId: policyId, assetNameHex: assetName);
+        this.name = hex2str
+            .encode(assetName), //if assetName is not hex, this will usualy fail
+        this.fingerprint = fingerprint ??
+            calculateFingerprint(policyId: policyId, assetNameHex: assetName);
 
   bool get isNativeToken => assetId != lovelaceHex;
   bool get isADA => assetId == lovelaceHex;
@@ -106,7 +108,12 @@ class CurrencyAssetMetadata {
   final int decimals;
 
   CurrencyAssetMetadata(
-      {required this.name, required this.description, this.ticker, this.url, this.logo, this.decimals = 0});
+      {required this.name,
+      required this.description,
+      this.ticker,
+      this.url,
+      this.logo,
+      this.decimals = 0});
   @override
   String toString() =>
       "CurrencyAssetMetadata(name: $name ticker: $ticker url: $url description: $description hasLogo: ${logo != null})";
@@ -133,7 +140,10 @@ final lovelacePseudoAsset = CurrencyAsset(
 );
 
 /// given a asset policyId and an assetName in hex, generate a bech32 asset fingerprint
-String calculateFingerprint({required String policyId, required String assetNameHex, String hrp = 'asset'}) {
+String calculateFingerprint(
+    {required String policyId,
+    required String assetNameHex,
+    String hrp = 'asset'}) {
   //final assetNameHex = str2hex.encode(assetName);
   final assetId = '$policyId$assetNameHex';
   //print("assetId: $assetId");
@@ -155,7 +165,8 @@ List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
   for (int i = 0; i < data.length; i++) {
     int value = data[i] & 0xff;
     if (value < 0 || value >> fromWidth != 0) {
-      throw new FormatException("input data bit-width exceeds $fromWidth: $value");
+      throw new FormatException(
+          "input data bit-width exceeds $fromWidth: $value");
     }
     acc = (acc << fromWidth) | value;
     bits += fromWidth;
@@ -169,7 +180,8 @@ List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
     if (bits > 0) {
       ret.add((acc << (toWidth - bits)) & maxv);
     } else if (bits >= fromWidth || ((acc << (toWidth - bits)) & maxv) != 0) {
-      throw new FormatException("input data bit-width exceeds $fromWidth: $bits");
+      throw new FormatException(
+          "input data bit-width exceeds $fromWidth: $bits");
     }
   }
 

@@ -16,7 +16,8 @@ class CardanoScanBlockchainExplorer {
   CardanoScanBlockchainExplorer({this.baseUrl = mainnetUrl});
 
   factory CardanoScanBlockchainExplorer.fromNetwork(NetworkId networkId) =>
-      CardanoScanBlockchainExplorer(baseUrl: networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl);
+      CardanoScanBlockchainExplorer(
+          baseUrl: networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl);
 
   /// result example: https://cardanoscan.io/epoch/269
   String epicUrl({required int epicNumber}) => "$baseUrl/epoch/$epicNumber";
@@ -25,8 +26,10 @@ class CardanoScanBlockchainExplorer {
   String blockUrl({required int blockNumber}) => "$baseUrl/block/$blockNumber";
 
   // result example: https://cardanoscan.io/transaction/811f7323ad7866cb4093ebbe7d98006f43303a0b7d8654391b571f3f9a952011
-  String transactionUrl({required String transactionIdHex32}) => "$baseUrl/transaction/$transactionIdHex32";
+  String transactionUrl({required String transactionIdHex32}) =>
+      "$baseUrl/transaction/$transactionIdHex32";
 
   /// result example: https://cardanoscan.io/address/addr1v95sf69jcfhnmknvffwmfvlvnccatqwfjcyh0nlfc6gh5scta2yzg
-  String addressUrl({required String addressBech32}) => "$baseUrl/address/$addressBech32";
+  String addressUrl({required String addressBech32}) =>
+      "$baseUrl/address/$addressBech32";
 }

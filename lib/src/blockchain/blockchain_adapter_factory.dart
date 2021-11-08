@@ -19,21 +19,27 @@ class BlockchainAdapterFactory {
   Blockfrost? _blockfrost;
   BlockfrostBlockchainAdapter? _blockfrostAdapter;
 
-  BlockchainAdapterFactory({required this.authInterceptor, required this.networkId});
+  BlockchainAdapterFactory(
+      {required this.authInterceptor, required this.networkId});
 
   /// creates an interceptor give a key
-  static Interceptor interceptorFromKey({required String key}) => BlockfrostApiKeyAuthInterceptor(projectId: key);
+  static Interceptor interceptorFromKey({required String key}) =>
+      BlockfrostApiKeyAuthInterceptor(projectId: key);
 
-  factory BlockchainAdapterFactory.fromKey({required String key, required NetworkId networkId}) =>
-      BlockchainAdapterFactory(authInterceptor: interceptorFromKey(key: key), networkId: networkId);
+  factory BlockchainAdapterFactory.fromKey(
+          {required String key, required NetworkId networkId}) =>
+      BlockchainAdapterFactory(
+          authInterceptor: interceptorFromKey(key: key), networkId: networkId);
 
   ///
   /// return cached BlockchainAdapter instance.
   ///
   BlockchainAdapter adapter() {
     if (_blockfrostAdapter == null) {
-      final blockfrost = _cachedBlockfrost(networkId: networkId, authInterceptor: authInterceptor);
-      _blockfrostAdapter = BlockfrostBlockchainAdapter(networkId: networkId, blockfrost: blockfrost);
+      final blockfrost = _cachedBlockfrost(
+          networkId: networkId, authInterceptor: authInterceptor);
+      _blockfrostAdapter = BlockfrostBlockchainAdapter(
+          networkId: networkId, blockfrost: blockfrost);
     }
     return _blockfrostAdapter!;
   }
@@ -45,7 +51,8 @@ class BlockchainAdapterFactory {
   }
 
   /// provides a cahced Blockfrost instance.
-  Blockfrost _cachedBlockfrost({required NetworkId networkId, required Interceptor authInterceptor}) {
+  Blockfrost _cachedBlockfrost(
+      {required NetworkId networkId, required Interceptor authInterceptor}) {
     if (_blockfrost == null) {
       final url = BlockfrostBlockchainAdapter.urlFromNetwork(networkId);
       print("new Blockfrost($url)");

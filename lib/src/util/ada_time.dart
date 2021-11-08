@@ -18,13 +18,16 @@ class AdaDateTime extends Codec<int, DateTime> {
 class AdaDateTimeEncoder extends Converter<int, DateTime> {
   const AdaDateTimeEncoder();
   @override
-  DateTime convert(int secondsSinceEpoch) => DateTime.fromMillisecondsSinceEpoch(secondsSinceEpoch * 1000, isUtc: true);
+  DateTime convert(int secondsSinceEpoch) =>
+      DateTime.fromMillisecondsSinceEpoch(secondsSinceEpoch * 1000,
+          isUtc: true);
 }
 
 class AdaDateTimeDecoder extends Converter<DateTime, int> {
   const AdaDateTimeDecoder();
   @override
-  int convert(DateTime dateTime) => (dateTime.millisecondsSinceEpoch / 1000).round();
+  int convert(DateTime dateTime) =>
+      (dateTime.millisecondsSinceEpoch / 1000).round();
 }
 
 final adaDateTime = AdaDateTime();
@@ -58,7 +61,8 @@ int epochToMilliseconds({int epoch = 0}) =>
 /// convert epoch to UTC timestamp
 ///
 DateTime epochToDateTime({int epoch = 0}) =>
-    DateTime.fromMillisecondsSinceEpoch(epochToMilliseconds(epoch: epoch), isUtc: true);
+    DateTime.fromMillisecondsSinceEpoch(epochToMilliseconds(epoch: epoch),
+        isUtc: true);
 
 ///
 /// convert slot to unix time in milliseconds
@@ -72,7 +76,8 @@ int slotToMilliseconds({int slot = 0}) =>
 /// convert slot to UTC timestamp
 ///
 DateTime slotToDateTime({int slot = 0}) =>
-    DateTime.fromMillisecondsSinceEpoch(slotToMilliseconds(slot: slot), isUtc: true);
+    DateTime.fromMillisecondsSinceEpoch(slotToMilliseconds(slot: slot),
+        isUtc: true);
 
 ///
 /// Convert Cardano epoch (epoch * 432000 + 1506203091 in UTC) to DateTime and back.

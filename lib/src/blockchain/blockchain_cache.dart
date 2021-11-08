@@ -12,6 +12,7 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 abstract class BlockchainCache {
   RawTransaction? cachedTransaction(TxIdHex txId);
   Block? cachedBlock(BlockHashHex blockId);
-  AccountContent? cachedAccountContent(Bech32Address stakeAddress); // TODO define AccountContent locally
+  AccountContent? cachedAccountContent(
+      Bech32Address stakeAddress); // TODO define AccountContent locally
   CurrencyAsset? cachedCurrencyAsset(String assetId);
 }

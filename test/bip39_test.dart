@@ -10,14 +10,17 @@ void main() {
   final entropyPlusCs24Words = 256;
   final testMnemonic1 =
       "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
-  final testEntropy1 = "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
+  final testEntropy1 =
+      "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
   final testHexSeed1 =
       '3e545a8c7aed6e4e0a152a4884ab53b6f1f0d7916f22793c7618949d891a1a80772b7a2e27dbf9b1a8027c4c481a1f423b7da3f4bf6ee70d4a3a2e940c87d74f';
 
   test('validateMnemonic', () {
-    expect(bip39.validateMnemonic('sleep kitten'), isFalse, reason: 'fails for a mnemonic that is too short');
+    expect(bip39.validateMnemonic('sleep kitten'), isFalse,
+        reason: 'fails for a mnemonic that is too short');
 
-    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten'), isFalse,
+    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten'),
+        isFalse,
         reason: 'fails for a mnemonic that is too short');
 
     expect(
@@ -27,25 +30,33 @@ void main() {
         reason: 'fails for a mnemonic that is too long');
 
     expect(
-        bip39.validateMnemonic('turtle front uncle idea crush write shrug there lottery flower risky shell'), isFalse,
+        bip39.validateMnemonic(
+            'turtle front uncle idea crush write shrug there lottery flower risky shell'),
+        isFalse,
         reason: 'fails if mnemonic words are not in the word list');
 
-    expect(bip39.validateMnemonic('sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten'),
+    expect(
+        bip39.validateMnemonic(
+            'sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten'),
         isFalse,
         reason: 'fails for invalid checksum');
 
-    expect(bip39.validateMnemonic(testMnemonic1), isTrue, reason: "testMnemonic1 valid");
+    expect(bip39.validateMnemonic(testMnemonic1), isTrue,
+        reason: "testMnemonic1 valid");
   });
 
   group('generateMnemonic', () {
     test('can vary entropy length', () {
       final words = (bip39.generateMnemonic(strength: 160)).split(' ');
-      expect(words.length, equals(15), reason: 'can vary generated entropy bit length');
+      expect(words.length, equals(15),
+          reason: 'can vary generated entropy bit length');
     });
     test('Cardano Shelley entropy length 24', () {
-      final words = (bip39.generateMnemonic(strength: entropyPlusCs24Words)).split(' ');
+      final words =
+          (bip39.generateMnemonic(strength: entropyPlusCs24Words)).split(' ');
       print(words.join(','));
-      expect(words.length, equals(24), reason: 'can vary generated entropy bit length');
+      expect(words.length, equals(24),
+          reason: 'can vary generated entropy bit length');
     });
 
     test('requests the exact amount of data from an RNG', () {
@@ -65,7 +76,8 @@ void main() {
       expect(entropy, equals(testEntropy1));
     });
     test('mnemonic to seed hex', () {
-      final seedHex = bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
+      final seedHex =
+          bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
       print("seedHex: $seedHex");
       expect(seedHex, equals(testHexSeed1));
     });
@@ -78,17 +90,20 @@ void main() {
         return Uint8List.fromList(HEX.decode(testEntropy1));
       };
       final code = bip39.generateMnemonic(randomBytes: randomBytes);
-      expect(code, equals(testMnemonic1), reason: 'generateMnemonic returns randomBytes entropy unmodified');
+      expect(code, equals(testMnemonic1),
+          reason: 'generateMnemonic returns randomBytes entropy unmodified');
     });
     test('validate mnemonic', () {
-      expect(bip39.validateMnemonic(testMnemonic1), isTrue, reason: 'validateMnemonic returns true');
+      expect(bip39.validateMnemonic(testMnemonic1), isTrue,
+          reason: 'validateMnemonic returns true');
     });
   });
 
   group('cardano-serialization-lib', () {
     test('entropy to mnemonic', () {
       //[0x4e, 0x82, 0x8f, 0x9a, 0x67, 0xdd, 0xcf, 0xf0, 0xe6, 0x39, 0x1a, 0xd4, 0xf2, 0x6d, 0xdb, 0x75, 0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba, 0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda];
-      final testEntropy0 = '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final testEntropy0 =
+          '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final mnemonic = bip39.entropyToMnemonic(testEntropy0);
       final bytes = bip39.mnemonicToSeed(mnemonic);
       print(bytes.join(','));

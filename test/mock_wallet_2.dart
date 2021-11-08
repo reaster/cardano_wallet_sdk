@@ -14,7 +14,8 @@ import 'mock_wallet_2.mocks.dart';
 
 final Serializers serializers = standardSerializers;
 
-const stakeAddr2 = 'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
+const stakeAddr2 =
+    'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
 
 const addr1 =
     'addr_test1qputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5l924fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sutu8kq';
@@ -68,7 +69,8 @@ Response<TxContent> txContent(String txId) {
       throw Exception('unknown txId: $txId');
   }
   final content = serializers.fromJson(TxContent.serializer, json)!;
-  final result = Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: content);
+  final result = Response(
+      requestOptions: RequestOptions(path: ''), statusCode: 200, data: content);
   return result;
 }
 
@@ -136,7 +138,10 @@ Response<TxContentUtxo> txContentUtxo(String txId) {
   }
   try {
     final content = serializers.fromJson(TxContentUtxo.serializer, json)!;
-    final result = Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: content);
+    final result = Response(
+        requestOptions: RequestOptions(path: ''),
+        statusCode: 200,
+        data: content);
     return result;
   } catch (e) {
     print("ERROR parsing TxContentUtxo(txId: $txId): $e");
@@ -181,12 +186,14 @@ Blockfrost buildMockBlockfrostWallet2() {
   var blockfrost = MockBlockfrost();
   when(blockfrost.getCardanoAccountsApi()).thenReturn(cardanoAccountsApi);
   when(blockfrost.getCardanoAddressesApi()).thenReturn(cardanoAddressesApi);
-  when(blockfrost.getCardanoTransactionsApi()).thenReturn(cardanoTransactionsApi);
+  when(blockfrost.getCardanoTransactionsApi())
+      .thenReturn(cardanoTransactionsApi);
   when(blockfrost.getCardanoBlocksApi()).thenReturn(cardanoBlocksApi);
   when(blockfrost.getCardanoAssetsApi()).thenReturn(cardanoAssetsApi);
 
   //addresses
-  when(cardanoAccountsApi.accountsStakeAddressGet(stakeAddress: stakeAddr2)).thenAnswer((_) async => accountContent);
+  when(cardanoAccountsApi.accountsStakeAddressGet(stakeAddress: stakeAddr2))
+      .thenAnswer((_) async => accountContent);
   final addresses2 = (ListBuilder<JsonObject>()
         ..add(MapJsonObject({'address': addr1}))
         ..add(MapJsonObject({'address': addr2}))
@@ -194,40 +201,71 @@ Blockfrost buildMockBlockfrostWallet2() {
       .build();
 
   //addresses transactions
-  when(cardanoAccountsApi.accountsStakeAddressAddressesGet(stakeAddress: stakeAddr2, count: anyNamed('count')))
-      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: addresses2));
-  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr1)).thenAnswer((_) async =>
-      Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx1, tx2, tx3])));
+  when(cardanoAccountsApi.accountsStakeAddressAddressesGet(
+          stakeAddress: stakeAddr2, count: anyNamed('count')))
+      .thenAnswer((_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: addresses2));
+  when(cardanoAddressesApi.addressesAddressTxsGet(address: addr1)).thenAnswer(
+      (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: BuiltList.of([tx1, tx2, tx3])));
   when(cardanoAddressesApi.addressesAddressTxsGet(address: addr2)).thenAnswer(
-      (_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx4, tx3])));
+      (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: BuiltList.of([tx4, tx3])));
   when(cardanoAddressesApi.addressesAddressTxsGet(address: addr3)).thenAnswer(
-      (_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: BuiltList.of([tx3])));
+      (_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: BuiltList.of([tx3])));
 
   //transaction content
-  when(cardanoTransactionsApi.txsHashGet(hash: tx1)).thenAnswer((_) async => txContent(tx1));
-  when(cardanoTransactionsApi.txsHashGet(hash: tx2)).thenAnswer((_) async => txContent(tx2));
-  when(cardanoTransactionsApi.txsHashGet(hash: tx3)).thenAnswer((_) async => txContent(tx3));
-  when(cardanoTransactionsApi.txsHashGet(hash: tx4)).thenAnswer((_) async => txContent(tx4));
+  when(cardanoTransactionsApi.txsHashGet(hash: tx1))
+      .thenAnswer((_) async => txContent(tx1));
+  when(cardanoTransactionsApi.txsHashGet(hash: tx2))
+      .thenAnswer((_) async => txContent(tx2));
+  when(cardanoTransactionsApi.txsHashGet(hash: tx3))
+      .thenAnswer((_) async => txContent(tx3));
+  when(cardanoTransactionsApi.txsHashGet(hash: tx4))
+      .thenAnswer((_) async => txContent(tx4));
 
   //transaction  blocks
-  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk1)).thenAnswer((_) async => blockContent(blk1));
-  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk2)).thenAnswer((_) async => blockContent(blk2));
-  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk3)).thenAnswer((_) async => blockContent(blk3));
-  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk4)).thenAnswer((_) async => blockContent(blk4));
+  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk1))
+      .thenAnswer((_) async => blockContent(blk1));
+  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk2))
+      .thenAnswer((_) async => blockContent(blk2));
+  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk3))
+      .thenAnswer((_) async => blockContent(blk3));
+  when(cardanoBlocksApi.blocksHashOrNumberGet(hashOrNumber: blk4))
+      .thenAnswer((_) async => blockContent(blk4));
 
-  when(cardanoBlocksApi.blocksLatestGet()).thenAnswer((_) async => blockContent(blk0));
+  when(cardanoBlocksApi.blocksLatestGet())
+      .thenAnswer((_) async => blockContent(blk0));
 
   //transactions UTx0s
-  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx1)).thenAnswer((_) async => txContentUtxo(tx1));
-  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx2)).thenAnswer((_) async => txContentUtxo(tx2));
-  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx3)).thenAnswer((_) async => txContentUtxo(tx3));
-  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx4)).thenAnswer((_) async => txContentUtxo(tx4));
+  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx1))
+      .thenAnswer((_) async => txContentUtxo(tx1));
+  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx2))
+      .thenAnswer((_) async => txContentUtxo(tx2));
+  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx3))
+      .thenAnswer((_) async => txContentUtxo(tx3));
+  when(cardanoTransactionsApi.txsHashUtxosGet(hash: tx4))
+      .thenAnswer((_) async => txContentUtxo(tx4));
 
-  when(cardanoTransactionsApi.txSubmitPost(contentType: 'application/cbor', data: anyNamed('data')))
-      .thenAnswer((_) async => Response(requestOptions: RequestOptions(path: ''), statusCode: 200, data: 'success'));
+  when(cardanoTransactionsApi.txSubmitPost(
+          contentType: 'application/cbor', data: anyNamed('data')))
+      .thenAnswer((_) async => Response(
+          requestOptions: RequestOptions(path: ''),
+          statusCode: 200,
+          data: 'success'));
 
   //native assets
-  when(cardanoAssetsApi.assetsAssetGet(asset: asset1)).thenAnswer((_) async => asset);
+  when(cardanoAssetsApi.assetsAssetGet(asset: asset1))
+      .thenAnswer((_) async => asset);
 
   //when(cardanoTransactionsApi.txsHashGet(hash: tx1)).thenAnswer((realInvocation) => null)
 

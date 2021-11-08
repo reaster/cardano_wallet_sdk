@@ -33,9 +33,11 @@ class WalletBuilder {
 
   set stakeAddress(ShelleyAddress stakeAddress) => _stakeAddress = stakeAddress;
 
-  set testnetAdapterKey(String? testnetAdapterKey) => _testnetAdapterKey = testnetAdapterKey;
+  set testnetAdapterKey(String? testnetAdapterKey) =>
+      _testnetAdapterKey = testnetAdapterKey;
 
-  set mainnetAdapterKey(String? mainnetAdapterKey) => _mainnetAdapterKey = mainnetAdapterKey;
+  set mainnetAdapterKey(String? mainnetAdapterKey) =>
+      _mainnetAdapterKey = mainnetAdapterKey;
 
   set adapter(BlockchainAdapter adapter) => _adapter = adapter;
 
@@ -45,7 +47,8 @@ class WalletBuilder {
 
   set hdWallet(HdWallet hdWallet) => _hdWallet = hdWallet;
 
-  set rootSigningKey(Bip32SigningKey? rootSigningKey) => _rootSigningKey = rootSigningKey;
+  set rootSigningKey(Bip32SigningKey? rootSigningKey) =>
+      _rootSigningKey = rootSigningKey;
 
   // set seed(Uint8List seed) => _seed = seed;
 
@@ -55,7 +58,8 @@ class WalletBuilder {
       _coinSelectionFunction = coinSelectionAlgorithm;
 
   Result<ReadOnlyWallet, String> readOnlyBuild() {
-    if (_stakeAddress == null) return Err("Read-only wallet creation requires a staking address");
+    if (_stakeAddress == null)
+      return Err("Read-only wallet creation requires a staking address");
     if (_walletName == null) {
       _walletName = "Wallet #${_walletNameIndex++}";
     }
@@ -67,7 +71,9 @@ class WalletBuilder {
       if (_networkId == null) _networkId = NetworkId.mainnet;
       final adapterResult = _lookupOrCreateBlockchainAdapter(
         networkId: _networkId!,
-        key: _networkId! == NetworkId.mainnet ? _mainnetAdapterKey : _testnetAdapterKey,
+        key: _networkId! == NetworkId.mainnet
+            ? _mainnetAdapterKey
+            : _testnetAdapterKey,
       );
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
       _adapter = adapterResult.unwrap();
@@ -94,8 +100,10 @@ class WalletBuilder {
     if (_hdWallet != null) {
       _rootSigningKey = _hdWallet!.rootSigningKey;
     } else {
-      if (_mnemonic == null) return Err("wallet creation requires a mnemonic phrase.");
-      _hdWallet = HdWallet.fromMnemonic(_mnemonic!.join(' ')); //(rootSigningKey: _rootSigningKey!);
+      if (_mnemonic == null)
+        return Err("wallet creation requires a mnemonic phrase.");
+      _hdWallet = HdWallet.fromMnemonic(
+          _mnemonic!.join(' ')); //(rootSigningKey: _rootSigningKey!);
       _rootSigningKey = _hdWallet!.rootSigningKey;
       // if (_rootSigningKey == null) {
       //   if (_mnemonic != null) {
@@ -119,13 +127,16 @@ class WalletBuilder {
       if (_networkId == null) _networkId = NetworkId.mainnet;
       final adapterResult = _lookupOrCreateBlockchainAdapter(
         networkId: _networkId!,
-        key: _networkId! == NetworkId.mainnet ? _mainnetAdapterKey : _testnetAdapterKey,
+        key: _networkId! == NetworkId.mainnet
+            ? _mainnetAdapterKey
+            : _testnetAdapterKey,
       );
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
       _adapter = adapterResult.unwrap();
     }
     final stakeKeyPair = _hdWallet!.deriveAddressKeys(role: stakingRole);
-    final stakeAddress = _hdWallet!.toRewardAddress(spend: stakeKeyPair.verifyKey!, networkId: _networkId!);
+    final stakeAddress = _hdWallet!.toRewardAddress(
+        spend: stakeKeyPair.verifyKey!, networkId: _networkId!);
     final addressKeyPair = _hdWallet!.deriveAddressKeys(account: accountIndex);
     //printKey(addressKeyPair);
     final wallet = WalletImpl(
@@ -149,20 +160,27 @@ class WalletBuilder {
   }
 
   ///generate mnumonic words to be used by new wallet.
-  List<String> generateNewMnemonic() => (bip39.generateMnemonic(strength: 256)).split(' ');
+  List<String> generateNewMnemonic() =>
+      (bip39.generateMnemonic(strength: 256)).split(' ');
 
-  static Map<NetworkId, BlockchainAdapterFactory> _blockchainAdapterFactoryCache = {};
+  static Map<NetworkId, BlockchainAdapterFactory>
+      _blockchainAdapterFactoryCache = {};
   static Map<NetworkId, BlockchainAdapter> _blockchainAdapterCache = {};
 
   static Result<BlockchainAdapter, String> _lookupOrCreateBlockchainAdapter(
       {required NetworkId networkId, String? key}) {
     BlockchainAdapter? adapter = _blockchainAdapterCache[networkId];
     if (adapter != null) return Ok(adapter);
-    BlockchainAdapterFactory? factory = _blockchainAdapterFactoryCache[networkId];
+    BlockchainAdapterFactory? factory =
+        _blockchainAdapterFactoryCache[networkId];
     if (factory == null) {
-      if (key == null) return Err("no BlockFrost key supplied for ${networkId.toString()} network");
-      Interceptor authInterceptor = BlockchainAdapterFactory.interceptorFromKey(key: key);
-      factory = BlockchainAdapterFactory(authInterceptor: authInterceptor, networkId: networkId);
+      if (key == null)
+        return Err(
+            "no BlockFrost key supplied for ${networkId.toString()} network");
+      Interceptor authInterceptor =
+          BlockchainAdapterFactory.interceptorFromKey(key: key);
+      factory = BlockchainAdapterFactory(
+          authInterceptor: authInterceptor, networkId: networkId);
       _blockchainAdapterFactoryCache[networkId] = factory;
     }
     adapter = factory!.adapter();

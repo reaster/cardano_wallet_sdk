@@ -22,7 +22,8 @@ import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 /// with Dart generators or https://github.com/reaster/schema-gen to generate these classes.
 ///
 
-class CborDeserializationException implements Exception {} //TODO replace with Result?
+class CborDeserializationException implements Exception {
+} //TODO replace with Result?
 
 /// an single asset name and value under a MultiAsset policyId
 class ShelleyAsset {
@@ -42,8 +43,8 @@ class ShelleyMultiAsset {
   factory ShelleyMultiAsset.deserialize({required MapEntry cMapEntry}) {
     final policyId = hexFromUnit8Buffer(cMapEntry.key as Uint8Buffer);
     final List<ShelleyAsset> assets = [];
-    (cMapEntry.value as Map).forEach(
-        (key, value) => assets.add(ShelleyAsset(name: hexFromUnit8Buffer(key as Uint8Buffer), value: value as int)));
+    (cMapEntry.value as Map).forEach((key, value) => assets.add(ShelleyAsset(
+        name: hexFromUnit8Buffer(key as Uint8Buffer), value: value as int)));
     return ShelleyMultiAsset(policyId: policyId, assets: assets);
   }
   //
@@ -52,8 +53,9 @@ class ShelleyMultiAsset {
   MapBuilder assetsToCborMap() {
     final mapBuilder = MapBuilder.builder();
     assets.forEach((asset) {
-      mapBuilder.writeBuff(
-          uint8BufferFromHex(asset.name, utf8EncodeOnHexFailure: true)); //lib only allows integer and string keys
+      mapBuilder.writeBuff(uint8BufferFromHex(asset.name,
+          utf8EncodeOnHexFailure:
+              true)); //lib only allows integer and string keys
       mapBuilder.writeInt(asset.value);
     });
     return mapBuilder;
@@ -75,7 +77,9 @@ class ShelleyTransactionInput {
   }
 
   factory ShelleyTransactionInput.deserialize({required List cList}) {
-    return ShelleyTransactionInput(transactionId: HEX.encode(cList[0] as Uint8Buffer), index: cList[1] as int);
+    return ShelleyTransactionInput(
+        transactionId: HEX.encode(cList[0] as Uint8Buffer),
+        index: cList[1] as int);
   }
 }
 
@@ -103,9 +107,12 @@ class ShelleyTransactionOutput {
   factory ShelleyTransactionOutput.deserialize({required List cList}) {
     final address = bech32ShelleyAddressFromBytes(cList[0] as Uint8Buffer);
     if (cList[1] is int) {
-      return ShelleyTransactionOutput(address: address, value: ShelleyValue(coin: cList[1] as int, multiAssets: []));
+      return ShelleyTransactionOutput(
+          address: address,
+          value: ShelleyValue(coin: cList[1] as int, multiAssets: []));
     } else if (cList[1] is List) {
-      final ShelleyValue value = ShelleyValue.deserialize(cList: cList[1] as List);
+      final ShelleyValue value =
+          ShelleyValue.deserialize(cList: cList[1] as List);
       return ShelleyTransactionOutput(address: address, value: value);
     } else {
       throw CborDeserializationException();
@@ -121,8 +128,10 @@ class ShelleyValue {
   ShelleyValue({required this.coin, required this.multiAssets});
 
   factory ShelleyValue.deserialize({required List cList}) {
-    final List<ShelleyMultiAsset> multiAssets =
-        (cList[1] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
+    final List<ShelleyMultiAsset> multiAssets = (cList[1] as Map)
+        .entries
+        .map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry))
+        .toList();
     return ShelleyValue(coin: cList[0] as int, multiAssets: multiAssets);
   }
   //
@@ -183,7 +192,8 @@ class ShelleyTransactionBody {
         fee: fee ?? this.fee,
         ttl: ttl ?? this.ttl,
         metadataHash: metadataHash ?? this.metadataHash,
-        validityStartInterval: validityStartInterval ?? this.validityStartInterval,
+        validityStartInterval:
+            validityStartInterval ?? this.validityStartInterval,
         mint: mint ?? this.mint,
       );
 
@@ -207,11 +217,18 @@ class ShelleyTransactionBody {
   }
 
   factory ShelleyTransactionBody.deserialize({required Map cMap}) {
-    final inputs = (cMap[0] as List).map((i) => ShelleyTransactionInput.deserialize(cList: i as List)).toList();
-    final outputs = (cMap[1] as List).map((i) => ShelleyTransactionOutput.deserialize(cList: i as List)).toList();
+    final inputs = (cMap[0] as List)
+        .map((i) => ShelleyTransactionInput.deserialize(cList: i as List))
+        .toList();
+    final outputs = (cMap[1] as List)
+        .map((i) => ShelleyTransactionOutput.deserialize(cList: i as List))
+        .toList();
     final mint = (cMap[9] == null)
         ? null
-        : (cMap[9] as Map).entries.map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry)).toList();
+        : (cMap[9] as Map)
+            .entries
+            .map((entry) => ShelleyMultiAsset.deserialize(cMapEntry: entry))
+            .toList();
     return ShelleyTransactionBody(
       inputs: inputs,
       outputs: outputs,
@@ -227,12 +244,14 @@ class ShelleyTransactionBody {
     //0:inputs
     mapBuilder.writeInt(0);
     final inListBuilder = ListBuilder.builder();
-    inputs.forEach((input) => inListBuilder.addBuilderOutput(input.toCborList().getData()));
+    inputs.forEach((input) =>
+        inListBuilder.addBuilderOutput(input.toCborList().getData()));
     mapBuilder.addBuilderOutput(inListBuilder.getData());
     //1:outputs
     mapBuilder.writeInt(1);
     final outListBuilder = ListBuilder.builder();
-    outputs.forEach((output) => outListBuilder.addBuilderOutput(output.toCborList().getData()));
+    outputs.forEach((output) =>
+        outListBuilder.addBuilderOutput(output.toCborList().getData()));
     mapBuilder.addBuilderOutput(outListBuilder.getData());
     //2:fee
     mapBuilder.writeInt(2);
@@ -305,7 +324,8 @@ class ShelleyNativeScript {
 class ShelleyTransactionWitnessSet {
   final List<ShelleyVkeyWitness> vkeyWitnesses;
   final List<ShelleyNativeScript> nativeScripts;
-  ShelleyTransactionWitnessSet({required this.vkeyWitnesses, required this.nativeScripts});
+  ShelleyTransactionWitnessSet(
+      {required this.vkeyWitnesses, required this.nativeScripts});
   //    transaction_witness_set =
   //    { ? 0: [* vkeywitness ]
   //  , ? 1: [* native_script ]
@@ -316,11 +336,13 @@ class ShelleyTransactionWitnessSet {
   //    }
   factory ShelleyTransactionWitnessSet.deserialize({required Map cMap}) {
     final witnessSetRawList = cMap[0] != null ? cMap[0] as List : [];
-    final List<ShelleyVkeyWitness> vkeyWitnesses =
-        witnessSetRawList.map((item) => ShelleyVkeyWitness(vkey: item[0], signature: item[1])).toList();
+    final List<ShelleyVkeyWitness> vkeyWitnesses = witnessSetRawList
+        .map((item) => ShelleyVkeyWitness(vkey: item[0], signature: item[1]))
+        .toList();
     final scriptRawList = cMap[1] != null ? cMap[1] as List : [];
-    final List<ShelleyNativeScript> nativeScripts =
-        scriptRawList.map((item) => ShelleyNativeScript(selector: item[0], blob: item[1])).toList();
+    final List<ShelleyNativeScript> nativeScripts = scriptRawList
+        .map((item) => ShelleyNativeScript(selector: item[0], blob: item[1]))
+        .toList();
     return ShelleyTransactionWitnessSet(
       vkeyWitnesses: vkeyWitnesses,
       nativeScripts: nativeScripts,
@@ -332,14 +354,16 @@ class ShelleyTransactionWitnessSet {
     if (vkeyWitnesses.isNotEmpty) {
       mapBuilder.writeInt(0); //key
       final inListBuilder = ListBuilder.builder();
-      vkeyWitnesses.forEach((witness) => inListBuilder.addBuilderOutput(witness.toCborList().getData()));
+      vkeyWitnesses.forEach((witness) =>
+          inListBuilder.addBuilderOutput(witness.toCborList().getData()));
       mapBuilder.addBuilderOutput(inListBuilder.getData()); //value
     }
     //1:outputs
     if (nativeScripts.isNotEmpty) {
       mapBuilder.writeInt(1); //key
       final outListBuilder = ListBuilder.builder();
-      nativeScripts.forEach((script) => outListBuilder.addBuilderOutput(script.toCborList().getData()));
+      nativeScripts.forEach((script) =>
+          outListBuilder.addBuilderOutput(script.toCborList().getData()));
       mapBuilder.addBuilderOutput(outListBuilder.getData()); //value
     }
     return mapBuilder;
@@ -352,14 +376,17 @@ class ShelleyTransaction {
   final ShelleyTransactionWitnessSet? witnessSet;
   final CBORMetadata? metadata;
 
-  ShelleyTransaction({required ShelleyTransactionBody body, this.witnessSet, this.metadata})
+  ShelleyTransaction(
+      {required ShelleyTransactionBody body, this.witnessSet, this.metadata})
       : this.body = ShelleyTransactionBody(
           //rebuild body to include metadataHash
           inputs: body.inputs,
           outputs: body.outputs,
           fee: body.fee,
           ttl: body.ttl,
-          metadataHash: metadata != null ? metadata.hash : null, //optionally add hash if metadata present
+          metadataHash: metadata != null
+              ? metadata.hash
+              : null, //optionally add hash if metadata present
           validityStartInterval: body.validityStartInterval,
           mint: body.mint,
         );
@@ -373,14 +400,19 @@ class ShelleyTransaction {
     final tx = list[0];
     if (tx.length < 3) throw CborDeserializationException();
     return ShelleyTransaction.deserialize(
-        cBody: tx[0] as Map, cWitnessSet: tx[1] as Map, cMetadata: tx[2] == null ? null : tx[2] as Map);
+        cBody: tx[0] as Map,
+        cWitnessSet: tx[1] as Map,
+        cMetadata: tx[2] == null ? null : tx[2] as Map);
   }
-  factory ShelleyTransaction.deserialize({required Map cBody, required Map cWitnessSet, Map? cMetadata}) {
+  factory ShelleyTransaction.deserialize(
+      {required Map cBody, required Map cWitnessSet, Map? cMetadata}) {
     final body = ShelleyTransactionBody.deserialize(cMap: cBody);
-    final ShelleyTransactionWitnessSet witnessSet = ShelleyTransactionWitnessSet.deserialize(cMap: cWitnessSet);
+    final ShelleyTransactionWitnessSet witnessSet =
+        ShelleyTransactionWitnessSet.deserialize(cMap: cWitnessSet);
     //if (MajorType.MAP.equals(metadata.getMajorType())) { //Metadata available
     final CBORMetadata? metadata = cMetadata == null ? null : null; //TODO
-    return ShelleyTransaction(body: body, witnessSet: witnessSet, metadata: metadata);
+    return ShelleyTransaction(
+        body: body, witnessSet: witnessSet, metadata: metadata);
   }
 
   ListBuilder toCborList() {
@@ -427,7 +459,8 @@ class ShelleyTransaction {
 class CBORMetadata {
   final MapBuilder mapBuilder;
 
-  CBORMetadata(MapBuilder? mapBuilder) : mapBuilder = mapBuilder == null ? MapBuilder.builder() : mapBuilder;
+  CBORMetadata(MapBuilder? mapBuilder)
+      : mapBuilder = mapBuilder == null ? MapBuilder.builder() : mapBuilder;
 
   List<int> get serialize {
     final result = Uint8Buffer();

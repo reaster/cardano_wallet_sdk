@@ -31,20 +31,30 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     required this.hdWallet,
     this.accountIndex = defaultAddressIndex,
     this.coinSelectionFunction = largestFirst,
-  }) : super(blockchainAdapter: blockchainAdapter, stakeAddress: stakeAddress, walletName: walletName);
+  }) : super(
+            blockchainAdapter: blockchainAdapter,
+            stakeAddress: stakeAddress,
+            walletName: walletName);
 
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
-      .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: _isUnusedReceiveAddress)
+      .deriveUnusedBaseAddressKit(
+          role: changeRole,
+          networkId: networkId,
+          unusedCallback: _isUnusedReceiveAddress)
       .address;
 
   @override
-  ShelleyAddress get firstUnusedReceiveAddress =>
-      hdWallet.deriveUnusedBaseAddressKit(networkId: networkId, unusedCallback: _isUnusedChangeAddress).address;
+  ShelleyAddress get firstUnusedReceiveAddress => hdWallet
+      .deriveUnusedBaseAddressKit(
+          networkId: networkId, unusedCallback: _isUnusedChangeAddress)
+      .address;
 
-  bool _isUnusedReceiveAddress(ShelleyAddress address) => !addresses.toSet().contains(address);
+  bool _isUnusedReceiveAddress(ShelleyAddress address) =>
+      !addresses.toSet().contains(address);
 
-  bool _isUnusedChangeAddress(ShelleyAddress address) => addresses.toSet().contains(address);
+  bool _isUnusedChangeAddress(ShelleyAddress address) =>
+      addresses.toSet().contains(address);
 
   @override
   Future<Result<ShelleyTransaction, String>> sendAda({
@@ -60,7 +70,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       return Err('only base shelley addresses currently supported');
     }
     if (toAddress.hrp != 'addr' && toAddress.hrp != 'addr_test') {
-      return Err("not a valid shelley external addresses, expecting 'addr' or 'addr_test' prefix");
+      return Err(
+          "not a valid shelley external addresses, expecting 'addr' or 'addr_test' prefix");
     }
     //coin selection:
     final Coin maxFeeGuess = 200000; //0.2 ADA
@@ -75,7 +86,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ..inputs(inputsResult.unwrap().inputs)
       ..value(ShelleyValue(coin: lovelace, multiAssets: []))
       ..toAddress(toAddress)
-      ..keyPair(hdWallet.deriveUnusedBaseAddressKit()) //contains sign key & verify key
+      ..keyPair(hdWallet
+          .deriveUnusedBaseAddressKit()) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
       ..changeAddress(this.firstUnusedChangeAddress)
       ..ttl(ttl)
@@ -84,7 +96,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     if (txResult.isErr()) return Err(txResult.unwrapErr());
     final ShelleyTransaction tx = txResult.unwrap();
     print("signed tx: ${tx.toString()}");
-    final submitResult = await blockchainAdapter.submitTransaction(tx.serialize);
+    final submitResult =
+        await blockchainAdapter.submitTransaction(tx.serialize);
     if (submitResult.isErr()) return Err(submitResult.unwrapErr());
     return Ok(tx);
   }
@@ -93,7 +106,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   bool get readOnly => false;
 
   @override
-  Bip32KeyPair get rootKeyPair => Bip32KeyPair(signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
+  Bip32KeyPair get rootKeyPair => Bip32KeyPair(
+      signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
 }
 
 // Yorio Wallet interface for reference:

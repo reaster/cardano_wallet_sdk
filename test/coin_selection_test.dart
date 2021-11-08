@@ -20,7 +20,8 @@ void main() {
   group('coin slection: largestFirst -', () {
     setUp(() async {
       //setup wallet
-      final updateResult = await mockAdapter.updateWallet(stakeAddress: address);
+      final updateResult =
+          await mockAdapter.updateWallet(stakeAddress: address);
       expect(updateResult.isOk(), isTrue);
       final update = updateResult.unwrap();
       wallet.refresh(
@@ -66,7 +67,8 @@ void main() {
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result3.isErr(), isTrue);
-      expect(result3.unwrapErr().reason, CoinSelectionErrorEnum.InputValueInsufficient);
+      expect(result3.unwrapErr().reason,
+          CoinSelectionErrorEnum.InputValueInsufficient);
     });
     test('InputsExhausted', () async {
       //setup coin selection - 101 ADA and coinSelectionLimit = 1 - which will give InputsExhausted
@@ -77,7 +79,8 @@ void main() {
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result4.isErr(), isTrue);
-      expect(result4.unwrapErr().reason, CoinSelectionErrorEnum.InputsExhausted);
+      expect(
+          result4.unwrapErr().reason, CoinSelectionErrorEnum.InputsExhausted);
     });
   });
 }

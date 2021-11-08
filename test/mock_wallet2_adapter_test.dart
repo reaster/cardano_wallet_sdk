@@ -26,10 +26,12 @@ void main() {
             expect(block.slot, greaterThanOrEqualTo(39241175));
           },
           err: (err) => print(err));
-      final updateResult = await mockAdapter.updateWallet(stakeAddress: address);
+      final updateResult =
+          await mockAdapter.updateWallet(stakeAddress: address);
       updateResult.when(
           ok: (update) {
-            print("Wallet(balance: ${update.balance}, formatted: ${formatter.format(update.balance)})");
+            print(
+                "Wallet(balance: ${update.balance}, formatted: ${formatter.format(update.balance)})");
             wallet.refresh(
                 balance: update.balance,
                 usedAddresses: update.addresses,
@@ -42,20 +44,26 @@ void main() {
             expect(wallet.addresses.length, equals(3));
 
             //assets
-            update.assets.forEach((key, value) => print("Asset($key: $key, value: $value"));
+            update.assets.forEach(
+                (key, value) => print("Asset($key: $key, value: $value"));
             expect(wallet.findAssetByTicker('ADA'), isNotNull);
-            expect(wallet.findAssetByTicker('ADA')?.assetId, equals(lovelaceHex));
+            expect(
+                wallet.findAssetByTicker('ADA')?.assetId, equals(lovelaceHex));
             expect(wallet.findAssetByTicker('TEST'), isNotNull);
             final testcoinHex = wallet.findAssetByTicker('TEST')!.assetId;
 
             //transactions
             final Set<ShelleyAddress> addressSet = update.addresses.toSet();
             update.transactions.forEach((RawTransaction tx) {
-              final w = WalletTransactionImpl(rawTransaction: tx, addressSet: addressSet);
-              print("${tx.toString()} - ${w.currencyBalancesByTicker(assetByAssetId: update.assets)} fees:${w.fees}");
+              final w = WalletTransactionImpl(
+                  rawTransaction: tx, addressSet: addressSet);
+              print(
+                  "${tx.toString()} - ${w.currencyBalancesByTicker(assetByAssetId: update.assets)} fees:${w.fees}");
             });
-            expect(wallet.filterTransactions(assetId: lovelaceHex).length, equals(4));
-            expect(wallet.filterTransactions(assetId: testcoinHex).length, equals(2));
+            expect(wallet.filterTransactions(assetId: lovelaceHex).length,
+                equals(4));
+            expect(wallet.filterTransactions(assetId: testcoinHex).length,
+                equals(2));
 
             //balances
             expect(wallet.currencies[lovelaceHex], equals(update.balance));

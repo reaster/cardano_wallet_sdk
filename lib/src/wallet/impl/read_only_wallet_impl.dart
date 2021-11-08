@@ -28,21 +28,27 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
-  ReadOnlyWalletImpl({required this.blockchainAdapter, required this.stakeAddress, required this.walletName})
-      : this.networkId = stakeAddress.toBech32().startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet;
+  ReadOnlyWalletImpl(
+      {required this.blockchainAdapter,
+      required this.stakeAddress,
+      required this.walletName})
+      : this.networkId = stakeAddress.toBech32().startsWith('stake_test')
+            ? NetworkId.testnet
+            : NetworkId.mainnet;
 
   @override
   Map<String, Coin> get currencies {
-    return transactions
-        .map((t) => t.currencies)
-        .expand((m) => m.entries)
-        .fold(<String, Coin>{}, (result, entry) => result..[entry.key] = entry.value + (result[entry.key] ?? 0));
+    return transactions.map((t) => t.currencies).expand((m) => m.entries).fold(
+        <String, Coin>{},
+        (result, entry) =>
+            result..[entry.key] = entry.value + (result[entry.key] ?? 0));
   }
 
   @override
   Coin get calculatedBalance {
-    final Coin rewardsSum =
-        stakeAccounts.map((s) => s.withdrawalsSum).fold(0, (p, c) => p + c); //TODO figure out the math
+    final Coin rewardsSum = stakeAccounts
+        .map((s) => s.withdrawalsSum)
+        .fold(0, (p, c) => p + c); //TODO figure out the math
     final Coin lovelaceSum = currencies[lovelaceHex] as Coin;
     final result = lovelaceSum + rewardsSum;
     return result;
@@ -73,7 +79,8 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       change = true;
       //swap raw transactions for wallet-centric transactions:
       this._transactions = transactions
-          .map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: _usedAddresses.toSet()))
+          .map((t) => WalletTransactionImpl(
+              rawTransaction: t, addressSet: _usedAddresses.toSet()))
           .toList();
     }
     if (this._stakeAccounts.length != stakeAccounts.length) {
@@ -116,15 +123,18 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
 
   @override
-  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) => _assets.values.firstWhere(matcher);
+  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) =>
+      _assets.values.firstWhere(matcher);
 
   @override
-  List<WalletTransaction> get unspentTransactions =>
-      transactions.where((tx) => tx.status == TransactionStatus.unspent).toList();
+  List<WalletTransaction> get unspentTransactions => transactions
+      .where((tx) => tx.status == TransactionStatus.unspent)
+      .toList();
 
   @override
   Future<Result<bool, String>> update() async {
-    final result = await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
+    final result =
+        await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
     bool changed = false;
     result.when(
       ok: (update) {

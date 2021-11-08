@@ -77,5 +77,6 @@ class StakeReward {
   /// stake pool ID
   final String poolId;
 
-  StakeReward({required this.epoch, required this.amount, required this.poolId});
+  StakeReward(
+      {required this.epoch, required this.amount, required this.poolId});
 }

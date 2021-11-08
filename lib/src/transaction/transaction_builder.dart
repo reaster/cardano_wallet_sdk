@@ -53,18 +53,21 @@ class TransactionBuilder {
   final staleSlotCuttoff = Duration(seconds: 60);
 
   /// simple build - assemble transaction without any validation
-  ShelleyTransaction build() => ShelleyTransaction(body: _buildBody(), witnessSet: _witnessSet, metadata: _metadata);
+  ShelleyTransaction build() => ShelleyTransaction(
+      body: _buildBody(), witnessSet: _witnessSet, metadata: _metadata);
 
   /// manually sign transacion and set single witnessSet.
   ShelleyTransaction sign() {
     final body = _buildBody();
     _witnessSet = _sign(body: body, keyPair: _keyPair!);
-    return ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    return ShelleyTransaction(
+        body: body, witnessSet: _witnessSet, metadata: _metadata);
   }
 
   /// Check if inputs and outputs including fee, add up to zero or balance out.
   bool get isBalanced {
-    final result = _buildBody().transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
+    final result = _buildBody()
+        .transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
     return result.isOk() && result.unwrap();
   }
 
@@ -82,7 +85,8 @@ class TransactionBuilder {
   ///
   /// TODO handle edge case where selectd coins have to be changed based on fee adjustment.
   ///
-  Future<Result<ShelleyTransaction, String>> buildAndSign({bool mustBalance = true}) async {
+  Future<Result<ShelleyTransaction, String>> buildAndSign(
+      {bool mustBalance = true}) async {
     final dataCheck = _checkContraints();
     if (dataCheck.isErr()) return Err(dataCheck.unwrapErr());
     //calculate time to live if not supplied
@@ -96,31 +100,35 @@ class TransactionBuilder {
     if (_inputs.isEmpty) return Err("inputs are empty");
     //convert value into spend output if not zero
     if (_value.coin > coinZero && _toAddress != null) {
-      ShelleyTransactionOutput spendOutput = ShelleyTransactionOutput(address: _toAddress!.toBech32(), value: _value);
+      ShelleyTransactionOutput spendOutput = ShelleyTransactionOutput(
+          address: _toAddress!.toBech32(), value: _value);
       _outputs.add(spendOutput);
     }
     var body = _buildBody();
     //adjust change to balance transaction
-    final balanceResult =
-        body.balancedOutputsWithChange(changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+    final balanceResult = body.balancedOutputsWithChange(
+        changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
     if (balanceResult.isErr()) return Err(balanceResult.unwrapErr());
     _outputs = balanceResult.unwrap();
     //build the complete signed transaction so we can calculate a more accurate fee
     body = _buildBody();
     _witnessSet = _sign(body: body, keyPair: _keyPair!, fakeSignature: true);
-    var tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    var tx = ShelleyTransaction(
+        body: body, witnessSet: _witnessSet, metadata: _metadata);
     _fee = calculateMinFee(tx: tx, minFee: _minFee);
     //rebalance change to fit the new fee
-    final balanceResult2 =
-        body.balancedOutputsWithChange(changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+    final balanceResult2 = body.balancedOutputsWithChange(
+        changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
     if (balanceResult2.isErr()) return Err(balanceResult2.unwrapErr());
     _outputs = balanceResult2.unwrap();
     body = _buildBody();
     //re-sign to capture changes
     _witnessSet = _sign(body: body, keyPair: _keyPair!);
-    tx = ShelleyTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    tx = ShelleyTransaction(
+        body: body, witnessSet: _witnessSet, metadata: _metadata);
     if (mustBalance) {
-      final balancedResult = tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
+      final balancedResult =
+          tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
       if (balancedResult.isErr()) return Err(balancedResult.unwrapErr());
     }
     return Ok(tx);
@@ -133,15 +141,19 @@ class TransactionBuilder {
   }) {
     final bodyData = body.toCborMap().getData();
     List<int> hash = blake2bHash256(bodyData);
-    final signedMessage = fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
-    final witness = ShelleyVkeyWitness(vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
-    return ShelleyTransactionWitnessSet(vkeyWitnesses: [witness], nativeScripts: []);
+    final signedMessage =
+        fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
+    final witness = ShelleyVkeyWitness(
+        vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
+    return ShelleyTransactionWitnessSet(
+        vkeyWitnesses: [witness], nativeScripts: []);
   }
 
   /// Generate fake signature that just has to be correct length for size calculation.
   SignedMessage _fakeSign(List<int> message) {
     var sm = Uint8List(message.length + TweetNaCl.signatureLength);
-    sm.fillRange(0, sm.length, 42); //file fake sig with meaning of life & everything.
+    sm.fillRange(
+        0, sm.length, 42); //file fake sig with meaning of life & everything.
     return SignedMessage.fromList(signedMessage: sm);
   }
 
@@ -158,12 +170,16 @@ class TransactionBuilder {
       );
 
   Result<bool, String> _checkContraints() {
-    if (_blockchainAdapter == null) return Err("'blockchainAdapter' property must be set");
+    if (_blockchainAdapter == null)
+      return Err("'blockchainAdapter' property must be set");
     if (_inputs.isEmpty) return Err("'inputs' property must be set");
     if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null))
-      return Err("when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
-    if (_keyPair == null) return Err("'kit' (ShelleyAddressKit) property must be set");
-    if (_changeAddress == null) return Err("'changeAddress' property must be set");
+      return Err(
+          "when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
+    if (_keyPair == null)
+      return Err("'kit' (ShelleyAddressKit) property must be set");
+    if (_changeAddress == null)
+      return Err("'changeAddress' property must be set");
     return Ok(true);
   }
 
@@ -171,7 +187,8 @@ class TransactionBuilder {
   /// ShelleyTransactionBody properties are set.
   /// if minFee is set, then this determines the lower minimum fee bound.
   Coin calculateMinFee({required ShelleyTransaction tx, Coin minFee = 0}) {
-    Coin calculatedFee = _minFeeFunction(transaction: tx, linearFee: _linearFee);
+    Coin calculatedFee =
+        _minFeeFunction(transaction: tx, linearFee: _linearFee);
     final fee = (calculatedFee < minFee) ? minFee : calculatedFee;
     return fee;
   }
@@ -204,7 +221,8 @@ class TransactionBuilder {
     }
     if (_ttl != 0) {
       if (_ttl < _currentSlot) {
-        return Err("specified ttl of $_ttl can't be less than current slot: $_currentSlot");
+        return Err(
+            "specified ttl of $_ttl can't be less than current slot: $_currentSlot");
       }
       return Ok(_ttl);
     }
@@ -212,25 +230,29 @@ class TransactionBuilder {
     return Ok(_currentSlot + defaultTtlDelta);
   }
 
-  void blockchainAdapter(BlockchainAdapter blockchainAdapter) => _blockchainAdapter = blockchainAdapter;
+  void blockchainAdapter(BlockchainAdapter blockchainAdapter) =>
+      _blockchainAdapter = blockchainAdapter;
 
   void keyPair(Bip32KeyPair keyPair) => _keyPair = keyPair;
 
   void value(ShelleyValue value) => _value = value;
 
-  void changeAddress(ShelleyAddress changeAddress) => _changeAddress = changeAddress;
+  void changeAddress(ShelleyAddress changeAddress) =>
+      _changeAddress = changeAddress;
 
   void toAddress(ShelleyAddress toAddress) => _toAddress = toAddress;
 
   void currentSlot(int currentSlot) => _currentSlot = currentSlot;
 
-  void minFeeFunction(MinFeeFunction feeFunction) => _minFeeFunction = feeFunction;
+  void minFeeFunction(MinFeeFunction feeFunction) =>
+      _minFeeFunction = feeFunction;
 
   void linearFee(LinearFee linearFee) => _linearFee = linearFee;
 
   void metadataHash(List<int>? metadataHash) => _metadataHash = metadataHash;
 
-  void validityStartInterval(int validityStartInterval) => _validityStartInterval = validityStartInterval;
+  void validityStartInterval(int validityStartInterval) =>
+      _validityStartInterval = validityStartInterval;
 
   void fee(Coin fee) => _fee = fee;
 
@@ -246,12 +268,13 @@ class TransactionBuilder {
 
   void txInput(ShelleyTransactionInput input) => _inputs.add(input);
 
-  void input({required String transactionId, required int index}) =>
-      txInput(ShelleyTransactionInput(transactionId: transactionId, index: index));
+  void input({required String transactionId, required int index}) => txInput(
+      ShelleyTransactionInput(transactionId: transactionId, index: index));
 
   void txOutput(ShelleyTransactionOutput output) => _outputs.add(output);
 
-  void witnessSet(ShelleyTransactionWitnessSet witnessSet) => _witnessSet = witnessSet;
+  void witnessSet(ShelleyTransactionWitnessSet witnessSet) =>
+      _witnessSet = witnessSet;
 
   void metadata(CBORMetadata metadata) => _metadata = metadata;
 
@@ -265,7 +288,8 @@ class TransactionBuilder {
   }) {
     assert(address != null || shelleyAddress != null);
     assert(!(address != null && shelleyAddress != null));
-    final String addr = shelleyAddress != null ? shelleyAddress.toBech32() : address!;
+    final String addr =
+        shelleyAddress != null ? shelleyAddress.toBech32() : address!;
     assert(multiAssetBuilder != null || value != null);
     assert(!(multiAssetBuilder != null && value != null));
     final val = value ?? multiAssetBuilder!.build();
@@ -309,7 +333,8 @@ class MultiAssetBuilder {
   List<ShelleyMultiAsset> _multiAssets = [];
   MultiAssetBuilder({required this.coin});
   ShelleyValue build() => ShelleyValue(coin: coin, multiAssets: _multiAssets);
-  MultiAssetBuilder nativeAsset({required String policyId, String? hexName, required int value}) {
+  MultiAssetBuilder nativeAsset(
+      {required String policyId, String? hexName, required int value}) {
     final nativeAsset = ShelleyMultiAsset(policyId: policyId, assets: [
       ShelleyAsset(name: hexName ?? '', value: value),
     ]);

@@ -20,7 +20,9 @@ void main() {
   test('Deserialization', () {
     final List<ShelleyTransactionInput> inputs = [
       ShelleyTransactionInput(
-          transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+          transactionId:
+              '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002',
+          index: 1),
     ];
     final List<ShelleyTransactionOutput> outputs = [
       ShelleyTransactionOutput(
@@ -31,16 +33,25 @@ void main() {
           address:
               'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
           value: ShelleyValue(coin: 340000, multiAssets: [
-            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
-              ShelleyAsset(name: '736174636f696e', value: 4000),
-              ShelleyAsset(name: '446174636f696e', value: 1100),
-            ]),
-            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
-              ShelleyAsset(name: '', value: 9000),
-            ]),
-            ShelleyMultiAsset(policyId: '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
-              ShelleyAsset(name: '666174636f696e', value: 5000),
-            ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                assets: [
+                  ShelleyAsset(name: '736174636f696e', value: 4000),
+                  ShelleyAsset(name: '446174636f696e', value: 1100),
+                ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+                assets: [
+                  ShelleyAsset(name: '', value: 9000),
+                ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                assets: [
+                  ShelleyAsset(name: '666174636f696e', value: 5000),
+                ]),
           ])),
     ];
     final body = ShelleyTransactionBody(
@@ -52,7 +63,8 @@ void main() {
       validityStartInterval: null,
       mint: outputs[1].value.multiAssets,
     );
-    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: null);
+    final ShelleyTransaction tx =
+        ShelleyTransaction(body: body, witnessSet: null, metadata: null);
     final txHex = tx.toCborHex;
     print(txHex);
     final expectedHex =
@@ -70,7 +82,9 @@ void main() {
   test('Serialize Transaction with Metadata', () {
     final List<ShelleyTransactionInput> inputs = [
       ShelleyTransactionInput(
-          transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+          transactionId:
+              '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002',
+          index: 1),
     ];
     final List<ShelleyTransactionOutput> outputs = [
       ShelleyTransactionOutput(
@@ -81,12 +95,18 @@ void main() {
           address:
               'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
           value: ShelleyValue(coin: 340000, multiAssets: [
-            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
-              ShelleyAsset(name: '736174636f696e', value: 4000),
-            ]),
-            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
-              ShelleyAsset(name: '', value: 9000),
-            ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                assets: [
+                  ShelleyAsset(name: '736174636f696e', value: 4000),
+                ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+                assets: [
+                  ShelleyAsset(name: '', value: 9000),
+                ]),
           ])),
     ];
     final body = ShelleyTransactionBody(
@@ -131,7 +151,8 @@ void main() {
         );
     // print("  actual: ${metadata.toCborHex}");
     // print('expected: a51b0000002e0efa535a644a6f686e1b0000002e0efa535b6243411b000001cc95c7413e42000b1b000001cc95c7413fa31907ba6832303176616c75651a000304bb1a00030d4163323033430b0b0a1b000001cc95c74140846833303176616c75651a000493e1430b0b0aa2190191663430317374726568656c6c6f6a68656c6c6f76616c7565');
-    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: metadata);
+    final ShelleyTransaction tx =
+        ShelleyTransaction(body: body, witnessSet: null, metadata: metadata);
     final txHex = tx.toCborHex;
     print(txHex);
     final expectedHex =
@@ -142,7 +163,9 @@ void main() {
   test('Serialize Transaction with Mint', () {
     final List<ShelleyTransactionInput> inputs = [
       ShelleyTransactionInput(
-          transactionId: '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002', index: 1),
+          transactionId:
+              '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002',
+          index: 1),
     ];
     final List<ShelleyTransactionOutput> outputs = [
       ShelleyTransactionOutput(
@@ -153,12 +176,18 @@ void main() {
           address:
               'addr_test1qzx9hu8j4ah3auytk0mwcupd69hpc52t0cw39a65ndrah86djs784u92a3m5w475w3w35tyd6v3qumkze80j8a6h5tuqq5xe8y',
           value: ShelleyValue(coin: 340000, multiAssets: [
-            ShelleyMultiAsset(policyId: '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96', assets: [
-              ShelleyAsset(name: '736174636f696e', value: 4000),
-            ]),
-            ShelleyMultiAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', assets: [
-              ShelleyAsset(name: '', value: 9000),
-            ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96',
+                assets: [
+                  ShelleyAsset(name: '736174636f696e', value: 4000),
+                ]),
+            ShelleyMultiAsset(
+                policyId:
+                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+                assets: [
+                  ShelleyAsset(name: '', value: 9000),
+                ]),
           ])),
     ];
     final body = ShelleyTransactionBody(
@@ -170,7 +199,8 @@ void main() {
       validityStartInterval: null,
       mint: outputs[1].value.multiAssets,
     );
-    final ShelleyTransaction tx = ShelleyTransaction(body: body, witnessSet: null, metadata: null);
+    final ShelleyTransaction tx =
+        ShelleyTransaction(body: body, witnessSet: null, metadata: null);
     final txHex = tx.toCborHex;
     print(txHex);
     final expectedHex =
@@ -237,7 +267,8 @@ void main() {
     encoder.writeRegEx('^[12]g');
     codec.decodeFromInput();
     print(codec.decodedPrettyPrint(false));
-    print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
+    print(codec
+        .decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
 
   // test('Serialize transaction hex to hex', () {

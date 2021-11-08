@@ -64,12 +64,14 @@ void main() {
   final entropyPlusCs24Words = 256;
   final testMnemonic1 =
       "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
-  final testEntropy1 = "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
+  final testEntropy1 =
+      "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
   final testHexSeed1 =
       '3e545a8c7aed6e4e0a152a4884ab53b6f1f0d7916f22793c7618949d891a1a80772b7a2e27dbf9b1a8027c4c481a1f423b7da3f4bf6ee70d4a3a2e940c87d74f';
   final masterPrv =
       "ed25519e_sk1drm35zt6mrym4mg8nqcnyvaju6j40gzf8efn6j3elxztpv2fx4ync2a7ed862ew334g3vns0730578z690399j5mfyu3gzhl8a6n38cth3s88";
-  final masterPub = "ed25519_pk1zddat8qcwxm4gqlawnrvdtec3l20r59pep60e0dzgf5p6ykrnsds6au707";
+  final masterPub =
+      "ed25519_pk1zddat8qcwxm4gqlawnrvdtec3l20r59pep60e0dzgf5p6ykrnsds6au707";
   final accountPrv =
       "xprv14zqjv6jdyea8mf4v4nwp2wjfn8f42trhtqz0dknd6tjmrw6fx4yhfgnp5cta5ug055c0gl56jm2fx3hexwznc4jjjqmv0d60psdcppvxgzskmsa2f6ydhg53pcvzrnuujeacqamrmvkcq7mgq45e6mr3qvqlp9r5";
   final accountPub =
@@ -119,7 +121,8 @@ void main() {
       expect(entropy, equals(testEntropy1));
     });
     test('mnemonic to seed hex', () {
-      final seedHex = bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
+      final seedHex =
+          bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
       print("seedHex: $seedHex");
       expect(seedHex, equals(testHexSeed1));
     });

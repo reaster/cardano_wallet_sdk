@@ -19,10 +19,12 @@ final _emptyUint8Buffer = Uint8Buffer(0);
 ///
 /// convert hex string to Uint8Buffer. Strips off 0x prefix if present.
 ///
-Uint8Buffer uint8BufferFromHex(String hex, {bool utf8EncodeOnHexFailure = false}) {
+Uint8Buffer uint8BufferFromHex(String hex,
+    {bool utf8EncodeOnHexFailure = false}) {
   if (hex.isEmpty) return _emptyUint8Buffer;
   try {
-    final list = hex.startsWith('0x') ? HEX.decode(hex.substring(2)) : HEX.decode(hex);
+    final list =
+        hex.startsWith('0x') ? HEX.decode(hex.substring(2)) : HEX.decode(hex);
     final result = Uint8Buffer();
     result.addAll(list);
     return result;
@@ -38,7 +40,8 @@ Uint8Buffer uint8BufferFromHex(String hex, {bool utf8EncodeOnHexFailure = false}
 ///
 /// Convert List<int> bytes to Uint8Buffer.
 ///
-Uint8Buffer unit8BufferFromBytes(List<int> bytes) => Uint8Buffer()..addAll(bytes);
+Uint8Buffer unit8BufferFromBytes(List<int> bytes) =>
+    Uint8Buffer()..addAll(bytes);
 
 ///
 /// Convert List<int> bytes to Uint8List.

@@ -20,8 +20,10 @@ void main() {
       expect(formatter.format(120000000), equals('₳120.000000'));
       expect(formatter.format(120000000000), equals('₳120,000.000000'));
       expect(formatter.format(120000000000000), equals('₳120,000,000.000000'));
-      expect(formatter.format(120000000000000000), equals('₳120,000,000,000.000000'));
-      expect(formatter.format(9000000000000000000), equals('₳9,000,000,000,000.000000'));
+      expect(formatter.format(120000000000000000),
+          equals('₳120,000,000,000.000000'));
+      expect(formatter.format(9000000000000000000),
+          equals('₳9,000,000,000,000.000000'));
     });
     test('compactCurrency', () {
       final formatter = AdaFormattter.compactCurrency();
@@ -53,9 +55,12 @@ void main() {
       expect(formatter.format(120000), equals('ADA 0.120000'));
       expect(formatter.format(120000000), equals('ADA 120.000000'));
       expect(formatter.format(120000000000), equals('ADA 120,000.000000'));
-      expect(formatter.format(120000000000000), equals('ADA 120,000,000.000000'));
-      expect(formatter.format(120000000000000000), equals('ADA 120,000,000,000.000000'));
-      expect(formatter.format(9000000000000000000), equals('ADA 9,000,000,000,000.000000'));
+      expect(
+          formatter.format(120000000000000), equals('ADA 120,000,000.000000'));
+      expect(formatter.format(120000000000000000),
+          equals('ADA 120,000,000,000.000000'));
+      expect(formatter.format(9000000000000000000),
+          equals('ADA 9,000,000,000,000.000000'));
     });
     test('simpleCurrencyEU', () {
       final formatter = AdaFormattter.simpleCurrency(locale: 'eu', name: 'ADA');

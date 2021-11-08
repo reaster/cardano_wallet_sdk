@@ -94,19 +94,23 @@ class HdWallet {
   HdWallet({required this.rootSigningKey});
 
   ///
-  factory HdWallet.fromSeed(Uint8List seed) => HdWallet(rootSigningKey: _bip32signingKey(seed));
+  factory HdWallet.fromSeed(Uint8List seed) =>
+      HdWallet(rootSigningKey: _bip32signingKey(seed));
 
-  factory HdWallet.fromHexEntropy(String hexEntropy) =>
-      HdWallet(rootSigningKey: _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
+  factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(
+      rootSigningKey:
+          _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
 
-  factory HdWallet.fromMnemonic(String mnemonic) => HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
+  factory HdWallet.fromMnemonic(String mnemonic) =>
+      HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
 
   /// return the root signing key
   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
 
   /// derive root signing key given a seed
   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
-    final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
+    final rawMaster = PBKDF2.hmac_sha512(
+        Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
     final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
     return root_xsk;
   }
@@ -116,8 +120,9 @@ class HdWallet {
   /// is NOT hardened, then a child verify key is also included.
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
-    Bip32SigningKey? signingKey =
-        keys.signingKey != null ? _derivator.ckdPriv(keys.signingKey!, index) as Bip32SigningKey : null;
+    Bip32SigningKey? signingKey = keys.signingKey != null
+        ? _derivator.ckdPriv(keys.signingKey!, index) as Bip32SigningKey
+        : null;
     Bip32VerifyKey? verifyKey = isHardened(index)
         ? null
         : keys.verifyKey != null
@@ -133,7 +138,8 @@ class HdWallet {
       int account = defaultAccountIndex,
       int role = paymentRole,
       int index = defaultAddressIndex}) {
-    final rootKeys = Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+    final rootKeys =
+        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: purpose);
     final coinKey = derive(keys: purposeKey, index: coinType);
     final accountKey = derive(keys: coinKey, index: account);
@@ -150,7 +156,8 @@ class HdWallet {
       NetworkId networkId = NetworkId.testnet,
       UnusedAddressFunction unusedCallback = alwaysUnused}) {
     assert(role == paymentRole || role == changeRole);
-    final rootKeys = Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+    final rootKeys =
+        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
     final accountKey = derive(keys: coinKey, index: account);
@@ -164,7 +171,10 @@ class HdWallet {
     Bip32KeyPair keyPair;
     do {
       keyPair = derive(keys: spendRoleKeys, index: i++);
-      addr = toBaseAddress(spend: keyPair.verifyKey!, stake: stakeAddressKeys.verifyKey!, networkId: networkId);
+      addr = toBaseAddress(
+          spend: keyPair.verifyKey!,
+          stake: stakeAddressKeys.verifyKey!,
+          networkId: networkId);
       print("addr[$i]: $addr");
     } while (!unusedCallback(addr));
     final result = ShelleyAddressKit(
@@ -180,11 +190,16 @@ class HdWallet {
 
   /// construct a Shelley base address give a public spend key, public stake key and networkId
   ShelleyAddress toBaseAddress(
-          {required Bip32PublicKey spend, required Bip32PublicKey stake, NetworkId networkId = NetworkId.testnet}) =>
-      ShelleyAddress.toBaseAddress(spend: spend, stake: stake, networkId: networkId);
+          {required Bip32PublicKey spend,
+          required Bip32PublicKey stake,
+          NetworkId networkId = NetworkId.testnet}) =>
+      ShelleyAddress.toBaseAddress(
+          spend: spend, stake: stake, networkId: networkId);
 
   /// construct a Shelley staking address give a public spend key and networkId
-  ShelleyAddress toRewardAddress({required Bip32PublicKey spend, NetworkId networkId = NetworkId.testnet}) =>
+  ShelleyAddress toRewardAddress(
+          {required Bip32PublicKey spend,
+          NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
 

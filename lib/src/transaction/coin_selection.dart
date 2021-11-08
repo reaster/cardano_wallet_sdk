@@ -28,7 +28,8 @@ import 'package:oxidized/oxidized.dart';
 /// }
 
 /// coin selection function type
-typedef CoinSelectionAlgorithm = Future<Result<CoinSelection, CoinSelectionError>> Function({
+typedef CoinSelectionAlgorithm
+    = Future<Result<CoinSelection, CoinSelectionError>> Function({
   required List<WalletTransaction> unspentInputsAvailable,
   required List<MultiAssetRequest> outputsRequested,
   required Set<ShelleyAddress> ownedAddresses,
@@ -49,8 +50,8 @@ class MultiAssetRequest {
   final String policyId;
   final List<AssetRequest> assets;
   MultiAssetRequest({required this.policyId, required this.assets});
-  factory MultiAssetRequest.lovelace(Coin amount) =>
-      MultiAssetRequest(policyId: '', assets: [AssetRequest(name: lovelaceHex, value: amount)]);
+  factory MultiAssetRequest.lovelace(Coin amount) => MultiAssetRequest(
+      policyId: '', assets: [AssetRequest(name: lovelaceHex, value: amount)]);
 }
 
 ///
@@ -61,19 +62,24 @@ class MultiAssetRequestBuilder {
 
   MultiAssetRequestBuilder({required Coin coin})
       : _multiAssets = [
-          MultiAssetRequest(policyId: '', assets: [AssetRequest(name: lovelaceHex, value: coin)])
+          MultiAssetRequest(
+              policyId: '',
+              assets: [AssetRequest(name: lovelaceHex, value: coin)])
         ];
 
   List<MultiAssetRequest> build() => _multiAssets;
 
-  MultiAssetRequestBuilder multiAssetRequest(MultiAssetRequest multiAssetRequest) {
+  MultiAssetRequestBuilder multiAssetRequest(
+      MultiAssetRequest multiAssetRequest) {
     _multiAssets.add(multiAssetRequest);
     return this;
   }
 
-  MultiAssetRequestBuilder nativeAsset({required String policyId, String? hexName, required Coin value}) {
-    final assetRequest =
-        MultiAssetRequest(policyId: policyId, assets: [AssetRequest(name: hexName ?? '', value: value)]);
+  MultiAssetRequestBuilder nativeAsset(
+      {required String policyId, String? hexName, required Coin value}) {
+    final assetRequest = MultiAssetRequest(
+        policyId: policyId,
+        assets: [AssetRequest(name: hexName ?? '', value: value)]);
     return multiAssetRequest(assetRequest);
   }
 }
@@ -108,7 +114,8 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
 }) async {
   if (outputsRequested.isEmpty) {
     return Err(CoinSelectionError(
-        reason: CoinSelectionErrorEnum.InputCountInsufficient, message: "can't create an empty transaction"));
+        reason: CoinSelectionErrorEnum.InputCountInsufficient,
+        message: "can't create an empty transaction"));
   }
   final String hardCodedUnit = lovelaceHex;
   Coin amount = 0;
@@ -137,7 +144,8 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
       message: "transactions must be greater than zero",
     ));
   }
-  final List<WalletTransaction> sortedInputs = List.from(unspentInputsAvailable);
+  final List<WalletTransaction> sortedInputs =
+      List.from(unspentInputsAvailable);
   sortedInputs.sort((a, b) => b.amount.compareTo(a.amount));
   List<ShelleyTransactionInput> results = [];
   Coin selectedAmount = 0;
@@ -151,7 +159,8 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
       final output = tx.outputs[index];
       //Coin coinAmount = tx.currencyAmount(assetId: hardCodedUnit);
       final contains = ownedAddresses.contains(output.address);
-      print("contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
+      print(
+          "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
       if (contains) {
         for (final txAmount in output.amounts) {
           if (txAmount.quantity > 0 && txAmount.unit == hardCodedUnit) {
@@ -163,10 +172,12 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
             if (++coinsSelected > coinSelectionLimit) {
               return Err(CoinSelectionError(
                 reason: CoinSelectionErrorEnum.InputsExhausted,
-                message: "coinsSelected ($coinsSelected) exceeds allowed coinSelectionLimit ($coinSelectionLimit)",
+                message:
+                    "coinsSelected ($coinsSelected) exceeds allowed coinSelectionLimit ($coinSelectionLimit)",
               ));
             }
-            results.add(ShelleyTransactionInput(index: index, transactionId: tx.txId));
+            results.add(
+                ShelleyTransactionInput(index: index, transactionId: tx.txId));
           }
         }
       }

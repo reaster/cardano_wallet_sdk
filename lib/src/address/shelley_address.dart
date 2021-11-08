@@ -43,7 +43,11 @@ class ShelleyAddress extends ByteList {
     CredentialType stakeType = CredentialType.Key,
   }) =>
       ShelleyAddress(
-        [(stakeType.index << 5) | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+        [
+              (stakeType.index << 5) |
+                  (paymentType.index << 4) |
+                  (networkId.index & 0x0f)
+            ] +
             blake2bHash224(spend.rawKey) +
             blake2bHash224(stake.rawKey),
         hrp: _computeHrp(networkId, hrp),
@@ -56,7 +60,8 @@ class ShelleyAddress extends ByteList {
     CredentialType paymentType = CredentialType.Key,
   }) =>
       ShelleyAddress(
-        [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] + blake2bHash224(spend.rawKey),
+        [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+            blake2bHash224(spend.rawKey),
         hrp: _computeHrp(networkId, hrp),
       );
 
@@ -72,7 +77,9 @@ class ShelleyAddress extends ByteList {
     return this.encode(Bech32Coder(hrp: prefix));
   }
 
-  NetworkId get networkId => NetworkId.testnet.index == this[0] & 0x0f ? NetworkId.testnet : NetworkId.mainnet;
+  NetworkId get networkId => NetworkId.testnet.index == this[0] & 0x0f
+      ? NetworkId.testnet
+      : NetworkId.mainnet;
 
   AddressType get addressType {
     final addrType = (this[0] & 0xf0) >> 4;
@@ -98,7 +105,8 @@ class ShelleyAddress extends ByteList {
     }
   }
 
-  CredentialType get paymentCredentialType => (this[0] & 0x10) >> 4 == 0 ? CredentialType.Key : CredentialType.Script;
+  CredentialType get paymentCredentialType =>
+      (this[0] & 0x10) >> 4 == 0 ? CredentialType.Key : CredentialType.Script;
 
   @override
   String toString() => toBech32();
@@ -109,10 +117,18 @@ class ShelleyAddress extends ByteList {
 
   //static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
 
-  static String _computeHrp(NetworkId id, String prefix) =>
-      id == NetworkId.testnet ? (prefix.endsWith(testnetHrpSuffix) ? prefix : prefix + testnetHrpSuffix) : prefix;
-  static List<int> _addressTypeValues = [baseDiscrim, pointerDiscrim, enterpriseDiscrim, rewardDiscrim];
-  static int addressTypeValue(AddressType addressType) => _addressTypeValues[addressType.index];
+  static String _computeHrp(NetworkId id, String prefix) => id ==
+          NetworkId.testnet
+      ? (prefix.endsWith(testnetHrpSuffix) ? prefix : prefix + testnetHrpSuffix)
+      : prefix;
+  static List<int> _addressTypeValues = [
+    baseDiscrim,
+    pointerDiscrim,
+    enterpriseDiscrim,
+    rewardDiscrim
+  ];
+  static int addressTypeValue(AddressType addressType) =>
+      _addressTypeValues[addressType.index];
 }
 
 class InvalidAddressTypeError extends Error {
