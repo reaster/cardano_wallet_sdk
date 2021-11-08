@@ -94,19 +94,14 @@ class WalletBuilder {
     if (_hdWallet != null) {
       _rootSigningKey = _hdWallet!.rootSigningKey;
     } else {
-      if (_mnemonic == null) return Err("wallet creation requires a mnemonic phrase.");
-      _hdWallet = HdWallet.fromMnemonic(_mnemonic!.join(' ')); //(rootSigningKey: _rootSigningKey!);
-      _rootSigningKey = _hdWallet!.rootSigningKey;
-      // if (_rootSigningKey == null) {
-      //   if (_mnemonic != null) {
-      //     _seed = bip39.mnemonicToSeed(_mnemonic!.join(' '));
-      //   }
-      //   if (_seed != null) {
-      //     _rootSigningKey = _bip32signingKey(_seed!);
-      //   }
-      // }
-      // if (_rootSigningKey == null) return Err("wallet creation requires a 'rootPrivateKey', '_mnemonic' or 'seed'");
-      // _hdWallet = HdWallet(rootSigningKey: _rootSigningKey!);
+      if (_mnemonic != null) {
+        _hdWallet = HdWallet.fromMnemonic(_mnemonic!.join(' '));
+        _rootSigningKey = _hdWallet!.rootSigningKey;
+      } else if (_rootSigningKey != null) {
+        _hdWallet = HdWallet(rootSigningKey: _rootSigningKey!);
+      } else {
+        return Err("wallet creation requires a 'rootPrivateKey' or 'mnemonic'");
+      }
     }
     if (_walletName == null) {
       _walletName = "Wallet #${_walletNameIndex++}";
