@@ -4,7 +4,6 @@
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:pinenacl/api.dart';
 import 'package:quiver/core.dart';
 
 ///

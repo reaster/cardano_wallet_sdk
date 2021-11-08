@@ -1,7 +1,6 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:pinenacl/key_derivation.dart';

@@ -2,9 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/api.dart';
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
+import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter_factory.dart';
+import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
+import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/transaction/coin_selection.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
+import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_impl.dart';
+import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
 import 'package:dio/dio.dart';
 import 'package:oxidized/oxidized.dart';
