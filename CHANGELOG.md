@@ -1,3 +1,9 @@
+## [0.1.0-alpha.7] - 2021-11-08
+
+* transaction validation works 
+* switched to lint
+* much clean-up and better documentation
+
 ## [0.1.0-alpha.6] - 2021-10-28
 
 * add coin selection 
