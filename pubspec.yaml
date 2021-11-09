@@ -1,6 +1,6 @@
 name: cardano_wallet_sdk
 description: The Cardano Wallet SDK is a high-level, 100%-pure-Dart library for performing common off-chain tasks, such as managing cryptographic keys, getting wallet balances and submitting ADA transactions to the blockchain, making it easy to integrate the Cardano ecosystem into your Flutter applications.
-version: 0.1.0-alpha.6
+version: 0.1.0-alpha.7
 homepage: https://github.com/reaster/cardano_wallet_sdk
 
 environment:
