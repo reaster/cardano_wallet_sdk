@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/reaster/cardano_wallet_sdk/workflows/Dart%20CI/badge.svg)](https://github.com/reaster/cardano_wallet_sdk/actions?query=workflow%3A"Dart+CI"+branch%3Amaster)
+[![Build Status](https://github.com/reaster/cardano_wallet_sdk/workflows/Dart%20CI/badge.svg)](https://github.com/reaster/cardano_wallet_sdk/actions/workflows/test-package.yml)
 
 # cardano_wallet_sdk
 
