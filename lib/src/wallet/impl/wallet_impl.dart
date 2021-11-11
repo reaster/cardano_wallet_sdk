@@ -10,6 +10,7 @@ import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
+import 'package:hex/hex.dart';
 import 'package:oxidized/oxidized.dart';
 
 ///
@@ -37,27 +38,61 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
             walletName: walletName);
 
   @override
-  ShelleyAddress get firstUnusedChangeAddress => hdWallet
-      .deriveUnusedBaseAddressKit(
-          role: changeRole,
-          networkId: networkId,
-          unusedCallback: _isUnusedReceiveAddress)
-      .address;
-
-  @override
   ShelleyAddress get firstUnusedReceiveAddress => hdWallet
       .deriveUnusedBaseAddressKit(
-          networkId: networkId, unusedCallback: _isUnusedChangeAddress)
+          networkId: networkId, unusedCallback: isUnusedAddress)
       .address;
 
-  bool _isUnusedReceiveAddress(ShelleyAddress address) =>
+  /// to duplicate cardano-client-lib we always return the 1st paymentAddress.
+  /// Not sure what happend to using changeRole?
+  @override
+  ShelleyAddress get firstUnusedChangeAddress => hdWallet
+      .deriveUnusedBaseAddressKit(
+          role: paymentRole, networkId: networkId, unusedCallback: alwaysUnused)
+      .address;
+  // ShelleyAddress get firstUnusedChangeAddress => hdWallet
+  //     .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: isUnusedAddress)
+  //     .address;
+
+  /// return true if the address has not been used before
+  bool isUnusedAddress(ShelleyAddress address) =>
       !addresses.toSet().contains(address);
 
-  bool _isUnusedChangeAddress(ShelleyAddress address) =>
-      addresses.toSet().contains(address);
+  @override
+  Future<Result<ShelleyTransaction, String>> submitTransaction({
+    required ShelleyTransaction tx,
+  }) async {
+    final submitResult =
+        await blockchainAdapter.submitTransaction(tx.serialize);
+    if (submitResult.isErr()) return Err(submitResult.unwrapErr());
+    return Ok(tx);
+  }
 
   @override
   Future<Result<ShelleyTransaction, String>> sendAda({
+    required ShelleyAddress toAddress,
+    required int lovelace,
+    int ttl = 0,
+    int fee = 0,
+    bool logTxHex = false,
+    bool logTx = false,
+  }) async {
+    final txResult = await buildSpendTransaction(
+      toAddress: toAddress,
+      lovelace: lovelace,
+      ttl: ttl,
+      fee: fee,
+    );
+    if (txResult.isErr()) return Err(txResult.unwrapErr());
+    if (logTxHex) print("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
+    if (logTx) print("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
+    final sendResult = submitTransaction(
+      tx: txResult.unwrap(),
+    );
+    return sendResult;
+  }
+
+  Future<Result<ShelleyTransaction, String>> buildSpendTransaction({
     required ShelleyAddress toAddress,
     required int lovelace,
     int ttl = 0,
@@ -74,6 +109,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
           "not a valid shelley external addresses, expecting 'addr' or 'addr_test' prefix");
     }
     //coin selection:
+    //TODO handle edge-case where fee adjustment requires input recalculation.
     final Coin maxFeeGuess = 200000; //0.2 ADA
     final inputsResult = await coinSelectionFunction(
       unspentInputsAvailable: this.unspentTransactions,
@@ -93,13 +129,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ..ttl(ttl)
       ..fee(fee);
     final txResult = await builder.buildAndSign();
-    if (txResult.isErr()) return Err(txResult.unwrapErr());
-    final ShelleyTransaction tx = txResult.unwrap();
-    print("signed tx: ${tx.toString()}");
-    final submitResult =
-        await blockchainAdapter.submitTransaction(tx.serialize);
-    if (submitResult.isErr()) return Err(submitResult.unwrapErr());
-    return Ok(tx);
+    return txResult;
   }
 
   @override

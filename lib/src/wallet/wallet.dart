@@ -15,28 +15,43 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 /// This is currently a prototype wallet and only supports sending simple ADA transactions.
 ///
 abstract class Wallet extends ReadOnlyWallet {
-  /// hierarchical deterministic wallet
+  /// Hierarchical deterministic wallet
   HdWallet get hdWallet;
 
-  /// account index of wallet, defaults to 0.
+  /// Account index of wallet, defaults to 0.
   int get accountIndex;
 
-  /// root private and public key
+  /// Root private and public key
   Bip32KeyPair get rootKeyPair;
 
-  /// base address key pair used for signing transactions
+  /// Base address key pair used for signing transactions
   Bip32KeyPair get addressKeyPair;
 
-  /// returns first unused receive address, used by others to send money to this account.
+  /// Returns first unused receive address, used by others to send money to this account.
   ShelleyAddress get firstUnusedReceiveAddress;
 
-  /// returns first unused change address, used to return unspent change to this wallet.
+  /// Returns first unused change address, used to return unspent change to this wallet.
   ShelleyAddress get firstUnusedChangeAddress;
 
-  /// send ADA to another address.
+  /// Send ADA to another address.
   Future<Result<ShelleyTransaction, String>> sendAda({
     required ShelleyAddress toAddress,
     required Coin lovelace,
+    int ttl = 0,
+    int fee = 0,
+    bool logTxHex = false,
+    bool logTx = false,
+  });
+
+  /// Send a transaction.
+  Future<Result<ShelleyTransaction, String>> submitTransaction({
+    required ShelleyTransaction tx,
+  });
+
+  /// Build a simple spend transaction.
+  Future<Result<ShelleyTransaction, String>> buildSpendTransaction({
+    required ShelleyAddress toAddress,
+    required int lovelace,
     int ttl = 0,
     int fee = 0,
   });
