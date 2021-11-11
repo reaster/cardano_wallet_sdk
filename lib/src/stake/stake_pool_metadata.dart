@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 class StakePoolMetadata {
   /// URL to the stake pool metadata
   final String? url;

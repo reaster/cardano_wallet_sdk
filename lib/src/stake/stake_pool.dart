@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 class StakePool {
   /// VRF key hash
   final String vrfKey;

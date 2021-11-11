@@ -1,15 +1,14 @@
-// import 'package:cardano_wallet_sdk/src/address/addresses.dart';
-// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-// import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
+import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
+import 'package:typed_data/typed_data.dart';
+import 'package:oxidized/oxidized.dart';
+import 'dart:convert' as convertor;
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
-import 'dart:convert' as convertor;
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:oxidized/oxidized.dart';
-import 'package:typed_data/typed_data.dart'; // as typed;
-// import 'package:cardano_wallet_sdk/src/util/codec.dart';
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 
 ///
 /// These classes define the data stored on the Cardano blockchain as defined by the shelley.cddl specification.
@@ -50,12 +49,17 @@ class ShelleyMultiAsset {
   //
   //    h'329728F73683FE04364631C27A7912538C116D802416CA1EAF2D7A96': {h'736174636F696E': 4000},
   //
-  MapBuilder assetsToCborMap() {
+  MapBuilder assetsToCborMap({bool forJson = false}) {
     final mapBuilder = MapBuilder.builder();
     assets.forEach((asset) {
-      mapBuilder.writeBuff(uint8BufferFromHex(asset.name,
-          utf8EncodeOnHexFailure:
-              true)); //lib only allows integer and string keys
+      final name = asset.name;
+      //final name = forJson && asset.name.isEmpty ? '0' : asset.name; //hack to fix empty keys in toJson
+      if (forJson) {
+        mapBuilder.writeString(name);
+      } else {
+        mapBuilder
+            .writeBuff(uint8BufferFromHex(name, utf8EncodeOnHexFailure: true));
+      }
       mapBuilder.writeInt(asset.value);
     });
     return mapBuilder;
@@ -69,9 +73,13 @@ class ShelleyTransactionInput {
 
   ShelleyTransactionInput({required this.transactionId, required this.index});
 
-  ListBuilder toCborList() {
+  ListBuilder toCborList({bool forJson = false}) {
     final listBuilder = ListBuilder.builder();
-    listBuilder.writeBuff(uint8BufferFromHex(transactionId));
+    if (forJson) {
+      listBuilder.writeString(transactionId);
+    } else {
+      listBuilder.writeBuff(uint8BufferFromHex(transactionId));
+    }
     listBuilder.writeInt(index);
     return listBuilder;
   }
@@ -90,16 +98,21 @@ class ShelleyTransactionOutput {
 
   ShelleyTransactionOutput({required this.address, required this.value});
 
-  ListBuilder toCborList() {
+  ListBuilder toCborList({bool forJson = false}) {
     //length should always be 2
     final listBuilder = ListBuilder.builder();
-    listBuilder.writeBuff(unit8BufferFromShelleyAddress(address));
+    if (forJson) {
+      listBuilder.writeString(address);
+    } else {
+      listBuilder.writeBuff(unit8BufferFromShelleyAddress(address));
+    }
     if (value.multiAssets.isEmpty) {
       //for pure ADA transactions, just write coin value
       listBuilder.writeInt(value.coin);
     } else {
       //for multi-asset, write a list: [coin value, multi-asset map]
-      listBuilder.addBuilderOutput(value.multiAssetsToCborList().getData());
+      listBuilder.addBuilderOutput(
+          value.multiAssetsToCborList(forJson: forJson).getData());
     }
     return listBuilder;
   }
@@ -144,13 +157,22 @@ class ShelleyValue {
   // ]
   //
 
-  ListBuilder multiAssetsToCborList() {
+  ListBuilder multiAssetsToCborList({bool forJson = false}) {
     final listBuilder = ListBuilder.builder();
-    listBuilder.writeInt(coin);
+    if (forJson) {
+      listBuilder.writeString("$coin");
+    } else {
+      listBuilder.writeInt(coin);
+    }
     final mapBuilder = MapBuilder.builder();
     multiAssets.forEach((multiAsset) {
-      mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
-      mapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
+      if (forJson) {
+        mapBuilder.writeString(multiAsset.policyId);
+      } else {
+        mapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
+      }
+      mapBuilder.addBuilderOutput(
+          multiAsset.assetsToCborMap(forJson: forJson).getData());
     });
     listBuilder.addBuilderOutput(mapBuilder.getData());
     return listBuilder;
@@ -164,8 +186,8 @@ class ShelleyTransactionBody {
   final int fee;
   final int? ttl; //Optional
   final List<int>? metadataHash;
-  final int? validityStartInterval;
-  final List<ShelleyMultiAsset>? mint;
+  final int validityStartInterval;
+  final List<ShelleyMultiAsset> mint;
 
   ShelleyTransactionBody({
     required this.inputs,
@@ -173,8 +195,8 @@ class ShelleyTransactionBody {
     required this.fee,
     this.ttl,
     this.metadataHash,
-    this.validityStartInterval,
-    this.mint,
+    this.validityStartInterval = 0,
+    this.mint = const [],
   });
 
   ShelleyTransactionBody update({
@@ -197,24 +219,24 @@ class ShelleyTransactionBody {
         mint: mint ?? this.mint,
       );
 
-  factory ShelleyTransactionBody.deserialize2(
-      {required List inputs,
-      required List outputs,
-      required int fee,
-      int? ttl,
-      List? metadataHash,
-      int? validityStartInterval,
-      List? mint}) {
-    return ShelleyTransactionBody(
-      inputs: [],
-      outputs: [],
-      fee: fee,
-      ttl: ttl,
-      metadataHash: [],
-      validityStartInterval: validityStartInterval,
-      mint: [],
-    );
-  }
+  // factory ShelleyTransactionBody.deserialize2(
+  //     {required List<ShelleyTransactionInput> inputs,
+  //     required List<ShelleyTransactionOutput> outputs,
+  //     required int fee,
+  //     int? ttl,
+  //     List<int>? metadataHash,
+  //     int? validityStartInterval,
+  //     List<ShelleyMultiAsset>? mint}) {
+  //   return ShelleyTransactionBody(
+  //     inputs: inputs,
+  //     outputs: outputs,
+  //     fee: fee,
+  //     ttl: ttl,
+  //     metadataHash: metadataHash,
+  //     validityStartInterval: validityStartInterval ?? 0,
+  //     mint: mint ?? [],
+  //   );
+  // }
 
   factory ShelleyTransactionBody.deserialize({required Map cMap}) {
     final inputs = (cMap[0] as List)
@@ -235,49 +257,83 @@ class ShelleyTransactionBody {
       fee: cMap[2] as int,
       ttl: cMap[3] == null ? null : cMap[3] as int,
       metadataHash: cMap[7] == null ? null : cMap[7] as List<int>,
-      validityStartInterval: cMap[8] == null ? null : cMap[8] as int,
-      mint: mint,
+      validityStartInterval: cMap[8] == null ? 0 : cMap[8] as int,
+      mint: mint ?? [],
     );
   }
-  MapBuilder toCborMap() {
+  MapBuilder toCborMap({bool forJson = false}) {
     final mapBuilder = MapBuilder.builder();
     //0:inputs
-    mapBuilder.writeInt(0);
+    if (forJson) {
+      mapBuilder.writeString('inputs');
+    } else {
+      mapBuilder.writeInt(0);
+    }
     final inListBuilder = ListBuilder.builder();
-    inputs.forEach((input) =>
-        inListBuilder.addBuilderOutput(input.toCborList().getData()));
+    inputs.forEach((input) => inListBuilder
+        .addBuilderOutput(input.toCborList(forJson: forJson).getData()));
     mapBuilder.addBuilderOutput(inListBuilder.getData());
     //1:outputs
-    mapBuilder.writeInt(1);
+    if (forJson) {
+      mapBuilder.writeString('outputs');
+    } else {
+      mapBuilder.writeInt(1);
+    }
     final outListBuilder = ListBuilder.builder();
-    outputs.forEach((output) =>
-        outListBuilder.addBuilderOutput(output.toCborList().getData()));
+    outputs.forEach((output) => outListBuilder
+        .addBuilderOutput(output.toCborList(forJson: forJson).getData()));
     mapBuilder.addBuilderOutput(outListBuilder.getData());
     //2:fee
-    mapBuilder.writeInt(2);
+    if (forJson) {
+      mapBuilder.writeString('fee');
+    } else {
+      mapBuilder.writeInt(2);
+    }
     mapBuilder.writeInt(fee);
     //3:ttl (optional)
     if (ttl != null) {
-      mapBuilder.writeInt(3);
+      if (forJson) {
+        mapBuilder.writeString('ttl');
+      } else {
+        mapBuilder.writeInt(3);
+      }
       mapBuilder.writeInt(ttl!);
     }
     //7:metadataHash (optional)
     if (metadataHash != null && metadataHash!.isNotEmpty) {
-      mapBuilder.writeInt(7);
-      mapBuilder.writeBuff(unit8BufferFromBytes(metadataHash!));
+      if (forJson) {
+        mapBuilder.writeString('metadataHash');
+        mapBuilder.writeString(HEX.encode(metadataHash!));
+      } else {
+        mapBuilder.writeInt(7);
+        mapBuilder.writeBuff(unit8BufferFromBytes(metadataHash!));
+      }
     }
     //8:validityStartInterval (optional)
-    if (validityStartInterval != null) {
-      mapBuilder.writeInt(8);
-      mapBuilder.writeInt(validityStartInterval!);
+    if (validityStartInterval != 0) {
+      if (forJson) {
+        mapBuilder.writeString('validityStartInterval');
+      } else {
+        mapBuilder.writeInt(8);
+      }
+      mapBuilder.writeInt(validityStartInterval);
     }
     //9:mint (optional)
-    if (mint != null && mint!.isNotEmpty) {
-      mapBuilder.writeInt(9);
+    if (mint.isNotEmpty) {
+      if (forJson) {
+        mapBuilder.writeString('mint');
+      } else {
+        mapBuilder.writeInt(9);
+      }
       final mintMapBuilder = MapBuilder.builder();
-      mint!.forEach((multiAsset) {
-        mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
-        mintMapBuilder.addBuilderOutput(multiAsset.assetsToCborMap().getData());
+      mint.forEach((multiAsset) {
+        if (forJson) {
+          mintMapBuilder.writeString(multiAsset.policyId);
+        } else {
+          mintMapBuilder.writeBuff(uint8BufferFromHex(multiAsset.policyId));
+        }
+        mintMapBuilder.addBuilderOutput(
+            multiAsset.assetsToCborMap(forJson: forJson).getData());
       });
       mapBuilder.addBuilderOutput(mintMapBuilder.getData());
     }
@@ -292,10 +348,20 @@ class ShelleyVkeyWitness {
 
   ShelleyVkeyWitness({required this.vkey, required this.signature});
 
-  ListBuilder toCborList() {
+  ListBuilder toCborList({bool forJson = false, bool base64 = false}) {
     final listBuilder = ListBuilder.builder();
-    listBuilder.writeBuff(unit8BufferFromBytes(vkey));
-    listBuilder.writeBuff(unit8BufferFromBytes(signature));
+    if (forJson) {
+      if (base64) {
+        listBuilder.writeString(convertor.base64.encode(vkey));
+        listBuilder.writeString(convertor.base64.encode(signature));
+      } else {
+        listBuilder.writeString(HEX.encode(vkey));
+        listBuilder.writeString(HEX.encode(signature));
+      }
+    } else {
+      listBuilder.writeBuff(unit8BufferFromBytes(vkey));
+      listBuilder.writeBuff(unit8BufferFromBytes(signature));
+    }
     return listBuilder;
   }
 
@@ -312,10 +378,14 @@ class ShelleyNativeScript {
 
   ShelleyNativeScript({required this.selector, required this.blob});
 
-  ListBuilder toCborList() {
+  ListBuilder toCborList({bool forJson = false}) {
     final listBuilder = ListBuilder.builder();
     listBuilder.writeInt(selector);
-    listBuilder.writeBuff(unit8BufferFromBytes(blob));
+    if (forJson) {
+      listBuilder.writeString(HEX.encode(blob));
+    } else {
+      listBuilder.writeBuff(unit8BufferFromBytes(blob));
+    }
     return listBuilder;
   }
 }
@@ -348,22 +418,30 @@ class ShelleyTransactionWitnessSet {
       nativeScripts: nativeScripts,
     );
   }
-  MapBuilder toCborMap() {
+  MapBuilder toCborMap({bool forJson = false, bool base64 = false}) {
     final mapBuilder = MapBuilder.builder();
-    //0:inputs
+    //0:vkeyWitnesses key
     if (vkeyWitnesses.isNotEmpty) {
-      mapBuilder.writeInt(0); //key
+      if (forJson) {
+        mapBuilder.writeString('vkeyWitnesses');
+      } else {
+        mapBuilder.writeInt(0);
+      }
       final inListBuilder = ListBuilder.builder();
-      vkeyWitnesses.forEach((witness) =>
-          inListBuilder.addBuilderOutput(witness.toCborList().getData()));
+      vkeyWitnesses.forEach((witness) => inListBuilder.addBuilderOutput(
+          witness.toCborList(forJson: forJson, base64: base64).getData()));
       mapBuilder.addBuilderOutput(inListBuilder.getData()); //value
     }
-    //1:outputs
+    //1:nativeScripts key
     if (nativeScripts.isNotEmpty) {
-      mapBuilder.writeInt(1); //key
+      if (forJson) {
+        mapBuilder.writeString('nativeScripts');
+      } else {
+        mapBuilder.writeInt(1);
+      }
       final outListBuilder = ListBuilder.builder();
-      nativeScripts.forEach((script) =>
-          outListBuilder.addBuilderOutput(script.toCborList().getData()));
+      nativeScripts.forEach((script) => outListBuilder
+          .addBuilderOutput(script.toCborList(forJson: forJson).getData()));
       mapBuilder.addBuilderOutput(outListBuilder.getData()); //value
     }
     return mapBuilder;
@@ -415,13 +493,15 @@ class ShelleyTransaction {
         body: body, witnessSet: witnessSet, metadata: metadata);
   }
 
-  ListBuilder toCborList() {
+  ListBuilder toCborList({bool forJson = false}) {
     final listBuilder = ListBuilder.builder();
-    listBuilder.addBuilderOutput(body.toCborMap().getData());
+    bool base64 = true;
+    listBuilder.addBuilderOutput(body.toCborMap(forJson: forJson).getData());
     if (witnessSet == null) {
       listBuilder.writeMap({});
     } else {
-      listBuilder.addBuilderOutput(witnessSet!.toCborMap().getData());
+      listBuilder.addBuilderOutput(
+          witnessSet!.toCborMap(forJson: forJson, base64: base64).getData());
     }
     if (metadata == null) {
       listBuilder.writeNull();
@@ -431,17 +511,22 @@ class ShelleyTransaction {
     return listBuilder;
   }
 
-  List<int> get serialize => toCborList().getData();
+  Uint8Buffer get serialize => toCborList().getData();
+  //List<int> get serialize => toCborList().getData();
 
   Result<String, String> toJson({bool prettyPrint = false}) {
     try {
-      final codec = Cbor()..decodeFromBuffer(this.body.toCborMap().getData());
-      final json = convertor.json.encode(codec.getDecodedData());
+      final codec = Cbor()
+        ..decodeFromBuffer(toCborList(forJson: true).getData());
+      final jsonString = convertor.json.encode(codec.getDecodedData());
       // Remove the [] from the JSON string
-      final result = json.substring(1, json.length - 1);
+      final result = jsonString.substring(1, jsonString.length - 1);
       if (prettyPrint) {
+        final toJsonFromString = convertor.JsonDecoder();
+        final json = toJsonFromString.convert(jsonString);
         final encoder = convertor.JsonEncoder.withIndent('  ');
-        return Ok(encoder.convert(result));
+        final formattedJson = encoder.convert(json);
+        return Ok(formattedJson);
       } else {
         return Ok(result);
       }
