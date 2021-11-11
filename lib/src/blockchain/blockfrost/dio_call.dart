@@ -66,22 +66,33 @@ String translateErrorMessage({required DioError dioError, String? subject}) {
     return dioError.message;
   }
   final prefix = isBlank(subject) ? '' : "$subject ";
+  var suffix = '';
+  if (dioError.response != null && dioError.response!.data != null) {
+    if (dioError.response!.data is Map) {
+      suffix += dioError.response!.data['error'] ?? '';
+      if (isNotBlank(suffix)) suffix += ': ';
+      suffix += dioError.response!.data['message'] ?? '';
+    } else {
+      suffix += dioError.response!.data.toString();
+    }
+  }
+  if (isNotBlank(suffix)) suffix += ': $suffix';
   switch (dioError.response!.statusCode) {
     case 400: //HTTP 400 return code is used when the request is not valid.
-      return "${prefix}request is not valid";
+      return "${prefix}request is not valid$suffix";
     case 402: //HTTP 402 return code is used when the projects exceed their daily request limit.
-      return "exceded blockfrost daily request limit";
+      return "exceded blockfrost daily request limit$suffix";
     case 403: //HTTP 403 return code is used when the request is not authenticated.
-      return "not authenticated";
+      return "not authenticated$suffix";
     case 404: // HTTP 404 return code is used when the resource doesn't exist.
-      return "${prefix}doesn't exist"; // HTTP 418 return code is used when the user has been auto-banned for flooding too much after previously receiving error code 402 or 429.
+      return "${prefix}doesn't exist$suffix"; // HTTP 418 return code is used when the user has been auto-banned for flooding too much after previously receiving error code 402 or 429.
     case 418:
-      return "auto-banned from blockfrost";
+      return "auto-banned from blockfrost$suffix";
     case 429: // HTTP 429 return code is used when the user has sent too many requests in a given amount of time and therefore has been rate-limited.
-      return "rate-limited: sent too many requests";
+      return "rate-limited: sent too many requests$suffix";
     case 500: //  HTTP 500 return code is used when our endpoints are having a problem.
-      return "blockfrost server having problems";
+      return "blockfrost server having problems$suffix";
     default:
-      return "unknown blockfrost error: ${dioError.response!.statusCode}";
+      return "unknown blockfrost error: ${dioError.response!.statusCode}$suffix";
   }
 }
