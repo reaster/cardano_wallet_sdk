@@ -3,6 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:cbor/cbor.dart' as cbor;
+import 'dart:convert' as convertor;
 import 'package:test/test.dart';
 
 ///
@@ -60,7 +61,7 @@ void main() {
       fee: 367965,
       ttl: 26194586,
       metadataHash: null,
-      validityStartInterval: null,
+      validityStartInterval: 0,
       mint: outputs[1].value.multiAssets,
     );
     final ShelleyTransaction tx =
@@ -75,7 +76,7 @@ void main() {
     final txHex2 = tx2.toCborHex;
     print(txHex2);
     expect(txHex, txHex2);
-    // print(codec.decodedPrettyPrint(false));
+    print(tx2.toJson(prettyPrint: true));
     //print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
 
@@ -115,7 +116,7 @@ void main() {
       fee: 367965,
       ttl: 26194586,
       metadataHash: null,
-      validityStartInterval: null,
+      validityStartInterval: 0,
       mint: outputs[1].value.multiAssets,
     );
 
@@ -196,7 +197,7 @@ void main() {
       fee: 367965,
       ttl: 26194586,
       metadataHash: null,
-      validityStartInterval: null,
+      validityStartInterval: 0,
       mint: outputs[1].value.multiAssets,
     );
     final ShelleyTransaction tx =
@@ -266,11 +267,19 @@ void main() {
     encoder.addBuilderOutput(mapBuilderOutput);
     encoder.writeRegEx('^[12]g');
     codec.decodeFromInput();
-    print(codec.decodedPrettyPrint(false));
+    print(codec.decodedPrettyPrint(true));
     print(codec
         .decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
-
+  test('exploreJsonPrettyPrint', () {
+    final toJsonFromString = convertor.JsonDecoder();
+    final json = toJsonFromString.convert(
+        '[[1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"}]');
+    final jsonFormatter = convertor.JsonEncoder.withIndent('  ');
+    final formattedJson = jsonFormatter.convert(json);
+    print(formattedJson);
+    expect(formattedJson.contains('\n'), isTrue);
+  });
   // test('Serialize transaction hex to hex', () {
   //   final transactionId = '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002';
   //   final input = ShelleyTransactionInput(index: 7, transactionId: transactionId);

@@ -165,8 +165,8 @@ class TransactionBuilder {
         fee: _fee,
         ttl: _ttl,
         metadataHash: _metadataHash,
-        validityStartInterval: _validityStartInterval,
-        mint: _mint.isEmpty ? null : _mint,
+        validityStartInterval: _validityStartInterval ?? 0,
+        mint: _mint,
       );
 
   Result<bool, String> _checkContraints() {
