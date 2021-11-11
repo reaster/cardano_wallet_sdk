@@ -32,6 +32,7 @@ test/wallet_send_test.dart
 .pub/
 build/
 pubspec.lock
+coverage/
 
 # Android related
 **/android/**/gradle-wrapper.jar
