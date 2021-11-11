@@ -92,7 +92,7 @@ class HdWallet {
   /// root constructor taking a root signing key
   HdWallet({required this.rootSigningKey});
 
-  ///
+  /// Create HdWallet from seed
   factory HdWallet.fromSeed(Uint8List seed) =>
       HdWallet(rootSigningKey: _bip32signingKey(seed));
 
@@ -174,7 +174,7 @@ class HdWallet {
           spend: keyPair.verifyKey!,
           stake: stakeAddressKeys.verifyKey!,
           networkId: networkId);
-      print("addr[$i]: $addr");
+      print("addr[$i][role:$role]: $addr");
     } while (!unusedCallback(addr));
     final result = ShelleyAddressKit(
       account: account,

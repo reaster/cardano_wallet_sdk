@@ -181,7 +181,8 @@ class WalletBuilder {
     return Ok(wallet);
   }
 
-  ///generate mnumonic words to be used by new wallet.
+  /// Generate a unique 24-word mnumonic phrase which can be used to create a
+  /// new wallet.
   List<String> generateNewMnemonic() =>
       (bip39.generateMnemonic(strength: 256)).split(' ');
 

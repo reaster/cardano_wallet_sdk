@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_cache.dart';
@@ -117,7 +120,9 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
               name: name, value: value + (byName[name] ?? coinZero)));
         }
       }
-      multiAssets.add(ShelleyMultiAsset(policyId: policyId, assets: assets));
+      if (assets.isNotEmpty) {
+        multiAssets.add(ShelleyMultiAsset(policyId: policyId, assets: assets));
+      }
     }
     final value = ShelleyValue(coin: lovelace, multiAssets: multiAssets);
     outputs.add(ShelleyTransactionOutput(address: targetAddress, value: value));
