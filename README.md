@@ -1,4 +1,15 @@
-[![Build Status](https://github.com/reaster/cardano_wallet_sdk/workflows/Dart%20CI/badge.svg)](https://github.com/reaster/cardano_wallet_sdk/actions/workflows/test-package.yml)
+<p align="center">
+    <a href="https://github.com/reaster/cardano_wallet_sdk/actions/workflows/test-package.yml">
+    <img src="https://github.com/reaster/cardano_wallet_sdk/workflows/Dart%20CI/badge.svg" alt="CI status" /></a>
+    <a href="https://github.com/reaster/cardano_wallet_sdk/stargazers">
+    <img src="https://img.shields.io/github/stars/reaster/cardano_wallet_sdk.svg?style=flat&logo=github&colorB=blue&label=stars" alt="Stars count on GitHub" /></a>
+    <a href="https://pub.dev/packages/cardano_wallet_sdk">
+	<img src="https://img.shields.io/pub/v/cardano_wallet_sdk.svg?style=flat&logo=github&colorB=blue" alt="Latest Release on pub.dev" /></a>
+    <a href="https://codecov.io/gh/reaster/cardano_wallet_sdk">
+    <img src="https://codecov.io/gh/reaster/cardano_wallet_sdk/branch/main/graph/badge.svg?token=ZR5AO2WML0"/></a>
+</p>
+
+---
 
 # cardano_wallet_sdk
 
