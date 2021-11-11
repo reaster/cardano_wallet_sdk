@@ -9,7 +9,7 @@
 .history
 .svn/
 
-test/wallet_send_itest.dart
+test/wallet_send_test.dart
 
 # IntelliJ related
 *.iml
