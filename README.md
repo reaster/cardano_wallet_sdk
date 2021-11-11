@@ -29,14 +29,14 @@ Installation details can be found on [pub.dev](https://pub.dev/packages/cardano_
 ### Wallet Management
 
 Create a wallet builder for testnet or mainnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
-```
+```dart
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = blockfrostKey;
 ```
 
 Create a read-only wallet using a staking address.
-```
+```dart
 var address = ShelleyAddress.fromBech32('stake_test1uq...vwl7a');
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
@@ -50,7 +50,7 @@ result.when(
 ```
 
 Restore existing wallet using 24 word mnemonic.
-```
+```dart
 var mnemonic = 'rude stadium move...gallery receive just'.split(' ');
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
@@ -64,7 +64,7 @@ if (result.isOk()) {
 ```
 
 Update existing wallet.
-```
+```dart
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = blockfrostKey
@@ -80,7 +80,7 @@ result2.when(
 ```
 
 Create a new 24 word mnemonic.
-```
+```dart
 List<String> mnemonic = WalletBuilder().generateNewMnemonic();
 print("mnemonic: ${mnemonic.join(' ')}");
 ```
@@ -88,17 +88,17 @@ print("mnemonic: ${mnemonic.join(' ')}");
 ### Wallet Details
 
 List transaction history.
-```
+```dart
 wallet.transactions.forEach((tx) => print(tx));
 ```
 
 List addresses.
-```
+```dart
 wallet.addresses.forEach((addr) => print(addr.toBech32()));
 ```
 
 List currency balances.
-```
+```dart
 final formatter = AdaFormattter.compactCurrency();
 wallet.currencies.forEach((assetId, balance) {
     final isAda = assetId == lovelaceHex;
@@ -107,7 +107,7 @@ wallet.currencies.forEach((assetId, balance) {
 ```
 
 List staking rewards.
-```
+```dart
 wallet.stakeAccounts.forEach((acct) {
     acct.rewards.forEach((reward) {
         print("epoch: ${reward.epoch}, ${reward.amount} ADA");
@@ -119,30 +119,30 @@ wallet.stakeAccounts.forEach((acct) {
 
 
 Access root private and public key pair.
-```
+```dart
 Bip32KeyPair pair = wallet.rootKeyPair;
 print("${pair.signingKey}, ${pair.verifyKey}");
 ```
 
 Access staking address.
-```
+```dart
 print(wallet.stakingAddress));
 ```
 
 First unused change address.
-```
+```dart
 print(wallet.firstUnusedChangeAddress));
 ```
 
 First unused spend address.
-```
+```dart
 print(wallet.firstUnusedSpendAddress));
 ```
 
 ### Submit Transactions
 
 Send 3 ADA to Bob.
-```
+```dart
 var bobsAddress = ShelleyAddress.fromBech32('addr1qyy6...');
 final Result<ShelleyTransaction, String> result = await wallet.sendAda(
     toAddress: bobsAddress,
