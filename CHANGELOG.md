@@ -1,3 +1,7 @@
+## [0.1.0-alpha.8] - 2021-11-16
+
+* transactions submitting!
+
 ## [0.1.0-alpha.7] - 2021-11-08
 
 * transaction validation works 
