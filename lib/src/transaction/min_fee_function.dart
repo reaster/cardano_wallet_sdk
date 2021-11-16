@@ -14,7 +14,11 @@ Coin simpleMinFee(
     {required ShelleyTransaction transaction,
     LinearFee linearFee = defaultLinearFee}) {
   final len = transaction.toCborList().getData().length;
-  return len * linearFee.coefficient + linearFee.constant;
+  final result =
+      (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
+  print(
+      "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
+  return result;
 }
 
 ///
@@ -29,6 +33,7 @@ class LinearFee {
 
 const minFeeA = 44;
 const minFeeB = 155381;
+const lenHackAddition = 5;
 
 /// fee calculation factors
 /// TODO update this from blockchain
@@ -37,4 +42,27 @@ const minFeeB = 155381;
 const defaultLinearFee = LinearFee(coefficient: minFeeA, constant: minFeeB);
 //
 /// default fee for simple ADA transaction
-const defaultFee = 200000; // 0.2 ADA
+const defaultFee = 170000; // 0.2 ADA
+
+/* .getCardanoEpochsApi().epochsNumberParametersGet(number: 168)
+EpochParamContent {
+  minFeeA=44,
+  minFeeB=155381,
+  maxBlockSize=65536,
+  maxTxSize=16384,
+  maxBlockHeaderSize=1100,
+  keyDeposit=2000000,
+  poolDeposit=500000000,
+  eMax=18,
+  nOpt=500,
+  a0=0.3,
+  rho=0.003,
+  tau=0.2,
+  decentralisationParam=0,
+  protocolMajorVer=6,
+  protocolMinorVer=0,
+  minUtxo=34482,
+  minPoolCost=340000000,
+  nonce=2badcc95a813d3626830487dead021fb48d2144c547543604e034e954aa1da15,
+}
+*/
