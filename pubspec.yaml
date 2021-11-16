@@ -7,12 +7,12 @@ environment:
   sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
-  blockfrost: ^1.0.0-dev.7
+  blockfrost: ^1.0.0-dev.8
   bip32_ed25519: ^0.2.1
   pinenacl: ^0.3.3
   bip39: ^1.0.6
   cbor: ^4.1.0
-  dio: ^4.0.1
+  dio: ^4.0.3
   convert: ^3.0.0
   collection: ^1.15.0
   intl: ^0.17.0
@@ -29,8 +29,9 @@ dev_dependencies:
   mockito: ^5.0.10
   build_runner: ^2.1.5
   lints: ^1.0.1
+  http: ^0.13.4
 
 dependency_overrides:
-#    blockfrost:
+  #  blockfrost:
     # git: git@github.com:reaster/blockfrost_api.git
     # path: ../blockfrost_api
