@@ -25,7 +25,9 @@ Future<Result<T, String>> dioCall<T extends Object>(
       if (onError != null) {
         onError(response: response);
       }
-      return Err("${response.statusCode}: ${response.statusMessage}");
+      final detailMessage = response.data != null ? ": ${response.data}" : '';
+      return Err(
+          "${response.statusCode}: ${response.statusMessage}$detailMessage");
     }
     if (onSuccess != null) {
       onSuccess(response.data!);
