@@ -8,7 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:built_value/serializer.dart';
-import '_mock_wallet_2.mocks.dart';
+import 'mock_wallet_2.mocks.dart';
 
 // wallet 2
 
