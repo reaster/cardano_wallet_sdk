@@ -10,8 +10,8 @@ import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
-import 'package:hex/hex.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:hex/hex.dart';
 
 ///
 /// Build transactional wallet by combining features of HdWallet, TransactionBuilder and
@@ -43,15 +43,17 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
           networkId: networkId, unusedCallback: isUnusedAddress)
       .address;
 
-  /// to duplicate cardano-client-lib we always return the 1st paymentAddress.
-  /// Not sure what happend to using changeRole?
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
       .deriveUnusedBaseAddressKit(
-          role: paymentRole, networkId: networkId, unusedCallback: alwaysUnused)
+          role: changeRole,
+          networkId: networkId,
+          unusedCallback: isUnusedAddress)
       .address;
+  // to duplicate cardano-client-lib we always return the 1st paymentAddress.
   // ShelleyAddress get firstUnusedChangeAddress => hdWallet
-  //     .deriveUnusedBaseAddressKit(role: changeRole, networkId: networkId, unusedCallback: isUnusedAddress)
+  //     .deriveUnusedBaseAddressKit(
+  //         role: paymentRole, networkId: networkId, unusedCallback: alwaysUnused)
   //     .address;
 
   /// return true if the address has not been used before
