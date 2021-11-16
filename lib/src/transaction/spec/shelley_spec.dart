@@ -1,6 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:typed_data';
+
 import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/util/codec.dart';
@@ -511,7 +513,10 @@ class ShelleyTransaction {
     return listBuilder;
   }
 
-  Uint8Buffer get serialize => toCborList().getData();
+  Uint8List get serialize {
+    final Uint8Buffer data = toCborList().getData();
+    return Uint8List.view(data.buffer, 0, data.length);
+  }
   //List<int> get serialize => toCborList().getData();
 
   Result<String, String> toJson({bool prettyPrint = false}) {
