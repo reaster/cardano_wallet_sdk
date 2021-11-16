@@ -8,9 +8,9 @@ import 'mock_wallet_2.dart';
 void main() {
   final formatter = AdaFormattter.compactCurrency();
   final mockAdapter = BlockfrostBlockchainAdapter(
-    blockfrost: buildMockBlockfrostWallet2(),
-    networkId: NetworkId.testnet,
-  );
+      blockfrost: buildMockBlockfrostWallet2(),
+      networkId: NetworkId.testnet,
+      projectId: '');
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
       final address = ShelleyAddress.fromBech32(stakeAddr2);

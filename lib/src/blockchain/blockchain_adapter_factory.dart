@@ -16,11 +16,14 @@ import 'package:dio/dio.dart';
 class BlockchainAdapterFactory {
   final Interceptor authInterceptor;
   final NetworkId networkId;
+  final String projectId;
   Blockfrost? _blockfrost;
   BlockfrostBlockchainAdapter? _blockfrostAdapter;
 
   BlockchainAdapterFactory(
-      {required this.authInterceptor, required this.networkId});
+      {required this.authInterceptor,
+      required this.networkId,
+      required this.projectId});
 
   /// creates an interceptor give a key
   static Interceptor interceptorFromKey({required String key}) =>
@@ -29,7 +32,9 @@ class BlockchainAdapterFactory {
   factory BlockchainAdapterFactory.fromKey(
           {required String key, required NetworkId networkId}) =>
       BlockchainAdapterFactory(
-          authInterceptor: interceptorFromKey(key: key), networkId: networkId);
+          authInterceptor: interceptorFromKey(key: key),
+          networkId: networkId,
+          projectId: key);
 
   ///
   /// return cached BlockchainAdapter instance.
@@ -39,7 +44,7 @@ class BlockchainAdapterFactory {
       final blockfrost = _cachedBlockfrost(
           networkId: networkId, authInterceptor: authInterceptor);
       _blockfrostAdapter = BlockfrostBlockchainAdapter(
-          networkId: networkId, blockfrost: blockfrost);
+          networkId: networkId, blockfrost: blockfrost, projectId: projectId);
     }
     return _blockfrostAdapter!;
   }

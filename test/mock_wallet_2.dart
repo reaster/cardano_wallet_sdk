@@ -8,7 +8,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:built_value/serializer.dart';
-import 'mock_wallet_2.mocks.dart';
+import '_mock_wallet_2.mocks.dart';
 
 // wallet 2
 
@@ -257,7 +257,9 @@ Blockfrost buildMockBlockfrostWallet2() {
       .thenAnswer((_) async => txContentUtxo(tx4));
 
   when(cardanoTransactionsApi.txSubmitPost(
-          contentType: 'application/cbor', data: anyNamed('data')))
+          contentType: 'application/cbor',
+          data: anyNamed('data'),
+          headers: anyNamed('headers')))
       .thenAnswer((_) async => Response(
           requestOptions: RequestOptions(path: ''),
           statusCode: 200,

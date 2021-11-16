@@ -8,9 +8,9 @@ import 'mock_wallet_2.dart';
 const ADA = 1000000;
 void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
-    blockfrost: buildMockBlockfrostWallet2(),
-    networkId: NetworkId.testnet,
-  );
+      blockfrost: buildMockBlockfrostWallet2(),
+      networkId: NetworkId.testnet,
+      projectId: '');
   final address = ShelleyAddress.fromBech32(stakeAddr2);
   final wallet = ReadOnlyWalletImpl(
     blockchainAdapter: mockAdapter,

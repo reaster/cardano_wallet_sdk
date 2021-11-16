@@ -6,6 +6,7 @@ import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
 import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
+import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
@@ -15,6 +16,7 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_update.dart';
 import 'package:blockfrost/blockfrost.dart';
 import 'package:dio/dio.dart';
+import 'dart:typed_data';
 import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:oxidized/oxidized.dart';
@@ -30,6 +32,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
 
   static const txContentType = 'application/cbor';
 
+  static const projectIdKey =
+      'project_id'; //hack: only needed by submitTransaction
+
   /// return base URL for blockfrost service given the network type.
   static String urlFromNetwork(NetworkId networkId) =>
       networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
@@ -37,13 +42,41 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   final NetworkId networkId;
   //final CardanoNetwork cardanoNetwork;
   final Blockfrost blockfrost;
+  final String projectId; //hack: only needed by submitTransaction
   Map<String, RawTransaction> _transactionCache = {};
   Map<String, Block> _blockCache = {};
   Map<String, AccountContent> _accountContentCache = {};
   Map<String, CurrencyAsset> _assetCache = {lovelaceHex: lovelacePseudoAsset};
 
   BlockfrostBlockchainAdapter(
-      {required this.networkId, required this.blockfrost});
+      {required this.networkId,
+      required this.blockfrost,
+      required this.projectId});
+
+  @override
+  Future<Result<LinearFee, String>> latestEpochParameters(
+      {int epochNumber = 0}) async {
+    if (epochNumber == 0) {
+      final blockResult = await latestBlock();
+      if (blockResult.isErr()) return Err(blockResult.unwrapErr());
+      epochNumber = blockResult.unwrap().epoch;
+    }
+    final paramResult = await dioCall<EpochParamContent>(
+      request: () => blockfrost
+          .getCardanoEpochsApi()
+          .epochsNumberParametersGet(number: epochNumber),
+      onSuccess: (data) => print(
+          "blockfrost.getCardanoEpochsApi().epochsNumberParametersGet(number:$epochNumber) -> ${serializers.toJson(EpochParamContent.serializer, data)}"),
+      errorSubject: 'latest EpochParamContent',
+    );
+    if (paramResult.isErr()) return Err(paramResult.unwrapErr());
+    final epochParams = paramResult.unwrap();
+    final linearFee = LinearFee(
+      constant: epochParams.minFeeA,
+      coefficient: epochParams.minFeeB,
+    );
+    return Ok(linearFee);
+  }
 
   @override
   Future<Result<Block, String>> latestBlock() async {
@@ -67,11 +100,11 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   }
 
   Future<Result<String, String>> submitTransaction(
-      List<int> cborTransaction) async {
+      Uint8List cborTransaction) async {
+    final Map<String, dynamic>? headers = {projectIdKey: projectId};
     final result = await dioCall<String>(
-      request: () => blockfrost
-          .getCardanoTransactionsApi()
-          .txSubmitPost(contentType: txContentType, data: cborTransaction),
+      request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(
+          contentType: txContentType, headers: headers, data: cborTransaction),
       onSuccess: (data) => print(
           "blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
       errorSubject: 'submit cbor transaction: ',

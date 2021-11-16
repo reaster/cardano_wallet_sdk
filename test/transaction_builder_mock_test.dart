@@ -9,9 +9,9 @@ import 'mock_wallet_2.dart';
 const ADA = 1000000;
 void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
-    blockfrost: buildMockBlockfrostWallet2(),
-    networkId: NetworkId.testnet,
-  );
+      blockfrost: buildMockBlockfrostWallet2(),
+      networkId: NetworkId.testnet,
+      projectId: '');
   final stakeAddress = ShelleyAddress.fromBech32(stakeAddr2);
   final toAddress = ShelleyAddress.fromBech32(
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
@@ -80,7 +80,7 @@ void main() {
           tx.body.transactionIsBalanced(cache: mockAdapter, fee: tx.body.fee);
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
-      expect(tx.body.fee, lessThan(defaultFee));
+      expect(tx.body.fee, lessThan(2000000));
     });
     test('sendAda - 200 ADA - insufficient balance', () async {
       Result<ShelleyTransaction, String> result =

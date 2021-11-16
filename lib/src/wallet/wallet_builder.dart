@@ -203,7 +203,9 @@ class WalletBuilder {
       Interceptor authInterceptor =
           BlockchainAdapterFactory.interceptorFromKey(key: key);
       factory = BlockchainAdapterFactory(
-          authInterceptor: authInterceptor, networkId: networkId);
+          authInterceptor: authInterceptor,
+          networkId: networkId,
+          projectId: key);
       _blockchainAdapterFactoryCache[networkId] = factory;
     }
     adapter = factory.adapter();

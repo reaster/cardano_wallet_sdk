@@ -14,7 +14,9 @@ import 'package:test/test.dart';
 void main() {
   final interceptor = BlockfrostTestAuthInterceptor();
   final adapterFactory = BlockchainAdapterFactory(
-      authInterceptor: interceptor, networkId: NetworkId.testnet);
+      authInterceptor: interceptor,
+      networkId: NetworkId.testnet,
+      projectId: interceptor.apiKey);
 
   // final ADA = 1000000;
 
