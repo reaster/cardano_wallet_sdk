@@ -1,21 +1,16 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-@Tags(['blockfrost'])
-
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'blockfrost_test_auth_interceptor.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
-
 import 'mock_wallet_2.dart';
 
 ///
 /// insure documented tests are actually working code.
 ///
 void main() {
-  final interceptor = BlockfrostTestAuthInterceptor();
-  final blockfrostKey = interceptor.apiKey;
+  final blockfrostKey = 'dummy-key';
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
       networkId: NetworkId.testnet,
@@ -89,7 +84,7 @@ void main() {
           'addr_test1qqwncl938qg3sf46z8n878z26fnq426ttyarv3hk58keyzpxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsq32vnr');
       final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
-        ..testnetAdapterKey = interceptor.apiKey
+        ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
         ..adapter = mockAdapter;
       final walletResult = await walletBuilder.buildAndSync();
