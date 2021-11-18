@@ -35,11 +35,25 @@ To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](
 
 ## Usage
 
-Installation details can be found on [pub.dev](https://pub.dev/packages/cardano_wallet_sdk/install).
+Released versions and installation details can be found on [pub.dev](https://pub.dev/packages/cardano_wallet_sdk/install).
+
+### Coding Style
+
+Although Dart is an imperative language, the framework uses functional idioms whenever possible. In particular, 
+the majority of the classes are immutible and rather than creating side effects by throwing 
+exceptions, the Result class is used. The WalletBuilder's build method
+provides a concrete example, returning either a wallet instance or error message if issues arise:
+```dart
+Result<Wallet, String> result = walletBuilder.build();
+result.when(
+    ok: (wallet) => print("Success: ${wallet.walletName}"),
+    err: (message) => print("Error: $message"),
+);
+```
 
 ### Wallet Management
 
-Create a wallet builder for testnet or mainnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
+Create a wallet builder for the testnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
 ```dart
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
@@ -56,7 +70,7 @@ final walletBuilder = WalletBuilder()
 Result<ReadOnlyWallet, String> result = await walletBuilder.readOnlyBuildAndSync();
 result.when(
     ok: (wallet) => print("${wallet.walletName}: ${wallet.balance}"),
-    err: (err) => print("Error: ${err}"),
+    err: (message) => print("Error: $message"),
 );
 ```
 
@@ -86,7 +100,7 @@ Coin oldBalance = wallet.balance;
 var result2 = await wallet.update();
 result2.when(
     ok: (_) => print("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
-    err: (err) => print("Error: ${err}"),
+    err: (message) => print("Error: $message"),
 );
 ```
 
