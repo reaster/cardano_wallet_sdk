@@ -4,6 +4,7 @@
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:logger/logger.dart';
 
 enum TransactionType { deposit, withdrawal }
 enum TransactionStatus { pending, unspent, spent }
@@ -194,6 +195,8 @@ extension TransactionScanner on RawTransaction {
     return result;
   }
 
+  static final _logger = Logger();
+
   ///
   /// return a map of all currencies with their net quantity change for a given set of
   /// addresses (i.e. a specific wallet).
@@ -209,7 +212,7 @@ extension TransactionScanner on RawTransaction {
         for (var amount in input.amounts) {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning - amount.quantity;
-          print(
+          _logger.i(
               "${time} tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
         }
       }
@@ -220,7 +223,7 @@ extension TransactionScanner on RawTransaction {
         for (var amount in output.amounts) {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning + amount.quantity;
-          print(
+          _logger.i(
               "${time} tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
         }
       }
@@ -245,7 +248,7 @@ extension TransactionScanner on RawTransaction {
         result.add(output.address);
       }
     }
-    print(
+    _logger.i(
         "filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
     return result;
   }

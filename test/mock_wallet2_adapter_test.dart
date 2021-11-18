@@ -10,7 +10,7 @@ void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
       networkId: NetworkId.testnet,
-      projectId: '');
+      projectId: 'mock-id');
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {
       final address = ShelleyAddress.fromBech32(stakeAddr2);

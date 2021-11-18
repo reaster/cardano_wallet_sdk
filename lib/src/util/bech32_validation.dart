@@ -1,8 +1,11 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:quiver/strings.dart';
+
+final _logger = Logger();
 
 ///
 /// if bech32 string has the correct prefix, '1' seperator, legal data characters and optionaly correct length,
@@ -20,7 +23,7 @@ Result<String, String> validBech32(
   if (hrpPrefixes.length > 1)
     hrpPrefixes
         .sort((a, b) => b.compareTo(a)); //avoid matching 'addr' for 'addr_test'
-  print(hrpPrefixes);
+  _logger.i(hrpPrefixes);
   final prefix = hrpPrefixes
       .firstWhere((prefix) => lowerCase.startsWith(prefix), orElse: () => '');
   if (isBlank(prefix))

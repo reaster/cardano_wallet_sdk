@@ -8,6 +8,7 @@ import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:collection/collection.dart';
+import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 
 ///
@@ -23,7 +24,9 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   Result<Map<AssetId, Coin>, String> sumCurrencyIO({
     required BlockchainCache cache,
     Coin fee = 0,
+    Logger? logger,
   }) {
+    if (logger == null) logger = Logger();
     Map<AssetId, Coin> sums = {};
     for (final input in inputs) {
       RawTransaction? tx = cache.cachedTransaction(input.transactionId);
@@ -47,13 +50,13 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
         }
       }
     }
-    print(" ====> sumCurrencyIO - should all be zero if balanced:");
+    logger.i(" ====> sumCurrencyIO - should all be zero if balanced:");
     for (final assetId in sums.keys) {
       if (assetId == lovelaceHex) {
-        print(
+        logger.i(
             "   ==> lovelace: ${sums[assetId]} - fee($fee) = ${(sums[lovelaceHex] ?? coinZero) - fee}");
       } else {
-        print("   ==> $assetId: ${sums[assetId]}");
+        logger.i("   ==> $assetId: ${sums[assetId]}");
       }
     }
     sums[lovelaceHex] = (sums[lovelaceHex] ?? coinZero) - fee;

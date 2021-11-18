@@ -3,6 +3,7 @@
 
 import 'package:coingecko_dart/dataClasses/coins/Coin.dart';
 import 'package:coingecko_dart/dataClasses/coins/PricedCoin.dart';
+import 'package:logger/logger.dart';
 import 'price_service.dart';
 import 'package:coingecko_dart/coingecko_dart.dart';
 import 'package:oxidized/oxidized.dart';
@@ -31,6 +32,7 @@ class CoinGeckoApiFix extends CoinGeckoApi {
 }
 
 class CoingeckoPriceService extends PriceService {
+  final logger = Logger();
   static Map<String, String> _defaultSymbolToId = {
     'btc': 'bitcoin',
     'eth': 'ethereum',
@@ -117,7 +119,7 @@ class CoingeckoPriceService extends PriceService {
         _symbolToId = fullList;
         id = _symbolToId[symbol];
       }, err: (err) {
-        print(err);
+        logger.e(err);
       });
     }
     return id;

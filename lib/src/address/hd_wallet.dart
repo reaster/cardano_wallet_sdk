@@ -3,6 +3,7 @@
 
 import 'package:hex/hex.dart';
 import 'package:bip39/bip39.dart' as bip39;
+import 'package:logger/logger.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
@@ -89,6 +90,8 @@ class HdWallet {
   final Bip32SigningKey rootSigningKey;
   final _derivator = Bip32Ed25519KeyDerivation.instance;
 
+  final logger = Logger();
+
   /// root constructor taking a root signing key
   HdWallet({required this.rootSigningKey});
 
@@ -174,7 +177,7 @@ class HdWallet {
           spend: keyPair.verifyKey!,
           stake: stakeAddressKeys.verifyKey!,
           networkId: networkId);
-      print("addr[$i][role:$role]: $addr");
+      logger.i("addr[$i][role:$role]: $addr");
     } while (!unusedCallback(addr));
     final result = ShelleyAddressKit(
       account: account,

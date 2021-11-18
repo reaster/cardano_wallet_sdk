@@ -328,36 +328,36 @@ class InvalidAddressTypeError extends Error {
 //   final icarusKeyTree = CardanoKeyIcarus.seed(seed);
 
 //   // final Bip32Key addressKey = icarusKeyTree.forPath(addressPath);
-//   // print(addressKey);
+//   // logger.i(addressKey);
 //   // final Bip32Key rewardKey = icarusKeyTree.forPath(rewardAddressPath);
-//   // print(rewardKey);
+//   // logger.i(rewardKey);
 
 //   final addressKey = icarusKeyTree.pathToKey(addressPath);
-//   print(addressKey);
+//   logger.i(addressKey);
 //   final rewardKey = icarusKeyTree.pathToKey(rewardAddressPath);
-//   print(rewardKey);
+//   logger.i(rewardKey);
 //   final addr1 = BaseAddress.fromKeys(NetworkId.testnet, addressKey, rewardKey);
-//   print(addr1);
+//   logger.i(addr1);
 
 //   var address = ShelleyAddress.fromBech32(
 //       'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp');
-//   print(address);
+//   logger.i(address);
 
 //   address =
 //       ShelleyAddress.fromBech32('addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwqfjkjv7');
-//   print(address);
+//   logger.i(address);
 
 //   address = ShelleyAddress.fromBech32('addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz');
-//   print(address);
+//   logger.i(address);
 
 //   address = ShelleyAddress.fromBech32('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8');
-//   print(address);
+//   logger.i(address);
 
 //   address = ShelleyAddress.fromBech32(
 //       'addr_test1qpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qum8x5w');
-//   print(address);
+//   logger.i(address);
 
 //   address =
 //       ShelleyAddress.fromBech32('addr1q9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qld6xc3');
-//   print(address);
+//   logger.i(address);
 // }

@@ -10,6 +10,7 @@ import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
+import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:hex/hex.dart';
 
@@ -22,6 +23,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   final int accountIndex;
   final Bip32KeyPair addressKeyPair;
   final CoinSelectionAlgorithm coinSelectionFunction;
+  final logger = Logger();
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
   WalletImpl({
@@ -86,8 +88,9 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       fee: fee,
     );
     if (txResult.isErr()) return Err(txResult.unwrapErr());
-    if (logTxHex) print("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
-    if (logTx) print("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
+    if (logTxHex)
+      logger.i("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
+    if (logTx) logger.i("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
     final sendResult = submitTransaction(
       tx: txResult.unwrap(),
     );

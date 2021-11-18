@@ -146,13 +146,13 @@ String calculateFingerprint(
     String hrp = 'asset'}) {
   //final assetNameHex = str2hex.encode(assetName);
   final assetId = '$policyId$assetNameHex';
-  //print("assetId: $assetId");
+  //logger.i("assetId: $assetId");
   final assetIdBytes = HEX.decode(assetId);
-  //print(b2s(assetIdBytes, prefix: 'assetIdBytes'));
+  //logger.i(b2s(assetIdBytes, prefix: 'assetIdBytes'));
   final List<int> hashBytes = blake2bHash160(assetIdBytes);
-  //print(b2s(hashBytes, prefix: 'hashBytes'));
+  //logger.i(b2s(hashBytes, prefix: 'hashBytes'));
   final List<int> fiveBitArray = convertBits(hashBytes, 8, 5, false);
-  //print(b2s(fiveBitArray, prefix: 'fiveBitArray'));
+  //logger.i(b2s(fiveBitArray, prefix: 'fiveBitArray'));
   return bech32.encode(Bech32(hrp, fiveBitArray));
 }
 

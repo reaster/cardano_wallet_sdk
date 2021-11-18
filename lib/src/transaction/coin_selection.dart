@@ -6,6 +6,7 @@ import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 
 ///
@@ -115,6 +116,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   int coinSelectionLimit = defaultCoinSelectionLimit,
   bool logSelection = false,
 }) async {
+  final logger = Logger();
   if (outputsRequested.isEmpty) {
     return Err(CoinSelectionError(
         reason: CoinSelectionErrorEnum.InputCountInsufficient,
@@ -155,21 +157,21 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   int coinsSelected = 0;
   for (final tx in sortedInputs) {
     if (tx.status != TransactionStatus.unspent) {
-      print("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
+      logger.i("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
     }
     // int index = 0;
     for (int index = 0; index < tx.outputs.length; index++) {
       final output = tx.outputs[index];
       //Coin coinAmount = tx.currencyAmount(assetId: hardCodedUnit);
       final contains = ownedAddresses.contains(output.address);
-      print(
+      logger.i(
           "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
       if (contains) {
         for (final txAmount in output.amounts) {
           if (txAmount.quantity > 0 && txAmount.unit == hardCodedUnit) {
             selectedAmount += txAmount.quantity;
             if (logSelection) {
-              print(
+              logger.i(
                   "selectedAmount += quantity: $selectedAmount += ${txAmount.quantity} -> tx: ${tx.txId} index: $index");
             }
             if (++coinsSelected > coinSelectionLimit) {

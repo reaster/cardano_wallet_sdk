@@ -66,7 +66,7 @@ class StakeAccount {
   //   this.metadata,
   // })  : this.assetId = '$policyId$assetName',
   //       this.name = hex2str.encode(assetName), //if assetName is not hex, this will usualy fail
-  //       this.fingerprint = fingerprint ?? calculateFingerprint(policyId: policyId, assetNameHex: assetName);
+  //       this.fingerprint = fingerprint ?? calculateFingerlogger.i(policyId: policyId, assetNameHex: assetName);
 
 }
 

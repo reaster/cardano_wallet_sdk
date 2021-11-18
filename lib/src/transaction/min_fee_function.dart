@@ -3,6 +3,7 @@
 
 import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import 'package:logger/logger.dart';
 
 typedef MinFeeFunction = Coin Function(
     {required ShelleyTransaction transaction, LinearFee linearFee});
@@ -13,10 +14,11 @@ typedef MinFeeFunction = Coin Function(
 Coin simpleMinFee(
     {required ShelleyTransaction transaction,
     LinearFee linearFee = defaultLinearFee}) {
+  final logger = Logger();
   final len = transaction.toCborList().getData().length;
   final result =
       (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
-  print(
+  logger.i(
       "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
   return result;
 }

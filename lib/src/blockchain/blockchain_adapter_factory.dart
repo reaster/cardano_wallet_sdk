@@ -7,6 +7,7 @@ import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_api_key_
 import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
 
 ///
 /// Provides a properly configured BlockchainAdapter for the requirested network.
@@ -19,6 +20,8 @@ class BlockchainAdapterFactory {
   final String projectId;
   Blockfrost? _blockfrost;
   BlockfrostBlockchainAdapter? _blockfrostAdapter;
+
+  final logger = Logger();
 
   BlockchainAdapterFactory(
       {required this.authInterceptor,
@@ -60,7 +63,7 @@ class BlockchainAdapterFactory {
       {required NetworkId networkId, required Interceptor authInterceptor}) {
     if (_blockfrost == null) {
       final url = BlockfrostBlockchainAdapter.urlFromNetwork(networkId);
-      print("new Blockfrost($url)");
+      logger.i("new Blockfrost($url)");
       _blockfrost = Blockfrost(
         basePathOverride: url,
         interceptors: [authInterceptor],
