@@ -183,7 +183,7 @@ class WalletBuilder {
 
   /// Generate a unique 24-word mnumonic phrase which can be used to create a
   /// new wallet.
-  List<String> generateNewMnemonic() =>
+  static List<String> generateNewMnemonic() =>
       (bip39.generateMnemonic(strength: 256)).split(' ');
 
   static Map<NetworkId, BlockchainAdapterFactory>

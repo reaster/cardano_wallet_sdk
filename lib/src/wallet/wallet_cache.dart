@@ -7,13 +7,19 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 ///
 /// Wallet cache interface.
 ///
-abstract class WalletCache {
+abstract class WalletCache<T> {
   ///lookup cached wallet by ID
-  ReadOnlyWallet? cachedWalletById(WalletId walletId);
+  WalletValue<T>? cachedWalletById(WalletId walletId);
 
   ///cache wallet.
-  void cacheWallet(ReadOnlyWallet wallet);
+  void cacheWallet(WalletValue<T> walletValue);
 
   ///clear cache
   int clearCachedWallets();
+}
+
+class WalletValue<T> {
+  final ReadOnlyWallet wallet;
+  final T metadata;
+  WalletValue({required this.wallet, required this.metadata});
 }

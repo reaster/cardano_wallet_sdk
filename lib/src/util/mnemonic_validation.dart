@@ -5,8 +5,9 @@ import 'package:oxidized/oxidized.dart';
 import 'package:bip39/bip39.dart' as bip39;
 
 ///
-/// if mnemonic string has the legal characters and correct length,
-/// the normalized correct form is returned. If it's not legal, then an explanation is returned in the error message.
+/// If the mnemonic or recovery phrase has all legal characters and the
+/// requiredNumberOfWords, then the normalized correct form is returned.
+/// If it's not legal, then an explanation is returned in the error message.
 ///
 Result<String, String> validMnemonic({
   required String phrase,
@@ -15,29 +16,36 @@ Result<String, String> validMnemonic({
   if (phrase.isEmpty) {
     return Err("mnemonic required");
   }
-  final lowerCase = phrase.toLowerCase();
+  final lowerCase = phrase.toLowerCase().trim(); //TODO normalize white space
   int invalidCharIndex = _firstIllegalDataChar(lowerCase);
   if (invalidCharIndex > -1)
     return Err(
         "invalid character: ${lowerCase.substring(invalidCharIndex, invalidCharIndex + 1)}");
   final words = lowerCase.split(' ');
-  if (words.length != requiredNumberOfWords)
-    return Err("$requiredNumberOfWords words required");
   try {
     bip39.mnemonicToEntropy(lowerCase);
   } on ArgumentError catch (e) {
-    final badWord = _findBadMnemonicWord(words);
-    if (badWord.isErr()) return Err(badWord.unwrapErr());
+    //might be a bad word, see if we can find it
+    final validity = validMnemonicWords(words);
+    if (validity.isErr()) return Err(validity.unwrapErr());
+    //otherwise check length
+    if (words.length != requiredNumberOfWords)
+      return Err("$requiredNumberOfWords words required");
     return Err(e.message);
   } on StateError catch (e) {
+    if (words.length != requiredNumberOfWords)
+      return Err("$requiredNumberOfWords words required");
     return Err(e.message);
   } catch (e) {
     return Err(e.toString());
   }
+  if (words.length != requiredNumberOfWords)
+    return Err("$requiredNumberOfWords words required");
   return Ok(lowerCase);
 }
 
-Result<bool, String> _findBadMnemonicWord(List<String> words) {
+/// Return true if a all the provided mnemonic words are valid.
+Result<bool, String> validMnemonicWords(List<String> words) {
   for (final word in words) {
     if (!validMnemonicWord(word)) {
       return Err("invalid mnemonic word: '$word'");
@@ -46,15 +54,16 @@ Result<bool, String> _findBadMnemonicWord(List<String> words) {
   return Ok(true);
 }
 
-/// return true if a valid mnemonic word
+/// Return true if a valid mnemonic word
 bool validMnemonicWord(String word) {
   // not a great implementation because it depends on the inner details of bip39
   try {
-    bip39.mnemonicToEntropy(word.toLowerCase().trim() + ' ability able');
+    // just need 3 words to avoid length error - append 2 valid words
+    bip39.mnemonicToEntropy('${word.toLowerCase().trim()} ability able');
   } on ArgumentError {
     return false;
   } on StateError {
-    return true;
+    return true; //StateError is not valid to this test
   }
   return true;
 }
@@ -77,4 +86,4 @@ int _indexOfCodeUnit(int ch16, List<int> codeUnits) {
 }
 
 final _mnemonicLegalDataChars = ' abcdefghijklmnopqrstuvwxyz'
-    .codeUnits; //call toLowerCase() on target string 
+    .codeUnits; //call toLowerCase() on target string

@@ -2,7 +2,7 @@ name: flutter_example
 description: A new Flutter project.
 
 # Prevent accidental publishing to pub.dev.
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -17,6 +17,9 @@ dependencies:
   cardano_wallet_sdk:
     path: ../../
   speed_dial_fab: ^2.1.1
+  flutter_riverpod: ^1.0.0
+  oxidized: ^5.1.0
+  flutter_slidable: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -33,3 +36,4 @@ flutter:
   assets:
     # Add assets from the images directory to the application.
     - assets/images/
+    - assets/res/

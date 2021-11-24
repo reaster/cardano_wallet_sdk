@@ -9,6 +9,8 @@
 .history
 .svn/
 
+/assets/res/blockfrost_project_id.txt
+
 # IntelliJ related
 *.iml
 *.ipr

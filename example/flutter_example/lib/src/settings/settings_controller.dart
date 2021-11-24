@@ -11,6 +11,9 @@ import 'settings_service.dart';
 class SettingsController with ChangeNotifier {
   SettingsController(this._settingsService);
 
+  set adapterKey(String key) => _settingsService.adapterKey = key;
+  String get adapterKey => _settingsService.adapterKey;
+
   // Make SettingsService a private variable so it is not used directly.
   final SettingsService _settingsService;
 
@@ -26,6 +29,7 @@ class SettingsController with ChangeNotifier {
   /// settings from the service.
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
+    await _settingsService.loadAdapterKeyAsset();
 
     // Important! Inform listeners a change has occurred.
     notifyListeners();

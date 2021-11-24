@@ -76,7 +76,7 @@ void main() {
       );
     });
     test('Create a new 24 word mnemonic', () {
-      List<String> mnemonic = WalletBuilder().generateNewMnemonic();
+      List<String> mnemonic = WalletBuilder.generateNewMnemonic();
       print("mnemonic: ${mnemonic.join(' ')}");
     });
     test('Send 3 ADA to Bob', () async {

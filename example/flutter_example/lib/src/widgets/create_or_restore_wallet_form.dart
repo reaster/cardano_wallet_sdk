@@ -1,6 +1,7 @@
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
+import 'package:flutter/services.dart';
 
 ///
 /// Create read-only wallet form. All biz logic passed in via functions.
@@ -11,8 +12,7 @@ class CreateOrRestoreWalletForm extends StatefulWidget {
   final bool isNew;
   final bool Function(String s) isWalletNameUnique;
   final bool Function(String s) isMnemonicUnique;
-  final void Function(BuildContext context, String walletName, String mnemonic)
-      doCreateWallet;
+  final void Function(BuildContext context, String walletName, List<String> mnemonic) doCreateWallet;
   final void Function(BuildContext context) doCancel;
 
   const CreateOrRestoreWalletForm({
@@ -29,14 +29,16 @@ class CreateOrRestoreWalletForm extends StatefulWidget {
         super(key: key);
 
   @override
-  _CreateOrRestoreWalletFormState createState() =>
-      _CreateOrRestoreWalletFormState();
+  _CreateOrRestoreWalletFormState createState() => _CreateOrRestoreWalletFormState();
 }
 
 class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
   final formKey = GlobalKey<FormState>();
   late TextEditingController walletNameController;
   late TextEditingController mnemonicController;
+  late String submitButtonText;
+  late String dialogTitleText;
+  late String recoveryPhraseHandlingText;
 
   String walletName = '';
   String mnemonic = '';
@@ -46,8 +48,16 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
     super.initState();
     walletName = widget.walletName;
     walletNameController = TextEditingController(text: widget.walletName);
-    mnemonic = widget.mnemonic;
-    mnemonicController = TextEditingController(text: widget.mnemonic);
+    if (widget.isNew && widget.mnemonic.isEmpty) {
+      mnemonic = WalletBuilder.generateNewMnemonic().join(' ');
+    } else {
+      mnemonic = widget.mnemonic;
+    }
+    mnemonicController = TextEditingController(text: mnemonic);
+    submitButtonText = widget.isNew ? 'Create' : 'Restore';
+    dialogTitleText = widget.isNew ? 'Create New Wallet' : 'Restore Wallet';
+    recoveryPhraseHandlingText =
+        'WARNING: The only way to restore this wallet is to keep a copy of this recoverey phrase in a safe, private location!';
   }
 
   @override
@@ -58,60 +68,67 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Form(
-        key: formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: CustomPaint(
-                size: const Size(80, 80),
-                painter: AdaCustomPainter(color: Colors.blue[800]),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        child: Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: CustomPaint(
+                  size: const Size(80, 80),
+                  painter: AdaCustomPainter(color: Colors.blue[800]),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: Text("Create Read-Only Wallet",
-                  style: Theme.of(context).textTheme.headline5),
-            ),
-            const SizedBox(height: 24),
-            buildWalletName(),
-            const SizedBox(height: 24),
-            buildStakeMnemonicTextField(),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  child: const Text('Submit'),
-                  onPressed: () {
-                    //print('StakeMnemonic: ${mnemonicController.text}');
-                    final isValid = formKey.currentState?.validate() ?? false;
-                    setState(() {});
-                    if (isValid) {
-                      widget.doCreateWallet(context, walletName, mnemonic);
-                    }
-                  },
+              const SizedBox(height: 24),
+              Center(
+                child: Text(dialogTitleText, style: Theme.of(context).textTheme.headline5),
+              ),
+              const SizedBox(height: 24),
+              buildWalletName(),
+              const SizedBox(height: 24),
+              if (widget.isNew)
+                Center(
+                  child: Text(recoveryPhraseHandlingText, style: Theme.of(context).textTheme.bodyText1!.apply(color: Colors.red)),
                 ),
-                ElevatedButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => widget.doCancel(context),
-                ),
-              ],
-            )
-          ],
+              if (widget.isNew) const SizedBox(height: 24),
+              buildStakeMnemonicTextField(),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    child: Text(submitButtonText),
+                    onPressed: () {
+                      //print('StakeMnemonic: ${mnemonicController.text}');
+                      final isValid = formKey.currentState?.validate() ?? false;
+                      setState(() {});
+                      if (isValid) {
+                        widget.doCreateWallet(context, walletName, mnemonic.split(' '));
+                      }
+                    },
+                  ),
+                  ElevatedButton(
+                    child: const Text('Cancel'),
+                    onPressed: () => widget.doCancel(context),
+                  ),
+                ],
+              )
+            ],
+          ),
+          // ),
+          // ],
         ),
-        // ),
-        // ],
       );
 
   Widget buildStakeMnemonicTextField() => TextFormField(
+        maxLines: null,
         onChanged: (value) => setState(() => mnemonic = value),
         validator: (value) {
           final result = validMnemonic(phrase: value ?? '');
           if (result.isErr()) {
-            print(result.unwrapErr());
+            debugPrint(result.unwrapErr());
             return result.unwrapErr();
           }
           if (!widget.isMnemonicUnique(mnemonic)) {
@@ -122,23 +139,24 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
         controller: mnemonicController,
         decoration: InputDecoration(
           hintText: '24-words seperated by spaces',
-          labelText: 'Mnemonic Phrase',
-          prefixIcon: const Icon(Icons.how_to_vote),
-          // icon: Icon(Icons.mail),
+          labelText: 'Recoverey Phrase',
+          prefixIcon: const Icon(Icons.security),
           suffixIcon: mnemonicController.text.isEmpty
               ? Container(width: 0)
               : IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.copy),
+                  tooltip: 'copy to clipboard',
                   onPressed: () {
-                    mnemonicController.clear();
-                    mnemonic = '';
+                    Clipboard.setData(ClipboardData(text: mnemonicController.text)).then((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Recoverey phrase copied to clipboard")));
+                    });
                   },
                 ),
           border: const OutlineInputBorder(),
         ),
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.go,
-        autofocus: true,
+        //autofocus: true,
       );
 
   Widget buildWalletName() => TextFormField(
@@ -162,6 +180,7 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
               ? Container(width: 0)
               : IconButton(
                   icon: const Icon(Icons.close),
+                  tooltip: 'remove text',
                   onPressed: () {
                     walletNameController.clear();
                     walletName = '';

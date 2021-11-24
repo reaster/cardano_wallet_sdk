@@ -1,5 +1,5 @@
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
 
 ///
@@ -10,8 +10,7 @@ class CreateReadOnlyWalletForm extends StatefulWidget {
   final String walletName;
   final bool Function(String s) isWalletNameUnique;
   final bool Function(String s) isAddressUnique;
-  final void Function(BuildContext context, String walletName, String address)
-      doCreateWallet;
+  final void Function(BuildContext context, String walletName, ShelleyAddress address) doCreateWallet;
   final void Function(BuildContext context) doCancel;
 
   const CreateReadOnlyWalletForm({
@@ -27,8 +26,7 @@ class CreateReadOnlyWalletForm extends StatefulWidget {
         super(key: key);
 
   @override
-  _CreateReadOnlyWalletFormState createState() =>
-      _CreateReadOnlyWalletFormState();
+  _CreateReadOnlyWalletFormState createState() => _CreateReadOnlyWalletFormState();
 }
 
 class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
@@ -56,52 +54,53 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Form(
-        key: formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: CustomPaint(
-                size: const Size(80, 80),
-                painter: AdaCustomPainter(color: Colors.blue[800]),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        child: Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: CustomPaint(
+                  size: const Size(80, 80),
+                  painter: AdaCustomPainter(color: Colors.blue[800]),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: Text("Create Read-Only Wallet",
-                  style: Theme.of(context).textTheme.headline5),
-            ),
-            const SizedBox(height: 24),
-            buildWalletName(),
-            const SizedBox(height: 24),
-            buildStakeAddressTextField(),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  child: const Text('Submit'),
-                  onPressed: () {
-                    //print('StakeAddress: ${addressController.text}');
-                    final isValid = formKey.currentState?.validate() ?? false;
-                    setState(() {});
-                    if (isValid) {
-                      widget.doCreateWallet(context, walletName, address);
-                    }
-                  },
-                ),
-                ElevatedButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => widget.doCancel(context),
-                ),
-              ],
-            )
-          ],
+              const SizedBox(height: 24),
+              Center(
+                child: Text("Create Read-Only Wallet", style: Theme.of(context).textTheme.headline5),
+              ),
+              const SizedBox(height: 24),
+              buildWalletName(),
+              const SizedBox(height: 24),
+              buildStakeAddressTextField(),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    child: const Text('Create'),
+                    onPressed: () {
+                      //print('StakeAddress: ${addressController.text}');
+                      final isValid = formKey.currentState?.validate() ?? false;
+                      setState(() {});
+                      if (isValid) {
+                        widget.doCreateWallet(context, walletName, ShelleyAddress.fromBech32(address));
+                      }
+                    },
+                  ),
+                  ElevatedButton(
+                    child: const Text('Cancel'),
+                    onPressed: () => widget.doCancel(context),
+                  ),
+                ],
+              )
+            ],
+          ),
+          // ),
+          // ],
         ),
-        // ),
-        // ],
       );
 
   Widget buildStakeAddressTextField() => TextFormField(
@@ -109,19 +108,15 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
         validator: (value) {
           //stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d
           final hrpPrefixes = ['stake_test'];
-          final result = validBech32(
-              bech32: value ?? '',
-              hrpPrefixes: hrpPrefixes,
-              dataPartRequiredLength: 53);
+          final result = validBech32(bech32: value ?? '', hrpPrefixes: hrpPrefixes, dataPartRequiredLength: 53);
           if (result.isErr()) {
-            print(result.unwrapErr());
+            //print(result.unwrapErr());
             return result.unwrapErr();
           }
           if (!widget.isAddressUnique(address)) {
             return "wallet for this address already exists";
           }
-          print("valid");
-          return null;
+          return null; //valid
         },
         controller: addressController,
         decoration: InputDecoration(
@@ -133,6 +128,7 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
               ? Container(width: 0)
               : IconButton(
                   icon: const Icon(Icons.close),
+                  tooltip: 'remove text',
                   onPressed: () {
                     addressController.clear();
                     address = '';
@@ -153,12 +149,10 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
           } else if (walletName.isEmpty) {
             return 'wallet name required';
           } else {
-            print("valid");
-            return null;
+            return null; //valid
           }
         },
         controller: walletNameController,
-        //onSubmitted: (value) => setState(() => this.walletName = value),
         decoration: InputDecoration(
           hintText: 'Personalized Name...',
           labelText: 'Wallet Name',
@@ -168,6 +162,7 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
               ? Container(width: 0)
               : IconButton(
                   icon: const Icon(Icons.close),
+                  tooltip: 'remove text',
                   onPressed: () {
                     walletNameController.clear();
                     walletName = '';
