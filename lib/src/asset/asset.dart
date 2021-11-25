@@ -68,10 +68,10 @@ class CurrencyAsset {
     required this.quantity,
     required this.initialMintTxHash,
     this.metadata,
-  })  : this.assetId = '$policyId$assetName',
-        this.name = hex2str
+  })  : assetId = '$policyId$assetName',
+        name = hex2str
             .encode(assetName), //if assetName is not hex, this will usualy fail
-        this.fingerprint = fingerprint ??
+        fingerprint = fingerprint ??
             calculateFingerprint(policyId: policyId, assetNameHex: assetName);
 
   bool get isNativeToken => assetId != lovelaceHex;
@@ -86,8 +86,8 @@ class CurrencyAsset {
 }
 
 /// 'lovelace' encoded as a hex string (i.e. str2hex.encode('lovelace') or '6c6f76656c616365').
-final lovelaceHex = '6c6f76656c616365';
-final lovelaceAssetId = lovelaceHex;
+const lovelaceHex = '6c6f76656c616365';
+const lovelaceAssetId = lovelaceHex;
 
 class CurrencyAssetMetadata {
   /// Asset name
@@ -165,8 +165,7 @@ List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
   for (int i = 0; i < data.length; i++) {
     int value = data[i] & 0xff;
     if (value < 0 || value >> fromWidth != 0) {
-      throw new FormatException(
-          "input data bit-width exceeds $fromWidth: $value");
+      throw FormatException("input data bit-width exceeds $fromWidth: $value");
     }
     acc = (acc << fromWidth) | value;
     bits += fromWidth;
@@ -180,8 +179,7 @@ List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
     if (bits > 0) {
       ret.add((acc << (toWidth - bits)) & maxv);
     } else if (bits >= fromWidth || ((acc << (toWidth - bits)) & maxv) != 0) {
-      throw new FormatException(
-          "input data bit-width exceeds $fromWidth: $bits");
+      throw FormatException("input data bit-width exceeds $fromWidth: $bits");
     }
   }
 

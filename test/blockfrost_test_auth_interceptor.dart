@@ -29,7 +29,7 @@ class BlockfrostTestAuthInterceptor extends AuthInterceptor {
     return file.readAsStringSync();
   }
 
-  static final apiKeyFilePath = '../blockfrost_project_id.txt';
+  static const apiKeyFilePath = '../blockfrost_project_id.txt';
 }
 
 ///
@@ -53,11 +53,11 @@ class BlockfrostTestAuthInterceptor extends AuthInterceptor {
 ///
 ///
 
-final mainnet = 'https://cardano-mainnet.blockfrost.io/api/v0';
-final testnet = 'https://cardano-testnet.blockfrost.io/api/v0';
-final IPFS =
+const mainnet = 'https://cardano-mainnet.blockfrost.io/api/v0';
+const testnet = 'https://cardano-testnet.blockfrost.io/api/v0';
+const ipfs =
     'https://ipfs.blockfrost.io/api/v0'; //InterPlanetary File System, 100MB max upload size
 
-final asc = 'asc'; //?order=asc, oldest first (default)
-final desc = 'desc'; //?order=desc, newest first
-final lovelacePerAda = 1000000;
+const asc = 'asc'; //?order=asc, oldest first (default)
+const desc = 'desc'; //?order=desc, newest first
+const lovelacePerAda = 1000000;

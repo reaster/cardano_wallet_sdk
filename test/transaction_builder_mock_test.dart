@@ -6,7 +6,7 @@ import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
 import 'mock_wallet_2.dart';
 
-const ADA = 1000000;
+const ada = 1000000;
 void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
@@ -15,7 +15,7 @@ void main() {
   final stakeAddress = ShelleyAddress.fromBech32(stakeAddr2);
   final toAddress = ShelleyAddress.fromBech32(
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
-  final mnemonic =
+  const mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin';
   final hdWallet = HdWallet.fromMnemonic(mnemonic);
   final accountIndex = defaultAccountIndex;
@@ -56,7 +56,7 @@ void main() {
     });
     test('sendAda - 99 ADA - 1 UTxOs', () async {
       Result<ShelleyTransaction, String> result =
-          await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 99);
+          await wallet.sendAda(toAddress: toAddress, lovelace: ada * 99);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
       expect(tx.body.inputs.length, 1,
@@ -70,7 +70,7 @@ void main() {
     });
     test('sendAda - 100 ADA - 2 UTxOs', () async {
       Result<ShelleyTransaction, String> result =
-          await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 100);
+          await wallet.sendAda(toAddress: toAddress, lovelace: ada * 100);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
       expect(tx.body.inputs.length, 2,
@@ -84,7 +84,7 @@ void main() {
     });
     test('sendAda - 200 ADA - insufficient balance', () async {
       Result<ShelleyTransaction, String> result =
-          await wallet.sendAda(toAddress: toAddress, lovelace: ADA * 200);
+          await wallet.sendAda(toAddress: toAddress, lovelace: ada * 200);
       expect(result.isErr(), isTrue);
       print("Error: ${result.unwrapErr()}");
     });

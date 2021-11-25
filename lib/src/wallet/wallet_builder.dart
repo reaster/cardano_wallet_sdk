@@ -84,17 +84,16 @@ class WalletBuilder {
 
   /// Create a read-only wallet matching the supplied properties.
   Result<ReadOnlyWallet, String> readOnlyBuild() {
-    if (_stakeAddress == null)
+    if (_stakeAddress == null) {
       return Err("Read-only wallet creation requires a staking address");
-    if (_walletName == null) {
-      _walletName = "Wallet #${_walletNameIndex++}";
     }
+    _walletName ??= "Wallet #${_walletNameIndex++}";
     if (_adapter != null) {
       if (_adapter! is BlockfrostBlockchainAdapter) {
         _networkId = (_adapter as BlockfrostBlockchainAdapter).networkId;
       }
     } else {
-      if (_networkId == null) _networkId = NetworkId.mainnet;
+      _networkId ??= NetworkId.mainnet;
       final adapterResult = _lookupOrCreateBlockchainAdapter(
         networkId: _networkId!,
         key: _networkId! == NetworkId.mainnet
@@ -137,15 +136,13 @@ class WalletBuilder {
         return Err("wallet creation requires a 'rootPrivateKey' or 'mnemonic'");
       }
     }
-    if (_walletName == null) {
-      _walletName = "Wallet #${_walletNameIndex++}";
-    }
+    _walletName ??= "Wallet #${_walletNameIndex++}";
     if (_adapter != null) {
       if (_adapter! is BlockfrostBlockchainAdapter) {
         _networkId = (_adapter as BlockfrostBlockchainAdapter).networkId;
       }
     } else {
-      if (_networkId == null) _networkId = NetworkId.mainnet;
+      _networkId ??= NetworkId.mainnet;
       final adapterResult = _lookupOrCreateBlockchainAdapter(
         networkId: _networkId!,
         key: _networkId! == NetworkId.mainnet
@@ -186,9 +183,9 @@ class WalletBuilder {
   static List<String> generateNewMnemonic() =>
       (bip39.generateMnemonic(strength: 256)).split(' ');
 
-  static Map<NetworkId, BlockchainAdapterFactory>
+  static final Map<NetworkId, BlockchainAdapterFactory>
       _blockchainAdapterFactoryCache = {};
-  static Map<NetworkId, BlockchainAdapter> _blockchainAdapterCache = {};
+  static final Map<NetworkId, BlockchainAdapter> _blockchainAdapterCache = {};
 
   static Result<BlockchainAdapter, String> _lookupOrCreateBlockchainAdapter(
       {required NetworkId networkId, String? key}) {
@@ -197,9 +194,10 @@ class WalletBuilder {
     BlockchainAdapterFactory? factory =
         _blockchainAdapterFactoryCache[networkId];
     if (factory == null) {
-      if (key == null)
+      if (key == null) {
         return Err(
             "no BlockFrost key supplied for ${networkId.toString()} network");
+      }
       Interceptor authInterceptor =
           BlockchainAdapterFactory.interceptorFromKey(key: key);
       factory = BlockchainAdapterFactory(

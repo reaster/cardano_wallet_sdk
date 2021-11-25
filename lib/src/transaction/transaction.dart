@@ -82,7 +82,9 @@ class TransactionOutput {
 
 class WalletTransactionImpl implements WalletTransaction {
   final RawTransaction rawTransaction;
+  @override
   final Map<String, Coin> currencies;
+  @override
   final Set<ShelleyAddress> ownedAddresses;
   WalletTransactionImpl(
       {required this.rawTransaction, required Set<ShelleyAddress> addressSet})
@@ -141,13 +143,21 @@ class WalletTransactionImpl implements WalletTransaction {
 }
 
 class RawTransactionImpl implements RawTransaction {
+  @override
   final String txId;
+  @override
   final String blockHash;
+  @override
   final int blockIndex;
+  @override
   final TransactionStatus status;
+  @override
   final Coin fees;
+  @override
   final List<TransactionInput> inputs;
+  @override
   final List<TransactionOutput> outputs;
+  @override
   final DateTime time;
   // Set<String>? _assetPolicyIds;
   // Map<String, Coin> _cachedSums = {};
@@ -165,14 +175,14 @@ class RawTransactionImpl implements RawTransaction {
   RawTransactionImpl toStatus(TransactionStatus status) => this.status == status
       ? this
       : RawTransactionImpl(
-          txId: this.txId,
-          blockHash: this.blockHash,
-          blockIndex: this.blockIndex,
+          txId: txId,
+          blockHash: blockHash,
+          blockIndex: blockIndex,
           status: status,
-          fees: this.fees,
-          inputs: List.from(this.inputs),
-          outputs: List.from(this.outputs),
-          time: this.time,
+          fees: fees,
+          inputs: List.from(inputs),
+          outputs: List.from(outputs),
+          time: time,
         );
 
   @override
@@ -186,12 +196,16 @@ extension TransactionScanner on RawTransaction {
   /// assetIds found in transactioins. TODO confirm unit == assetId
   Set<String> get assetIds {
     Set<String> result = {lovelaceHex};
-    inputs.forEach((input) => input.amounts.forEach((amount) {
-          if (amount.unit.isNotEmpty) result.add(amount.unit);
-        }));
-    outputs.forEach((output) => output.amounts.forEach((amount) {
-          if (amount.unit.isNotEmpty) result.add(amount.unit);
-        }));
+    for (var input in inputs) {
+      for (var amount in input.amounts) {
+        if (amount.unit.isNotEmpty) result.add(amount.unit);
+      }
+    }
+    for (var output in outputs) {
+      for (var amount in output.amounts) {
+        if (amount.unit.isNotEmpty) result.add(amount.unit);
+      }
+    }
     return result;
   }
 
@@ -213,7 +227,7 @@ extension TransactionScanner on RawTransaction {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning - amount.quantity;
           _logger.i(
-              "${time} tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
+              "$time tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
         }
       }
     }
@@ -224,7 +238,7 @@ extension TransactionScanner on RawTransaction {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning + amount.quantity;
           _logger.i(
-              "${time} tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
+              "$time tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
         }
       }
     }

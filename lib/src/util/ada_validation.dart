@@ -17,12 +17,14 @@ Result<String, String> validAda({
   ada = ada.trim();
   int invalidCharIndex = _firstIllegalDataChar(ada, allowNegative);
   if (invalidCharIndex > -1) {
-    return Err("invalid character: ${ada.substring(invalidCharIndex, invalidCharIndex + 1)}");
+    return Err(
+        "invalid character: ${ada.substring(invalidCharIndex, invalidCharIndex + 1)}");
   }
   final amount = double.tryParse(ada) ?? 0.0;
   if (!zeroAllowed && amount == 0.0) return Err("can't be zero");
   final index = ada.lastIndexOf('.');
-  final fraction = index >= 0 && index < ada.length ? ada.substring(index + 1) : '';
+  final fraction =
+      index >= 0 && index < ada.length ? ada.substring(index + 1) : '';
   if (fraction.length > decimalPrecision) {
     return Err("only $decimalPrecision decimal places allowed");
   }
@@ -37,7 +39,9 @@ int _firstIllegalDataChar(String ada, bool allowNegative) {
 }
 
 bool _legalAdaChar(int ch16, bool allowNegative) =>
-    _indexOfCodeUnit(ch16, allowNegative ? _adaLegalDataCharsNegative : _adaLegalDataChars) > -1;
+    _indexOfCodeUnit(
+        ch16, allowNegative ? _adaLegalDataCharsNegative : _adaLegalDataChars) >
+    -1;
 
 int _indexOfCodeUnit(int ch16, List<int> codeUnits) {
   for (int i = 0; i < codeUnits.length; i++) {

@@ -9,7 +9,7 @@ void main() {
     test('valid', () {
       final result = validAda(ada: '1');
       print(result.unwrap());
-      expect(result.unwrap(), '1');
+      expect(result.unwrap(), '1.0');
       expect(validAda(ada: '01').isOk(), isTrue);
       expect(validAda(ada: '0123456789000').isOk(), isTrue);
       expect(validAda(ada: '.777777').isOk(), isTrue);

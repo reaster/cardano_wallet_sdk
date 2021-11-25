@@ -33,7 +33,7 @@ class CoinGeckoApiFix extends CoinGeckoApi {
 
 class CoingeckoPriceService extends PriceService {
   final logger = Logger();
-  static Map<String, String> _defaultSymbolToId = {
+  static final Map<String, String> _defaultSymbolToId = {
     'btc': 'bitcoin',
     'eth': 'ethereum',
     'bnb': 'binancecoin',
@@ -104,8 +104,7 @@ class CoingeckoPriceService extends PriceService {
     if (result.isError) {
       return Err(result.errorMessage);
     } else {
-      Map<String, String> map = Map.fromIterable(result.data,
-          key: (c) => c.symbol, value: (c) => c.id);
+      Map<String, String> map = {for (var c in result.data) c.symbol: c.id};
       return Ok(map);
     }
   }

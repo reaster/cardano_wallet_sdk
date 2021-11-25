@@ -40,7 +40,9 @@ void main() {
                 stakeAccounts: []);
 
             //addresses
-            update.addresses.forEach((addr) => print(addr.toBech32()));
+            for (var addr in update.addresses) {
+              print(addr.toBech32());
+            }
             expect(wallet.addresses.length, equals(3));
 
             //assets
@@ -54,12 +56,12 @@ void main() {
 
             //transactions
             final Set<ShelleyAddress> addressSet = update.addresses.toSet();
-            update.transactions.forEach((RawTransaction tx) {
+            for (var tx in update.transactions) {
               final w = WalletTransactionImpl(
                   rawTransaction: tx, addressSet: addressSet);
               print(
                   "${tx.toString()} - ${w.currencyBalancesByTicker(assetByAssetId: update.assets)} fees:${w.fees}");
-            });
+            }
             expect(wallet.filterTransactions(assetId: lovelaceHex).length,
                 equals(4));
             expect(wallet.filterTransactions(assetId: testcoinHex).length,

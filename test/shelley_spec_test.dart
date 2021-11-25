@@ -68,7 +68,7 @@ void main() {
         ShelleyTransaction(body: body, witnessSet: null, metadata: null);
     final txHex = tx.toCborHex;
     print(txHex);
-    final expectedHex =
+    const expectedHex =
         '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388021a00059d5d031a018fb29a09a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388a0f6';
     expect(txHex, expectedHex, reason: '1st serialization good');
 
@@ -156,7 +156,7 @@ void main() {
         ShelleyTransaction(body: body, witnessSet: null, metadata: metadata);
     final txHex = tx.toCborHex;
     print(txHex);
-    final expectedHex =
+    const expectedHex =
         '83a6008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a0758203f4851269f7b360569e7fbc7ab3dadd504980d6ccda7afd9e52d83cba855a8bf09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0a51b0000002e0efa535a644a6f686e1b0000002e0efa535b6243411b000001cc95c7413e42000b1b000001cc95c7413fa31907ba6832303176616c75651a000304bb1a00030d4163323033430b0b0a1b000001cc95c74140846833303176616c75651a000493e1430b0b0aa2190191663430317374726568656c6c6f6a68656c6c6f76616c7565';
     expect(txHex, expectedHex);
   });
@@ -204,15 +204,15 @@ void main() {
         ShelleyTransaction(body: body, witnessSet: null, metadata: null);
     final txHex = tx.toCborHex;
     print(txHex);
-    final expectedHex =
+    const expectedHex =
         '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328021a00059d5d031a018fb29a09a2581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147736174636f696e190fa0581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328a0f6';
     expect(txHex, expectedHex);
   });
 
   test('Serialize address to hex', () {
-    final addr =
+    const addr =
         'addr_test1qqy3df0763vfmygxjxu94h0kprwwaexe6cx5exjd92f9qfkry2djz2a8a7ry8nv00cudvfunxmtp5sxj9zcrdaq0amtqmflh6v';
-    final addrHexExpected =
+    const addrHexExpected =
         '000916A5FED4589D910691B85ADDF608DCEEE4D9D60D4C9A4D2A925026C3229B212BA7EF8643CD8F7E38D6279336D61A40D228B036F40FEED6';
     final addrHex = hexFromShelleyAddress(addr, uppercase: true);
     print(addrHex);
@@ -272,10 +272,10 @@ void main() {
         .decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
   });
   test('exploreJsonPrettyPrint', () {
-    final toJsonFromString = convertor.JsonDecoder();
+    const toJsonFromString = convertor.JsonDecoder();
     final json = toJsonFromString.convert(
         '[[1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"}]');
-    final jsonFormatter = convertor.JsonEncoder.withIndent('  ');
+    const jsonFormatter = convertor.JsonEncoder.withIndent('  ');
     final formattedJson = jsonFormatter.convert(json);
     print(formattedJson);
     expect(formattedJson.contains('\n'), isTrue);

@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dio/dio.dart';
-import 'package:blockfrost/src/auth/auth.dart';
 
-class BlockfrostApiKeyAuthInterceptor extends AuthInterceptor {
+class BlockfrostApiKeyAuthInterceptor extends Interceptor {
   final String projectId;
   BlockfrostApiKeyAuthInterceptor({required this.projectId});
   @override

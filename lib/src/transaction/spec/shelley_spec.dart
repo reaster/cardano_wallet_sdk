@@ -53,7 +53,7 @@ class ShelleyMultiAsset {
   //
   MapBuilder assetsToCborMap({bool forJson = false}) {
     final mapBuilder = MapBuilder.builder();
-    assets.forEach((asset) {
+    for (var asset in assets) {
       final name = asset.name;
       //final name = forJson && asset.name.isEmpty ? '0' : asset.name; //hack to fix empty keys in toJson
       if (forJson) {
@@ -63,7 +63,7 @@ class ShelleyMultiAsset {
             .writeBuff(uint8BufferFromHex(name, utf8EncodeOnHexFailure: true));
       }
       mapBuilder.writeInt(asset.value);
-    });
+    }
     return mapBuilder;
   }
 }
@@ -167,7 +167,7 @@ class ShelleyValue {
       listBuilder.writeInt(coin);
     }
     final mapBuilder = MapBuilder.builder();
-    multiAssets.forEach((multiAsset) {
+    for (var multiAsset in multiAssets) {
       if (forJson) {
         mapBuilder.writeString(multiAsset.policyId);
       } else {
@@ -175,7 +175,7 @@ class ShelleyValue {
       }
       mapBuilder.addBuilderOutput(
           multiAsset.assetsToCborMap(forJson: forJson).getData());
-    });
+    }
     listBuilder.addBuilderOutput(mapBuilder.getData());
     return listBuilder;
   }
@@ -272,8 +272,10 @@ class ShelleyTransactionBody {
       mapBuilder.writeInt(0);
     }
     final inListBuilder = ListBuilder.builder();
-    inputs.forEach((input) => inListBuilder
-        .addBuilderOutput(input.toCborList(forJson: forJson).getData()));
+    for (var input in inputs) {
+      inListBuilder
+          .addBuilderOutput(input.toCborList(forJson: forJson).getData());
+    }
     mapBuilder.addBuilderOutput(inListBuilder.getData());
     //1:outputs
     if (forJson) {
@@ -282,8 +284,10 @@ class ShelleyTransactionBody {
       mapBuilder.writeInt(1);
     }
     final outListBuilder = ListBuilder.builder();
-    outputs.forEach((output) => outListBuilder
-        .addBuilderOutput(output.toCborList(forJson: forJson).getData()));
+    for (var output in outputs) {
+      outListBuilder
+          .addBuilderOutput(output.toCborList(forJson: forJson).getData());
+    }
     mapBuilder.addBuilderOutput(outListBuilder.getData());
     //2:fee
     if (forJson) {
@@ -328,7 +332,7 @@ class ShelleyTransactionBody {
         mapBuilder.writeInt(9);
       }
       final mintMapBuilder = MapBuilder.builder();
-      mint.forEach((multiAsset) {
+      for (var multiAsset in mint) {
         if (forJson) {
           mintMapBuilder.writeString(multiAsset.policyId);
         } else {
@@ -336,7 +340,7 @@ class ShelleyTransactionBody {
         }
         mintMapBuilder.addBuilderOutput(
             multiAsset.assetsToCborMap(forJson: forJson).getData());
-      });
+      }
       mapBuilder.addBuilderOutput(mintMapBuilder.getData());
     }
     return mapBuilder;
@@ -430,8 +434,10 @@ class ShelleyTransactionWitnessSet {
         mapBuilder.writeInt(0);
       }
       final inListBuilder = ListBuilder.builder();
-      vkeyWitnesses.forEach((witness) => inListBuilder.addBuilderOutput(
-          witness.toCborList(forJson: forJson, base64: base64).getData()));
+      for (var witness in vkeyWitnesses) {
+        inListBuilder.addBuilderOutput(
+            witness.toCborList(forJson: forJson, base64: base64).getData());
+      }
       mapBuilder.addBuilderOutput(inListBuilder.getData()); //value
     }
     //1:nativeScripts key
@@ -442,8 +448,10 @@ class ShelleyTransactionWitnessSet {
         mapBuilder.writeInt(1);
       }
       final outListBuilder = ListBuilder.builder();
-      nativeScripts.forEach((script) => outListBuilder
-          .addBuilderOutput(script.toCborList(forJson: forJson).getData()));
+      for (var script in nativeScripts) {
+        outListBuilder
+            .addBuilderOutput(script.toCborList(forJson: forJson).getData());
+      }
       mapBuilder.addBuilderOutput(outListBuilder.getData()); //value
     }
     return mapBuilder;
@@ -458,15 +466,14 @@ class ShelleyTransaction {
 
   ShelleyTransaction(
       {required ShelleyTransactionBody body, this.witnessSet, this.metadata})
-      : this.body = ShelleyTransactionBody(
+      : body = ShelleyTransactionBody(
           //rebuild body to include metadataHash
           inputs: body.inputs,
           outputs: body.outputs,
           fee: body.fee,
           ttl: body.ttl,
-          metadataHash: metadata != null
-              ? metadata.hash
-              : null, //optionally add hash if metadata present
+          metadataHash:
+              metadata?.hash, //optionally add hash if metadata present
           validityStartInterval: body.validityStartInterval,
           mint: body.mint,
         );
@@ -527,9 +534,9 @@ class ShelleyTransaction {
       // Remove the [] from the JSON string
       final result = jsonString.substring(1, jsonString.length - 1);
       if (prettyPrint) {
-        final toJsonFromString = convertor.JsonDecoder();
+        const toJsonFromString = convertor.JsonDecoder();
         final json = toJsonFromString.convert(jsonString);
-        final encoder = convertor.JsonEncoder.withIndent('  ');
+        const encoder = convertor.JsonEncoder.withIndent('  ');
         final formattedJson = encoder.convert(json);
         return Ok(formattedJson);
       } else {
@@ -550,7 +557,7 @@ class CBORMetadata {
   final MapBuilder mapBuilder;
 
   CBORMetadata(MapBuilder? mapBuilder)
-      : mapBuilder = mapBuilder == null ? MapBuilder.builder() : mapBuilder;
+      : mapBuilder = mapBuilder ?? MapBuilder.builder();
 
   List<int> get serialize {
     final result = Uint8Buffer();

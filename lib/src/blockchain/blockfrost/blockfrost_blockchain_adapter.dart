@@ -46,10 +46,12 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   //final CardanoNetwork cardanoNetwork;
   final Blockfrost blockfrost;
   final String projectId; //hack: only needed by submitTransaction
-  Map<String, RawTransaction> _transactionCache = {};
-  Map<String, Block> _blockCache = {};
-  Map<String, AccountContent> _accountContentCache = {};
-  Map<String, CurrencyAsset> _assetCache = {lovelaceHex: lovelacePseudoAsset};
+  final Map<String, RawTransaction> _transactionCache = {};
+  final Map<String, Block> _blockCache = {};
+  final Map<String, AccountContent> _accountContentCache = {};
+  final Map<String, CurrencyAsset> _assetCache = {
+    lovelaceHex: lovelacePseudoAsset
+  };
 
   BlockfrostBlockchainAdapter(
       {required this.networkId,
@@ -102,6 +104,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(block);
   }
 
+  @override
   Future<Result<String, String>> submitTransaction(
       Uint8List cborTransaction) async {
     final Map<String, dynamic>? headers = {projectIdKey: projectId};
@@ -109,7 +112,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(
           contentType: txContentType, headers: headers, data: cborTransaction),
       onSuccess: (data) => logger.i(
-          "blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> ${data}"),
+          "blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> $data"),
       errorSubject: 'submit cbor transaction: ',
     );
     if (result.isErr()) return Err(result.unwrapErr());
@@ -247,7 +250,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return poolResponse.statusMessage != null
           ? Err(
               "${poolResponse.statusMessage}, code: ${poolResponse.statusCode}")
-          : Err('problem loading stake pool: ${poolId}');
+          : Err('problem loading stake pool: $poolId');
     }
     StakePoolMetadata stakePoolMetadata;
     final Response<AnyOfpoolMetadataobject> metadataResponse = await blockfrost
@@ -267,7 +270,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return metadataResponse.statusMessage != null
           ? Err(
               "${metadataResponse.statusMessage}, code: ${metadataResponse.statusCode}")
-          : Err('problem loading stake pool metadata: ${poolId}');
+          : Err('problem loading stake pool metadata: $poolId');
     }
     List<StakeReward> rewards = [];
     final Response<BuiltList<JsonObject>> rewardResponse = await blockfrost
@@ -275,7 +278,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         .accountsStakeAddressRewardsGet(
             stakeAddress: stakeAddress, count: 100); //TODO replace with dioCall
     if (rewardResponse.statusCode == 200 && rewardResponse.data != null) {
-      rewardResponse.data!.forEach((reward) {
+      for (var reward in rewardResponse.data!) {
         if (reward.isMap) {
           final map = reward.asMap;
           rewards.add(StakeReward(
@@ -285,12 +288,12 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
           logger.i(
               "amount: ${map['amount']}, epoch: ${map['epoch']}, pool_id: ${map['pool_id']}");
         }
-      });
+      }
     } else {
       return rewardResponse.statusMessage != null
           ? Err(
               "${rewardResponse.statusMessage}, code: ${rewardResponse.statusCode}")
-          : Err('problem loading staking rewards: ${stakeAddress}');
+          : Err('problem loading staking rewards: $stakeAddress');
     }
     StakeAccount stakeAccount;
     final Response<AccountContent> accountResponse = await blockfrost
@@ -317,7 +320,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return accountResponse.statusMessage != null
           ? Err(
               "${accountResponse.statusMessage}, code: ${accountResponse.statusCode}")
-          : Err('problem loading staking account: ${stakeAddress}');
+          : Err('problem loading staking account: $stakeAddress');
     }
     return Ok([stakeAccount]);
   }
@@ -334,14 +337,14 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return Err("${result.statusCode}: ${result.statusMessage}");
     }
 
-    result.data!.forEach((jsonObject) {
+    for (var jsonObject in result.data!) {
       String? address = jsonObject.isMap ? jsonObject.asMap['address'] : null;
       if (address != null) {
         final shelley = ShelleyAddress.fromBech32(address);
         addresses.add(shelley);
         logger.i("address: $address, shelley: $shelley");
       }
-    });
+    }
     return Ok(addresses);
   }
 
@@ -353,8 +356,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     List<String> txHashes = await _transactionsHashes(address: address);
     List<RawTransaction> transactions = [];
     for (var txHash in txHashes) {
-      if (duplicateTxHashes.contains(txHash))
-        continue; //skip already processed transactions
+      if (duplicateTxHashes.contains(txHash)) {
+        continue;
+      } //skip already processed transactions
       final result = await _loadTransaction(txHash: txHash);
       duplicateTxHashes.add(txHash);
       if (result.isOk()) {
@@ -452,8 +456,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
           "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, data)}"),
       errorSubject: 'UTXO',
     );
-    if (txContentUtxoResult.isErr())
+    if (txContentUtxoResult.isErr()) {
       return Err(txContentUtxoResult.unwrapErr());
+    }
 
     // Response<TxContentUtxo> txUtxo = await blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash);
     // if (txUtxo.statusCode != 200 || txUtxo.data == null) {

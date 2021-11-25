@@ -56,10 +56,10 @@ void main() {
       ..fee(367965)
       ..ttl(26194586);
 
-    final ShelleyTransaction tx = await builder.build();
+    final ShelleyTransaction tx = builder.build();
     final txHex = tx.toCborHex;
     //print(txHex);
-    final expectedHex =
+    const expectedHex =
         '83a5008182582073198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002010182825839000916a5fed4589d910691b85addf608dceee4d9d60d4c9a4d2a925026c3229b212ba7ef8643cd8f7e38d6279336d61a40d228b036f40feed6199c40825839008c5bf0f2af6f1ef08bb3f6ec702dd16e1c514b7e1d12f7549b47db9f4d943c7af0aaec774757d4745d1a2c8dd3220e6ec2c9df23f757a2f8821a00053020a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388021a00059d5d031a018fb29a09a3581c329728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a247736174636f696e190fa047446174636f696e19044c581c6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7a140192328581c449728f73683fe04364631c27a7912538c116d802416ca1eaf2d7a96a147666174636f696e191388a0f6';
     expect(txHex, expectedHex, reason: '1st serialization good');
 
@@ -97,7 +97,7 @@ void main() {
   //   },
   //   // skip: 'key fails Bip32SigningKey validateKeyBits test'
   // );
-  final mnemonic =
+  const mnemonic =
       'rude stadium move tumble spice vocal undo butter cargo win valid session question walk indoor nothing wagon column artefact monster fold gallery receive just';
   test('signAndVerify', () {
     final hdWallet = HdWallet.fromMnemonic(mnemonic);
@@ -153,11 +153,11 @@ void main() {
     final mnemonic =
         "alpha desert more credit sad balance receive sand someone correct used castle present bar shop borrow inmate estate year flip theory recycle measure silk"
             .split(' ');
-    final expectedTxHex =
+    const expectedTxHex =
         '83a40081825820d65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e010182825839001d3c7cb138111826ba11e67f1c4ad2660aab4b593a3646f6a1ed9208269a1cdb0100c324b16c5a555baca45af12098d0beb2abc20808a6171a001e848082583900cb50b9f579320a1bd4444f29c2482d06cd18959116bcb796eafe16aaaaad89c262cf305fdf4fc3edde834a9b0444d1e3469f401b975ec2ac1a3b589fbe021a000290a1031a02745f28a0f6';
-    final expectedSignedTx =
+    const expectedSignedTx =
         '83a40081825820d65a6fdb484f4984cb982d4a4f3cba04e8e64feceec1891c63ea7c97ffe9458e010182825839001d3c7cb138111826ba11e67f1c4ad2660aab4b593a3646f6a1ed9208269a1cdb0100c324b16c5a555baca45af12098d0beb2abc20808a6171a001e848082583900cb50b9f579320a1bd4444f29c2482d06cd18959116bcb796eafe16aaaaad89c262cf305fdf4fc3edde834a9b0444d1e3469f401b975ec2ac1a3b589fbe021a000290a1031a02745f28a10081825820f94431a84c877cac81092cca3448219808111398021a2c3dbb30ba5be289ec5b584043b43c33619852eb4ca45573eac05c62a32557e5ff78d2a7b0af3b47bae2b77ca82cb02bd03cb6cd2dc416de24ed9560b2afb5c78e46a4df02a4b67ca2aa280cf6';
-    final privateKey =
+    const privateKey =
         "xprv1jz89agqn8utrqypwsmmwhalwv8uzadvxj7s0jwrx94xzvv8t64fwghtnct8um3sxq9xspvprw8v4u94mu6jxh7esalk77z537kyvcr0hz7jjgg2fx6mfj9se3tt4f39ldqy644e4mv3xy05l5g8mdvl94srxh7hd";
 
     final walletBuilder = WalletBuilder()

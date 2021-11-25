@@ -113,8 +113,8 @@ class HdWallet {
   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
     final rawMaster = PBKDF2.hmac_sha512(
         Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
-    final Bip32SigningKey root_xsk = Bip32SigningKey.normalizeBytes(rawMaster);
-    return root_xsk;
+    final Bip32SigningKey rootXsk = Bip32SigningKey.normalizeBytes(rawMaster);
+    return rootXsk;
   }
 
   /// The magic of parent-to-child key-pair derivation happens here. If a parent signing key is

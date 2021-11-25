@@ -29,7 +29,7 @@ Uint8Buffer uint8BufferFromHex(String hex,
     result.addAll(list);
     return result;
   } catch (e) {
-    if (!utf8EncodeOnHexFailure) throw e;
+    if (!utf8EncodeOnHexFailure) rethrow;
     final list = utf8.encode(hex);
     final result = Uint8Buffer();
     result.addAll(list);

@@ -5,9 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:quiver/strings.dart';
 import 'package:oxidized/oxidized.dart';
 
-typedef Future<Response<dynamic>> NetworkRquest();
-typedef void OneArgFunction(dynamic);
-typedef void ResponseFunction(
+typedef NetworkRquest = Future<Response<dynamic>> Function();
+typedef OneArgFunction = void Function(dynamic);
+typedef ResponseFunction = void Function(
     {Response? response, DioError? dioError, Exception? exception});
 
 ///

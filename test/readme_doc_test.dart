@@ -10,7 +10,7 @@ import 'mock_wallet_2.dart';
 /// insure documented tests are actually working code.
 ///
 void main() {
-  final blockfrostKey = 'dummy-key';
+  const blockfrostKey = 'dummy-key';
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
       networkId: NetworkId.testnet,
@@ -32,7 +32,7 @@ void main() {
 
   group('wallet management -', () {
     test('Create a read-only wallet using a staking address', () async {
-      final bechAddr =
+      const bechAddr =
           'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
       var address = ShelleyAddress.fromBech32(bechAddr);
       final walletBuilder = WalletBuilder()

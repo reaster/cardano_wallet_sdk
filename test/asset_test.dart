@@ -79,6 +79,7 @@ void main() {
 
   test('exploreDartFusedCodecs', () {
     final Codec<String, String> str2hex = utf8.fuse(HEX);
+    // ignore: prefer_const_declarations
     final string1 = 'myName1234XYZ';
     final hex1 = str2hex.encode(string1);
     //print("hex1:$hex1");

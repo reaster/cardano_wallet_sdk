@@ -62,7 +62,7 @@ class MultiAssetRequest {
 /// Special builder for creating ShelleyValue objects containing multi-asset transactions.
 ///
 class MultiAssetRequestBuilder {
-  List<MultiAssetRequest> _multiAssets = [];
+  final List<MultiAssetRequest> _multiAssets;
 
   MultiAssetRequestBuilder({required Coin coin})
       : _multiAssets = [
@@ -94,11 +94,11 @@ class CoinSelection {
 }
 
 enum CoinSelectionErrorEnum {
-  Unsupported,
-  InputValueInsufficient,
-  InputCountInsufficient,
-  InputLimitExceeded,
-  InputsExhausted,
+  unsupported,
+  inputValueInsufficient,
+  inputCountInsufficient,
+  inputLimitExceeded,
+  inputsExhausted,
 }
 
 class CoinSelectionError {
@@ -119,10 +119,10 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   final logger = Logger();
   if (outputsRequested.isEmpty) {
     return Err(CoinSelectionError(
-        reason: CoinSelectionErrorEnum.InputCountInsufficient,
+        reason: CoinSelectionErrorEnum.inputCountInsufficient,
         message: "can't create an empty transaction"));
   }
-  final String hardCodedUnit = lovelaceHex;
+  const String hardCodedUnit = lovelaceHex;
   Coin amount = 0;
   for (final reqest in outputsRequested) {
     if (reqest.policyId == '') {
@@ -131,21 +131,21 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
           amount = asset.value;
         } else {
           return Err(CoinSelectionError(
-            reason: CoinSelectionErrorEnum.Unsupported,
+            reason: CoinSelectionErrorEnum.unsupported,
             message: "only support ADA transactions at this time",
           ));
         }
       }
     } else {
       return Err(CoinSelectionError(
-        reason: CoinSelectionErrorEnum.Unsupported,
+        reason: CoinSelectionErrorEnum.unsupported,
         message: "only support ADA transactions at this time",
       ));
     }
   }
   if (amount <= 0) {
     return Err(CoinSelectionError(
-      reason: CoinSelectionErrorEnum.InputValueInsufficient,
+      reason: CoinSelectionErrorEnum.inputValueInsufficient,
       message: "transactions must be greater than zero",
     ));
   }
@@ -176,7 +176,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
             }
             if (++coinsSelected > coinSelectionLimit) {
               return Err(CoinSelectionError(
-                reason: CoinSelectionErrorEnum.InputsExhausted,
+                reason: CoinSelectionErrorEnum.inputsExhausted,
                 message:
                     "coinsSelected ($coinsSelected) exceeds allowed coinSelectionLimit ($coinSelectionLimit)",
               ));
@@ -194,7 +194,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   }
   if (selectedAmount < amount) {
     return Err(CoinSelectionError(
-      reason: CoinSelectionErrorEnum.InputValueInsufficient,
+      reason: CoinSelectionErrorEnum.inputValueInsufficient,
       message: "insufficient funds",
     ));
   }

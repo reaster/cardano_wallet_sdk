@@ -5,7 +5,7 @@ import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:test/test.dart';
 import 'mock_wallet_2.dart';
 
-const ADA = 1000000;
+const ada = 1000000;
 void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
@@ -38,7 +38,7 @@ void main() {
     test('setup coin selection - 100 ADA', () async {
       final result = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [MultiAssetRequest.lovelace(100 * ADA)],
+        outputsRequested: [MultiAssetRequest.lovelace(100 * ada)],
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result.isOk(), isTrue);
@@ -49,7 +49,7 @@ void main() {
     test('setup coin selection - 101 ADA', () async {
       final result2 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
+        outputsRequested: [MultiAssetRequest.lovelace(101 * ada)],
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result2.isOk(), isTrue);
@@ -62,25 +62,25 @@ void main() {
       //setup coin selection - 201 ADA, which will result in insufficient funds error
       final result3 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [MultiAssetRequest.lovelace(201 * ADA)],
+        outputsRequested: [MultiAssetRequest.lovelace(201 * ada)],
         coinSelectionLimit: 4,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result3.isErr(), isTrue);
       expect(result3.unwrapErr().reason,
-          CoinSelectionErrorEnum.InputValueInsufficient);
+          CoinSelectionErrorEnum.inputValueInsufficient);
     });
     test('InputsExhausted', () async {
       //setup coin selection - 101 ADA and coinSelectionLimit = 1 - which will give InputsExhausted
       final result4 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [MultiAssetRequest.lovelace(101 * ADA)],
+        outputsRequested: [MultiAssetRequest.lovelace(101 * ada)],
         coinSelectionLimit: 1,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result4.isErr(), isTrue);
       expect(
-          result4.unwrapErr().reason, CoinSelectionErrorEnum.InputsExhausted);
+          result4.unwrapErr().reason, CoinSelectionErrorEnum.inputsExhausted);
     });
   });
 }

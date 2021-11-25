@@ -9,13 +9,13 @@ import 'package:test/test.dart';
 import 'package:oxidized/oxidized.dart';
 
 void main() {
-  final wallet1 =
+  const wallet1 =
       'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
-  final wallet2 =
+  const wallet2 =
       'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
-  final wallet3 =
+  const wallet3 =
       'stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d';
-  final wallet4 =
+  const wallet4 =
       'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
   final interceptor = BlockfrostTestAuthInterceptor();
   final builder = WalletBuilder()
@@ -68,24 +68,24 @@ Future<Result<ReadOnlyWallet, String>> testWalletFromBuilder(
     ok: (wallet) {
       print(
           "Wallet(name: ${wallet.walletName}, balance: ${formatter.format(wallet.balance)})");
-      wallet.addresses.forEach((addr) {
+      for (var addr in wallet.addresses) {
         print(addr.toBech32());
-      });
-      wallet.transactions.forEach((tx) {
+      }
+      for (var tx in wallet.transactions) {
         print("$tx");
-      });
+      }
       wallet.currencies.forEach((key, value) {
         print("$key: ${key == lovelaceHex ? formatter.format(value) : value}");
       });
-      wallet.stakeAccounts.forEach((acct) {
+      for (var acct in wallet.stakeAccounts) {
         final ticker = acct.poolMetadata?.ticker ??
             acct.poolMetadata?.name ??
             acct.poolId!;
-        acct.rewards.forEach((reward) {
+        for (var reward in acct.rewards) {
           print(
               "epoch: ${reward.epoch}, value: ${formatter.format(reward.amount)}, ticker: $ticker");
-        });
-      });
+        }
+      }
       final int calculatSum =
           wallet.calculatedBalance; //TODO figure out the math
       expect(wallet.balance, equals(calculatSum));

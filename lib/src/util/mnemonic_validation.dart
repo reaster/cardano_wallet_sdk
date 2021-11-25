@@ -18,9 +18,10 @@ Result<String, String> validMnemonic({
   }
   final lowerCase = phrase.toLowerCase().trim(); //TODO normalize white space
   int invalidCharIndex = _firstIllegalDataChar(lowerCase);
-  if (invalidCharIndex > -1)
+  if (invalidCharIndex > -1) {
     return Err(
         "invalid character: ${lowerCase.substring(invalidCharIndex, invalidCharIndex + 1)}");
+  }
   final words = lowerCase.split(' ');
   try {
     bip39.mnemonicToEntropy(lowerCase);
@@ -29,18 +30,21 @@ Result<String, String> validMnemonic({
     final validity = validMnemonicWords(words);
     if (validity.isErr()) return Err(validity.unwrapErr());
     //otherwise check length
-    if (words.length != requiredNumberOfWords)
+    if (words.length != requiredNumberOfWords) {
       return Err("$requiredNumberOfWords words required");
+    }
     return Err(e.message);
   } on StateError catch (e) {
-    if (words.length != requiredNumberOfWords)
+    if (words.length != requiredNumberOfWords) {
       return Err("$requiredNumberOfWords words required");
+    }
     return Err(e.message);
   } catch (e) {
     return Err(e.toString());
   }
-  if (words.length != requiredNumberOfWords)
+  if (words.length != requiredNumberOfWords) {
     return Err("$requiredNumberOfWords words required");
+  }
   return Ok(lowerCase);
 }
 

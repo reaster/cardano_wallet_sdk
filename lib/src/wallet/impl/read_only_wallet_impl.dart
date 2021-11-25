@@ -8,7 +8,7 @@ import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:oxidized/src/result.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:quiver/strings.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
@@ -17,9 +17,13 @@ import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 /// transaction history, staking and reward history.
 ///
 class ReadOnlyWalletImpl implements ReadOnlyWallet {
+  @override
   final NetworkId networkId;
+  @override
   final ShelleyAddress stakeAddress;
+  @override
   final String walletName;
+  @override
   final BlockchainAdapter blockchainAdapter;
   int _balance = 0;
   List<WalletTransaction> _transactions = [];
@@ -32,7 +36,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       {required this.blockchainAdapter,
       required this.stakeAddress,
       required this.walletName})
-      : this.networkId = stakeAddress.toBech32().startsWith('stake_test')
+      : networkId = stakeAddress.toBech32().startsWith('stake_test')
             ? NetworkId.testnet
             : NetworkId.mainnet;
 
@@ -63,29 +67,29 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     required List<StakeAccount> stakeAccounts,
   }) {
     bool change = false;
-    if (this._assets.length != assets.length) {
+    if (_assets.length != assets.length) {
       change = true;
-      this._assets = assets;
+      _assets = assets;
     }
-    if (this._balance != balance) {
+    if (_balance != balance) {
       change = true;
-      this._balance = balance;
+      _balance = balance;
     }
-    if (this._usedAddresses.length != usedAddresses.length) {
+    if (_usedAddresses.length != usedAddresses.length) {
       change = true;
-      this._usedAddresses = usedAddresses;
+      _usedAddresses = usedAddresses;
     }
-    if (this._transactions.length != transactions.length) {
+    if (_transactions.length != transactions.length) {
       change = true;
       //swap raw transactions for wallet-centric transactions:
-      this._transactions = transactions
+      _transactions = transactions
           .map((t) => WalletTransactionImpl(
               rawTransaction: t, addressSet: _usedAddresses.toSet()))
           .toList();
     }
-    if (this._stakeAccounts.length != stakeAccounts.length) {
+    if (_stakeAccounts.length != stakeAccounts.length) {
       change = true;
-      this._stakeAccounts = stakeAccounts;
+      _stakeAccounts = stakeAccounts;
     }
     return change;
   }

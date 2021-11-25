@@ -25,7 +25,7 @@ class Price {
 
   @override
   String toString() {
-    return 'Price(from: $fromTicker, to: $toTicker, value: $value, timestamp: ${dateTime}';
+    return 'Price(from: $fromTicker, to: $toTicker, value: $value, timestamp: $dateTime';
   }
 
   Duration get lastUpdated => DateTime.now().difference(dateTime);

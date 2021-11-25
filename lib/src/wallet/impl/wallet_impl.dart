@@ -19,8 +19,11 @@ import 'package:hex/hex.dart';
 /// ReadOnlyWallet.
 ///
 class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
+  @override
   final HdWallet hdWallet;
+  @override
   final int accountIndex;
+  @override
   final Bip32KeyPair addressKeyPair;
   final CoinSelectionAlgorithm coinSelectionFunction;
   final logger = Logger();
@@ -97,6 +100,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     return sendResult;
   }
 
+  @override
   Future<Result<ShelleyTransaction, String>> buildSpendTransaction({
     required ShelleyAddress toAddress,
     required int lovelace,
@@ -106,7 +110,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     if (lovelace > balance) {
       return Err('insufficient balance');
     }
-    if (toAddress.addressType != AddressType.Base) {
+    if (toAddress.addressType != AddressType.base) {
       return Err('only base shelley addresses currently supported');
     }
     if (toAddress.hrp != 'addr' && toAddress.hrp != 'addr_test') {
@@ -115,11 +119,11 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     }
     //coin selection:
     //TODO handle edge-case where fee adjustment requires input recalculation.
-    final Coin maxFeeGuess = 200000; //0.2 ADA
+    const Coin maxFeeGuess = 200000; //0.2 ADA
     final inputsResult = await coinSelectionFunction(
-      unspentInputsAvailable: this.unspentTransactions,
+      unspentInputsAvailable: unspentTransactions,
       outputsRequested: [MultiAssetRequest.lovelace(lovelace + maxFeeGuess)],
-      ownedAddresses: this.addresses.toSet(),
+      ownedAddresses: addresses.toSet(),
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
     //use builder to build ShelleyTransaction
@@ -130,7 +134,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ..keyPair(hdWallet
           .deriveUnusedBaseAddressKit()) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
-      ..changeAddress(this.firstUnusedChangeAddress)
+      ..changeAddress(firstUnusedChangeAddress)
       ..ttl(ttl)
       ..fee(fee);
     final txResult = await builder.buildAndSign();

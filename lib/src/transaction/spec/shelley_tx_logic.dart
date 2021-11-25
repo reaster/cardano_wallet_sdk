@@ -14,11 +14,11 @@ extension ShelleyTransactionLogic on ShelleyTransaction {
   /// Verify each witness in the witness set.
   ///
   bool get verify {
-    for (ShelleyVkeyWitness witness in this.witnessSet!.vkeyWitnesses) {
+    for (ShelleyVkeyWitness witness in witnessSet!.vkeyWitnesses) {
       final signature = Signature(Uint8List.fromList(
           witness.signature.sublist(0, Signature.signatureLength)));
       final verifyKey = Bip32VerifyKey(uint8ListFromBytes(witness.vkey));
-      final bodyData = this.body.toCborMap().getData();
+      final bodyData = body.toCborMap().getData();
       final List<int> hash = blake2bHash256(bodyData);
       Uint8List message = Uint8List.fromList(hash);
       if (!verifyKey.verify(signature: signature, message: message)) {

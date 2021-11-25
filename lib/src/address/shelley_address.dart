@@ -16,8 +16,8 @@ import 'package:quiver/core.dart';
 /// [reference](https://cips.cardano.org/cips/cip19/)
 /// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
 ///
-enum AddressType { Base, Pointer, Enterprise, Reward }
-enum CredentialType { Key, Script }
+enum AddressType { base, pointer, enterprise, reward }
+enum CredentialType { key, script }
 
 const String defaultAddrHrp = 'addr';
 const String defaultRewardHrp = 'stake';
@@ -38,8 +38,8 @@ class ShelleyAddress extends ByteList {
     required Bip32PublicKey stake,
     NetworkId networkId = NetworkId.testnet,
     String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.Key,
-    CredentialType stakeType = CredentialType.Key,
+    CredentialType paymentType = CredentialType.key,
+    CredentialType stakeType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
@@ -56,7 +56,7 @@ class ShelleyAddress extends ByteList {
     required Bip32PublicKey spend,
     NetworkId networkId = NetworkId.testnet,
     String hrp = defaultRewardHrp,
-    CredentialType paymentType = CredentialType.Key,
+    CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
@@ -73,7 +73,7 @@ class ShelleyAddress extends ByteList {
 
   String toBech32({String? prefix}) {
     prefix ??= _computeHrp(networkId, hrp);
-    return this.encode(Bech32Coder(hrp: prefix));
+    return encode(Bech32Coder(hrp: prefix));
   }
 
   NetworkId get networkId => NetworkId.testnet.index == this[0] & 0x0f
@@ -88,24 +88,24 @@ class ShelleyAddress extends ByteList {
       case 1:
       case 2:
       case 3:
-        return AddressType.Base;
+        return AddressType.base;
       case 4:
       case 5:
-        return AddressType.Pointer;
+        return AddressType.pointer;
       case 6:
       case 7:
-        return AddressType.Enterprise;
+        return AddressType.enterprise;
       case 14:
       case 15:
-        return AddressType.Reward;
+        return AddressType.reward;
       default:
         throw InvalidAddressTypeError(
-            "addressType: $addressType is not defined. Containing address ${this.toBech32()}");
+            "addressType: $addressType is not defined. Containing address ${toBech32()}");
     }
   }
 
   CredentialType get paymentCredentialType =>
-      (this[0] & 0x10) >> 4 == 0 ? CredentialType.Key : CredentialType.Script;
+      (this[0] & 0x10) >> 4 == 0 ? CredentialType.key : CredentialType.script;
 
   @override
   String toString() => toBech32();
@@ -114,13 +114,26 @@ class ShelleyAddress extends ByteList {
   @override
   int get hashCode => hashObjects(this);
 
+  @override
+  bool operator ==(Object other) {
+    final isEqual = identical(this, other) ||
+        other is ShelleyAddress &&
+            runtimeType == other.runtimeType &&
+            length == other.length;
+    if (!isEqual || hrp != (other as ShelleyAddress).hrp) return false;
+    for (var i = 0; i < length; i++) {
+      if (this[i] != other[i]) return false;
+    }
+    return true;
+  }
+
   //static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
 
   static String _computeHrp(NetworkId id, String prefix) => id ==
           NetworkId.testnet
       ? (prefix.endsWith(testnetHrpSuffix) ? prefix : prefix + testnetHrpSuffix)
       : prefix;
-  static List<int> _addressTypeValues = [
+  static final List<int> _addressTypeValues = [
     baseDiscrim,
     pointerDiscrim,
     enterpriseDiscrim,

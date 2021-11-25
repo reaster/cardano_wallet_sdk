@@ -62,11 +62,11 @@ import 'package:bip39/bip39.dart' as bip39;
 
 void main() {
   // final entropyPlusCs24Words = 256;
-  final testMnemonic1 =
+  const testMnemonic1 =
       "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
-  final testEntropy1 =
+  const testEntropy1 =
       "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
-  final testHexSeed1 =
+  const testHexSeed1 =
       '3e545a8c7aed6e4e0a152a4884ab53b6f1f0d7916f22793c7618949d891a1a80772b7a2e27dbf9b1a8027c4c481a1f423b7da3f4bf6ee70d4a3a2e940c87d74f';
   // final masterPrv =
   //     "ed25519e_sk1drm35zt6mrym4mg8nqcnyvaju6j40gzf8efn6j3elxztpv2fx4ync2a7ed862ew334g3vns0730578z690399j5mfyu3gzhl8a6n38cth3s88";
@@ -76,9 +76,9 @@ void main() {
   //     "xprv14zqjv6jdyea8mf4v4nwp2wjfn8f42trhtqz0dknd6tjmrw6fx4yhfgnp5cta5ug055c0gl56jm2fx3hexwznc4jjjqmv0d60psdcppvxgzskmsa2f6ydhg53pcvzrnuujeacqamrmvkcq7mgq45e6mr3qvqlp9r5";
   // final accountPub =
   //     "xpub13hk3yrupjdquk6htz0s2yl4r40n9h0hmlleddtsvnf554z4k9nngvs9pdhp65n5gmw3fzrscy88ee9nmspmk8kedspaksptfn4k8zqcq245nd";
-  final chainPrv =
+  const chainPrv =
       "xprv1cpfh0megyfu4fxyccks4lcszhj2pdj9zdl5plls7r8q50sjfx4yav928dydh94eegljc3hk5jemg37pdh93gh6dmqrz66944m7hkq2k97svm646l363rlgd9nxcs87z7vvjm7tf5kqv07met3nelj90pnsfjclag";
-  final chainPub =
+  const chainPub =
       "xpub19vdjcq8rtj0ect0vym8rhfvh2pxjljrgv2mqxkc9xs90lzn7h39utaqeh4t4lr4z87s6txd3q0u9uce9huknfvqclahjhr8nly27r8q5ww6gs";
   // final stakingPrv =
   //     "xprv19r8dgpg4dlq3d2emg5yny893q3d06f4938qqxxjl5h32ms6fx4ym83dl8k2ptt0698gt2sujqespka4vzehd0h3hlfnnqzmd4cn7tzdm5vs7dqzprqyguav46uup83gju7vyjrltkrf5stvs0su75zawzy7amvc6";
@@ -161,7 +161,7 @@ void main() {
     // });
 
     var idx = 0;
-    chainPairs.forEach((keypair) {
+    for (var keypair in chainPairs) {
       test('m/1852\'/1815\'/0\'/0/$idx', () {
         final xprv = keypair['xprv']!;
         final xpub = keypair['xpub']!;
@@ -173,6 +173,6 @@ void main() {
         assert(K == derivedPub);
         idx++;
       });
-    });
+    }
   });
 }

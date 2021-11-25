@@ -6,11 +6,11 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:test/test.dart';
 
 void main() {
-  final mnemonicBadChecksum =
+  const mnemonicBadChecksum =
       'ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt';
-  final mnemonicBadWord =
+  const mnemonicBadWord =
       'abbey green ocean blanket aim coin beyond oven happy never april gold way pluck over cave sick affair coach author credit bullet honey donor';
-  final mnemonicBadWord2 =
+  const mnemonicBadWord2 =
       'ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual zoey';
   group('mnemonic validation - ', () {
     test('valid', () {

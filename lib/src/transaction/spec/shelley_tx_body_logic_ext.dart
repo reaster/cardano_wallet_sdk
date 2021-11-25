@@ -26,15 +26,17 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
     Coin fee = 0,
     Logger? logger,
   }) {
-    if (logger == null) logger = Logger();
+    logger ??= Logger();
     Map<AssetId, Coin> sums = {};
     for (final input in inputs) {
       RawTransaction? tx = cache.cachedTransaction(input.transactionId);
-      if (tx == null)
+      if (tx == null) {
         return Err("transaction '${input.transactionId}' not in cache");
-      if (tx.outputs.length <= input.index)
+      }
+      if (tx.outputs.length <= input.index) {
         return Err(
             "transaction '${input.transactionId}' index[${input.index}] out of range[0..${tx.outputs.length - 1}]");
+      }
       final output = tx.outputs[input.index];
       for (final amount in output.amounts) {
         sums[amount.unit] = amount.quantity + (sums[amount.unit] ?? coinZero);
@@ -171,8 +173,9 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
     Map<String, Map<String, Coin>> byPolicyId = {};
     for (final assetId in sums.keys) {
       final currencyAsset = cache.cachedCurrencyAsset(assetId);
-      if (currencyAsset == null)
+      if (currencyAsset == null) {
         return Err("no CurrencyAsset for assetId: '$assetId' in cache");
+      }
       Map<String, Coin> byName = byPolicyId[currencyAsset.policyId] ?? {};
       if (byName.isEmpty) byPolicyId[currencyAsset.policyId] = byName;
       Coin coin = byName[currencyAsset.assetName] ?? coinZero;

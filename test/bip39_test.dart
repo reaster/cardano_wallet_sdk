@@ -7,13 +7,16 @@ import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final entropyPlusCs24Words = 256;
-  final testMnemonic1 =
+  const entropyPlusCs24Words = 256;
+  const testMnemonic1 =
       "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
-  final testEntropy1 =
+  const testEntropy1 =
       "475083b81730de275969b1f18db34b7fb4ef79c66aa8efdd7742f1bcfe204097";
-  final testHexSeed1 =
+  const testHexSeed1 =
       '3e545a8c7aed6e4e0a152a4884ab53b6f1f0d7916f22793c7618949d891a1a80772b7a2e27dbf9b1a8027c4c481a1f423b7da3f4bf6ee70d4a3a2e940c87d74f';
+
+  Uint8List randomBytes(int size) =>
+      Uint8List.fromList(HEX.decode(testEntropy1));
 
   test('validateMnemonic', () {
     expect(bip39.validateMnemonic('sleep kitten'), isFalse,
@@ -85,10 +88,8 @@ void main() {
       final code = bip39.entropyToMnemonic(testEntropy1);
       expect(code, equals(testMnemonic1));
     });
+
     test('generate mnemonic', () {
-      bip39.RandomBytes randomBytes = (int size) {
-        return Uint8List.fromList(HEX.decode(testEntropy1));
-      };
       final code = bip39.generateMnemonic(randomBytes: randomBytes);
       expect(code, equals(testMnemonic1),
           reason: 'generateMnemonic returns randomBytes entropy unmodified');
@@ -102,7 +103,7 @@ void main() {
   group('cardano-serialization-lib', () {
     test('entropy to mnemonic', () {
       //[0x4e, 0x82, 0x8f, 0x9a, 0x67, 0xdd, 0xcf, 0xf0, 0xe6, 0x39, 0x1a, 0xd4, 0xf2, 0x6d, 0xdb, 0x75, 0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba, 0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda];
-      final testEntropy0 =
+      const testEntropy0 =
           '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final mnemonic = bip39.entropyToMnemonic(testEntropy0);
       final bytes = bip39.mnemonicToSeed(mnemonic);

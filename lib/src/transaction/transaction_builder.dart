@@ -50,7 +50,7 @@ class TransactionBuilder {
   final defaultTtlDelta = 900;
 
   /// How often to check current slot. If 1 minute old, update
-  final staleSlotCuttoff = Duration(seconds: 60);
+  final staleSlotCuttoff = const Duration(seconds: 60);
 
   /// simple build - assemble transaction without any validation
   ShelleyTransaction build() => ShelleyTransaction(
@@ -170,16 +170,20 @@ class TransactionBuilder {
       );
 
   Result<bool, String> _checkContraints() {
-    if (_blockchainAdapter == null)
+    if (_blockchainAdapter == null) {
       return Err("'blockchainAdapter' property must be set");
+    }
     if (_inputs.isEmpty) return Err("'inputs' property must be set");
-    if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null))
+    if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null)) {
       return Err(
           "when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
-    if (_keyPair == null)
+    }
+    if (_keyPair == null) {
       return Err("'kit' (ShelleyAddressKit) property must be set");
-    if (_changeAddress == null)
+    }
+    if (_changeAddress == null) {
       return Err("'changeAddress' property must be set");
+    }
     return Ok(true);
   }
 
@@ -330,7 +334,7 @@ typedef CurrentEpochFunction = Future<int> Function();
 ///
 class MultiAssetBuilder {
   final int coin;
-  List<ShelleyMultiAsset> _multiAssets = [];
+  final List<ShelleyMultiAsset> _multiAssets = [];
   MultiAssetBuilder({required this.coin});
   ShelleyValue build() => ShelleyValue(coin: coin, multiAssets: _multiAssets);
   MultiAssetBuilder nativeAsset(

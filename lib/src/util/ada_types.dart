@@ -9,7 +9,7 @@
 typedef Coin = int;
 
 /// placeholder for future BigInt.zero
-final Coin coinZero = 0;
+const Coin coinZero = 0;
 
 /// Native Token policyId appended to hex encoded coin name. ADA has no policyId
 /// so its assetId is just 'lovelace' in hex: '6c6f76656c616365'. Simalur to 'unit'

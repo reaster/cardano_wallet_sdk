@@ -14,7 +14,7 @@ import 'package:intl/intl.dart';
 class AdaFormattter {
   static const symbol =
       '₳'; // https://github.com/yonilevy/crypto-currency-symbols
-  static const ADA = 'ADA ';
+  static const ada = 'ADA ';
   final NumberFormat formatter;
 
   AdaFormattter({required this.formatter});
@@ -57,7 +57,7 @@ class AdaFormattter {
   // TODO(alanknight): Should we allow decimalDigits on other numbers.
   factory AdaFormattter.currency(
           {String? locale = 'en',
-          String? name = ADA,
+          String? name = ada,
           String? symbol = symbol,
           int? decimalDigits = 6,
           String? customPattern}) =>
@@ -72,7 +72,7 @@ class AdaFormattter {
   /// A number format for compact currency representations, e.g. "₳1.2M" instead of "₳1,200,000".
   factory AdaFormattter.compactCurrency(
           {String? locale = 'en',
-          String? name = ADA,
+          String? name = ada,
           String? symbol = symbol,
           int? decimalDigits = 6}) =>
       AdaFormattter(
@@ -107,7 +107,7 @@ class AdaFormattter {
   /// will format with two, which is the default for that locale.
   factory AdaFormattter.simpleCurrency(
           {String? locale = 'en',
-          String? name = ADA,
+          String? name = ada,
           int? decimalDigits = 6}) =>
       AdaFormattter(
           formatter: NumberFormat.simpleCurrency(
@@ -119,7 +119,7 @@ class AdaFormattter {
   /// [NumberFormat.simpleCurrency].
   factory AdaFormattter.compactSimpleCurrency(
           {String? locale = 'en',
-          String? name = ADA,
+          String? name = ada,
           int? decimalDigits = 6}) =>
       AdaFormattter(
           formatter: NumberFormat.compactSimpleCurrency(
