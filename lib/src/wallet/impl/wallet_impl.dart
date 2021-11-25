@@ -90,10 +90,15 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       ttl: ttl,
       fee: fee,
     );
-    if (txResult.isErr()) return Err(txResult.unwrapErr());
-    if (logTxHex)
+    if (txResult.isErr()) {
+      return Err(txResult.unwrapErr());
+    }
+    if (logTxHex) {
       logger.i("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
-    if (logTx) logger.i("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
+    }
+    if (logTx) {
+      logger.i("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
+    }
     final sendResult = submitTransaction(
       tx: txResult.unwrap(),
     );
