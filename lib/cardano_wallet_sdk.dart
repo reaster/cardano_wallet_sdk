@@ -30,6 +30,7 @@ export './src/transaction/transaction.dart';
 export './src/util/ada_formatter.dart';
 export './src/util/ada_time.dart';
 export './src/util/ada_types.dart';
+export './src/util/ada_validation.dart';
 export './src/util/bech32_validation.dart';
 export './src/util/blake2bhash.dart';
 export './src/util/codec.dart';

@@ -104,7 +104,7 @@ class HdWallet {
           _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
 
   factory HdWallet.fromMnemonic(String mnemonic) =>
-      HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic));
+      HdWallet.fromHexEntropy(bip39.mnemonicToEntropy(mnemonic.trim()));
 
   /// return the root signing key
   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
