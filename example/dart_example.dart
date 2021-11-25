@@ -16,11 +16,13 @@ final formatter = AdaFormattter.compactCurrency();
 void main() async {
   // fish the blockfrost key out of a text file
   final adapterKey = _readApiKey();
+
   // the adapter talks to the blockchain and caches immutable data
   final adapter = BlockchainAdapterFactory.fromKey(
     key: adapterKey,
     networkId: NetworkId.testnet,
   ).adapter();
+
   //build a read-only wallet from a staking address
   final stakeAddress = ShelleyAddress.fromBech32(
       'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg');
@@ -41,6 +43,7 @@ void main() async {
     },
     err: (message) => print("Error: $message"),
   );
+
   //restore a wallet from it's mnemonic phrase
   final mnemonic =
       'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat'
@@ -55,6 +58,7 @@ void main() async {
         "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}"),
     err: (message) => print("Error: $message"),
   );
+
   //create a new wallet
   final mnemonic2 = WalletBuilder.generateNewMnemonic();
   final walletBuilder3 = WalletBuilder()
@@ -67,6 +71,7 @@ void main() async {
         "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}"),
     err: (message) => print("Error: $message"),
   );
+
   // Bob sends 2 ADA to Alice
   const lovelace = 2 * 1000000;
   final result = await bob.unwrap().sendAda(
