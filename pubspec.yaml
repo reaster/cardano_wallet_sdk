@@ -31,6 +31,7 @@ dev_dependencies:
   build_runner: ^2.1.5
   lints: ^1.0.1
   http: ^0.13.4
+  flutter_lints: ^1.0.0
 # dependency_overrides:
 #  blockfrost:
 # git: git@github.com:reaster/blockfrost_api.git
