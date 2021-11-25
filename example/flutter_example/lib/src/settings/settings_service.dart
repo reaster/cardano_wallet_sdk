@@ -21,7 +21,8 @@ class SettingsService {
 
   Future<String> loadAdapterKeyAsset() async {
     WidgetsFlutterBinding.ensureInitialized();
-    adapterKey = await rootBundle.loadString('assets/res/blockfrost_project_id.txt');
+    adapterKey =
+        await rootBundle.loadString('assets/res/blockfrost_project_id.txt');
     return adapterKey;
   }
 }

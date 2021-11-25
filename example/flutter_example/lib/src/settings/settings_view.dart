@@ -26,7 +26,8 @@ class SettingsView extends StatelessWidget {
           //
           // When a user selects a theme from the dropdown list, the
           // SettingsController is updated, which rebuilds the MaterialApp.
-          child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
             // Row(
             //   children: [
             //     const Text('Blockfrost key:'),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
@@ -10,7 +11,9 @@ class CreateReadOnlyWalletForm extends StatefulWidget {
   final String walletName;
   final bool Function(String s) isWalletNameUnique;
   final bool Function(String s) isAddressUnique;
-  final void Function(BuildContext context, String walletName, ShelleyAddress address) doCreateWallet;
+  final void Function(
+          BuildContext context, String walletName, ShelleyAddress address)
+      doCreateWallet;
   final void Function(BuildContext context) doCancel;
 
   const CreateReadOnlyWalletForm({
@@ -26,7 +29,8 @@ class CreateReadOnlyWalletForm extends StatefulWidget {
         super(key: key);
 
   @override
-  _CreateReadOnlyWalletFormState createState() => _CreateReadOnlyWalletFormState();
+  _CreateReadOnlyWalletFormState createState() =>
+      _CreateReadOnlyWalletFormState();
 }
 
 class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
@@ -69,7 +73,8 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
               ),
               const SizedBox(height: 24),
               Center(
-                child: Text("Create Read-Only Wallet", style: Theme.of(context).textTheme.headline5),
+                child: Text("Create Read-Only Wallet",
+                    style: Theme.of(context).textTheme.headline5),
               ),
               const SizedBox(height: 24),
               buildWalletName(),
@@ -86,7 +91,8 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
                       final isValid = formKey.currentState?.validate() ?? false;
                       setState(() {});
                       if (isValid) {
-                        widget.doCreateWallet(context, walletName, ShelleyAddress.fromBech32(address));
+                        widget.doCreateWallet(context, walletName,
+                            ShelleyAddress.fromBech32(address));
                       }
                     },
                   ),
@@ -108,7 +114,10 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
         validator: (value) {
           //stake_test1upnk3u6wd65w7na3rkamznyzjspv7kgu7xm9j8w5m00xcls39m99d
           final hrpPrefixes = ['stake_test'];
-          final result = validBech32(bech32: value ?? '', hrpPrefixes: hrpPrefixes, dataPartRequiredLength: 53);
+          final result = validBech32(
+              bech32: value ?? '',
+              hrpPrefixes: hrpPrefixes,
+              dataPartRequiredLength: 53);
           if (result.isErr()) {
             //print(result.unwrapErr());
             return result.unwrapErr();
@@ -138,7 +147,7 @@ class _CreateReadOnlyWalletFormState extends State<CreateReadOnlyWalletForm> {
         ),
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.go,
-        autofocus: true,
+        autofocus: kIsWeb,
       );
 
   Widget buildWalletName() => TextFormField(

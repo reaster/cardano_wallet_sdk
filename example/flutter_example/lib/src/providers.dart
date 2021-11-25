@@ -12,7 +12,11 @@ import 'settings/settings_service.dart';
 ///
 final _settingsService = SettingsService();
 final settingsController = SettingsController(_settingsService);
-final settingsProvider = Provider<SettingsController>((ref) => settingsController);
+final settingsProvider =
+    Provider<SettingsController>((ref) => settingsController);
 
-final walletStateNotifier = WalletStateNotifier(WalletService(settingService: _settingsService));
-final walletProvider = StateNotifierProvider<WalletStateNotifier, List<ReadOnlyWallet>>((ref) => walletStateNotifier);
+final walletStateNotifier =
+    WalletStateNotifier(WalletService(settingService: _settingsService));
+final walletProvider =
+    StateNotifierProvider<WalletStateNotifier, List<ReadOnlyWallet>>(
+        (ref) => walletStateNotifier);

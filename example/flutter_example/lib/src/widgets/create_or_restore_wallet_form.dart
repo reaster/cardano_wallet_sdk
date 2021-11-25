@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
@@ -12,7 +13,9 @@ class CreateOrRestoreWalletForm extends StatefulWidget {
   final bool isNew;
   final bool Function(String s) isWalletNameUnique;
   final bool Function(String s) isMnemonicUnique;
-  final void Function(BuildContext context, String walletName, List<String> mnemonic) doCreateWallet;
+  final void Function(
+          BuildContext context, String walletName, List<String> mnemonic)
+      doCreateWallet;
   final void Function(BuildContext context) doCancel;
 
   const CreateOrRestoreWalletForm({
@@ -29,7 +32,8 @@ class CreateOrRestoreWalletForm extends StatefulWidget {
         super(key: key);
 
   @override
-  _CreateOrRestoreWalletFormState createState() => _CreateOrRestoreWalletFormState();
+  _CreateOrRestoreWalletFormState createState() =>
+      _CreateOrRestoreWalletFormState();
 }
 
 class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
@@ -83,14 +87,19 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
               ),
               const SizedBox(height: 24),
               Center(
-                child: Text(dialogTitleText, style: Theme.of(context).textTheme.headline5),
+                child: Text(dialogTitleText,
+                    style: Theme.of(context).textTheme.headline5),
               ),
               const SizedBox(height: 24),
               buildWalletName(),
               const SizedBox(height: 24),
               if (widget.isNew)
                 Center(
-                  child: Text(recoveryPhraseHandlingText, style: Theme.of(context).textTheme.bodyText1!.apply(color: Colors.red)),
+                  child: Text(recoveryPhraseHandlingText,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText1!
+                          .apply(color: Colors.red)),
                 ),
               if (widget.isNew) const SizedBox(height: 24),
               buildStakeMnemonicTextField(),
@@ -105,7 +114,8 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
                       final isValid = formKey.currentState?.validate() ?? false;
                       setState(() {});
                       if (isValid) {
-                        widget.doCreateWallet(context, walletName, mnemonic.split(' '));
+                        widget.doCreateWallet(
+                            context, walletName, mnemonic.split(' '));
                       }
                     },
                   ),
@@ -147,8 +157,12 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
                   icon: const Icon(Icons.copy),
                   tooltip: 'copy to clipboard',
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: mnemonicController.text)).then((_) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Recoverey phrase copied to clipboard")));
+                    Clipboard.setData(
+                            ClipboardData(text: mnemonicController.text))
+                        .then((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content:
+                              Text("Recoverey phrase copied to clipboard")));
                     });
                   },
                 ),
@@ -156,7 +170,7 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
         ),
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.go,
-        //autofocus: true,
+        autofocus: kIsWeb,
       );
 
   Widget buildWalletName() => TextFormField(

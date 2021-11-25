@@ -17,9 +17,12 @@ class WalletService {
   final BlockchainAdapter blockchainAdapter;
 
   WalletService({required this.settingService})
-      : blockchainAdapter = BlockchainAdapterFactory.fromKey(key: settingService.adapterKey, networkId: testnet).adapter();
+      : blockchainAdapter = BlockchainAdapterFactory.fromKey(
+                key: settingService.adapterKey, networkId: testnet)
+            .adapter();
 
-  List<ReadOnlyWallet> get wallets => store.cache.values.map((v) => v.wallet).toList();
+  List<ReadOnlyWallet> get wallets =>
+      store.cache.values.map((v) => v.wallet).toList();
 
   Result<ReadOnlyWallet, String> deleteWallet({required String walletId}) {
     final value = store.cachedWalletById(walletId);
@@ -32,7 +35,8 @@ class WalletService {
   }
 
   /// Create a read-only wallet.
-  Future<Result<ReadOnlyWallet, String>> createReadOnlyWallet(String walletName, ShelleyAddress stakeAddress) async {
+  Future<Result<ReadOnlyWallet, String>> createReadOnlyWallet(
+      String walletName, ShelleyAddress stakeAddress) async {
     final builder = WalletBuilder()
       ..adapter = blockchainAdapter
       ..walletName = walletName
@@ -40,13 +44,16 @@ class WalletService {
     final result = await builder.readOnlyBuildAndSync();
     if (result.isOk()) {
       //cache wallet instance:
-      store.cacheWallet(WalletValue(wallet: result.unwrap(), metadata: WalletMetadata(created: DateTime.now())));
+      store.cacheWallet(WalletValue(
+          wallet: result.unwrap(),
+          metadata: WalletMetadata(created: DateTime.now())));
     }
     return result;
   }
 
   /// Restore wallet.
-  Future<Result<Wallet, String>> restoreWallet(String walletName, List<String> mnemonic) async {
+  Future<Result<Wallet, String>> restoreWallet(
+      String walletName, List<String> mnemonic) async {
     final builder = WalletBuilder()
       ..adapter = blockchainAdapter
       ..walletName = walletName
@@ -54,13 +61,16 @@ class WalletService {
     final result = await builder.buildAndSync();
     if (result.isOk()) {
       //cache wallet instance:
-      store.cacheWallet(WalletValue(wallet: result.unwrap(), metadata: WalletMetadata(created: DateTime.now())));
+      store.cacheWallet(WalletValue(
+          wallet: result.unwrap(),
+          metadata: WalletMetadata(created: DateTime.now())));
     }
     return result;
   }
 
   /// Create new wallet.
-  Result<Wallet, String> createNewWallet(String walletName, List<String> mnemonic) {
+  Result<Wallet, String> createNewWallet(
+      String walletName, List<String> mnemonic) {
     final builder = WalletBuilder()
       ..adapter = blockchainAdapter
       ..walletName = walletName
@@ -68,19 +78,24 @@ class WalletService {
     final result = builder.build();
     if (result.isOk()) {
       //cache wallet instance:
-      store.cacheWallet(WalletValue(wallet: result.unwrap(), metadata: WalletMetadata(created: DateTime.now())));
+      store.cacheWallet(WalletValue(
+          wallet: result.unwrap(),
+          metadata: WalletMetadata(created: DateTime.now())));
     }
     return result;
   }
 
   /// Check if a wallet name has not been used yet.
-  bool isWalletNameAvailable(String walletName) => !wallets.any((wallet) => wallet.walletName == walletName);
+  bool isWalletNameAvailable(String walletName) =>
+      !wallets.any((wallet) => wallet.walletName == walletName);
 
   /// Lookup a wallet by name.
-  ReadOnlyWallet? findByName(String walletName) => wallets.firstWhereOrNull((wallet) => wallet.walletName == walletName);
+  ReadOnlyWallet? findByName(String walletName) =>
+      wallets.firstWhereOrNull((wallet) => wallet.walletName == walletName);
 
   /// Collect list of wallet names.
-  List<String> get walletNames => wallets.map((wallet) => wallet.walletName).toList();
+  List<String> get walletNames =>
+      wallets.map((wallet) => wallet.walletName).toList();
 }
 
 /// Metadata stored along with wallet.
