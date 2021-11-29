@@ -1,5 +1,5 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/wallet/wallet_controller.dart';
+import 'package:flutter_example/src/wallet/wallet_state_notifier.dart';
 import 'package:flutter_example/src/wallet/wallet_service.dart';
 import 'package:riverpod/riverpod.dart';
 import 'settings/settings_controller.dart';

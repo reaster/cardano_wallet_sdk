@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_example/src/providers.dart';
 import 'package:flutter_example/src/wallet/wallet_details_view.dart';
-import 'package:flutter_example/src/wallet/wallet_item_list_view.dart';
+import 'package:flutter_example/src/wallet/wallet_list_view.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'settings/settings_view.dart';
@@ -12,8 +12,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Glue the SettingsController to the MaterialApp.
-    //
     // The AnimatedBuilder Widget listens to the SettingsController for changes.
     // Whenever the user updates their settings, the MaterialApp is rebuilt.
     return AnimatedBuilder(
@@ -64,12 +62,16 @@ class MyApp extends StatelessWidget {
               builder: (BuildContext context) {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
-                    return SettingsView(controller: settingsController);
+                    return SettingsView();
                   case WalletDetailsView.routeName:
-                    return const WalletDetailsView();
-                  case WalletItemListView.routeName:
+                    final args = routeSettings.arguments as String;
+                    return WalletDetailsView(
+                      key: ValueKey(args),
+                      walletId: args,
+                    );
+                  case WalletListView.routeName:
                   default:
-                    return const WalletItemListView();
+                    return const WalletListView();
                 }
               },
             );
