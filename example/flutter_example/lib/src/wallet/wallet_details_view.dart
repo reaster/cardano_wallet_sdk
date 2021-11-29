@@ -45,8 +45,8 @@ class WalletCustomScrollView extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final bool wide = mediaQuery.size.width >= 400.0;
-    bool isDark = mediaQuery.platformBrightness == Brightness.dark;
-    print('platformBrightness: ${mediaQuery.platformBrightness}');
+    bool isDark = settingsController.themeMode == ThemeMode.dark;
+    print('settingsController.themeMode: ${settingsController.themeMode}');
     final titleColor = wallet.readOnly ? Colors.grey : Colors.blue[800];
     final subtitleColor = wallet.readOnly ? Colors.grey : Colors.green;
     final feeColor = wallet.readOnly ? Colors.grey : Colors.red;

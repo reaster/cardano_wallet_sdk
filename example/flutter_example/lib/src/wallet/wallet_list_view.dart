@@ -22,7 +22,9 @@ class WalletListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    //bool isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    bool isDark = settingsController.themeMode == ThemeMode.dark;
+    print('settingsController.themeMode: ${settingsController.themeMode}');
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -44,7 +46,8 @@ class WalletListView extends StatelessWidget {
         backgroundColor: Colors.blueAccent,
       ),
       body: Container(
-        decoration: isDark ? FlutterLogoDecoration() : gradientBackground,
+        decoration: isDark ? darkGradientBackground : gradientBackground,
+        // decoration: isDark ? FlutterLogoDecoration() : gradientBackground,
         child: const WalletList(),
       ),
     );
@@ -102,6 +105,13 @@ class WalletListView extends StatelessWidget {
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
     colors: [Colors.white, Colors.grey],
+  ));
+
+  static const darkGradientBackground = BoxDecoration(
+      gradient: LinearGradient(
+    begin: Alignment.topRight,
+    end: Alignment.bottomLeft,
+    colors: [Colors.black, Colors.grey],
   ));
 }
 
