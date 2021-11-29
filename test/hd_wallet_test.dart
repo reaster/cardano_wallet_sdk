@@ -260,6 +260,39 @@ addr.xvk                                key_for_account_0_address_1.txt         
     });
   });
 
+  group('convergence -', () {
+    const testEntropy =
+        '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+    final hdWallet = HdWallet.fromHexEntropy(testEntropy);
+    final Bip32KeyPair stakeAddress0Pair =
+        hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
+    setUp(() {});
+    test('validate', () {
+      final Bip32KeyPair keys0 = hdWallet.deriveAddressKeys(index: 0);
+      final addr0 = hdWallet.toBaseAddress(
+          networkId: NetworkId.mainnet,
+          spend: keys0.verifyKey!,
+          stake: stakeAddress0Pair.verifyKey!);
+      print('   addr[0]: ${addr0.toBech32()}');
+      final Bip32KeyPair keys1 = hdWallet.deriveAddressKeys(index: 1);
+      final addr1 = hdWallet.toBaseAddress(
+          networkId: NetworkId.mainnet,
+          spend: keys1.verifyKey!,
+          stake: stakeAddress0Pair.verifyKey!);
+      print('   addr[1]: ${addr1.toBech32()}');
+      //public to public key
+      final Bip32KeyPair keys1Pub = hdWallet.derive(
+          keys: Bip32KeyPair(signingKey: null, verifyKey: keys0.verifyKey),
+          index: 1);
+      final addr1Pub = hdWallet.toBaseAddress(
+          networkId: NetworkId.mainnet,
+          spend: keys1Pub.verifyKey!,
+          stake: stakeAddress0Pair.verifyKey!);
+      print('addrPub[1]: ${addr1Pub.toBech32()}');
+      expect(addr1Pub.toBech32(), equals(addr1.toBech32()));
+    }, skip: 'path generation misunderstanding?');
+  });
+
   group('mnemonic words -', () {
     setUp(() {});
     test('validate', () {
