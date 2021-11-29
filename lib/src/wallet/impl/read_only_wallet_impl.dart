@@ -32,20 +32,27 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
-  ReadOnlyWalletImpl({required this.blockchainAdapter, required this.stakeAddress, required this.walletName})
-      : networkId = stakeAddress.toBech32().startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet;
+  ReadOnlyWalletImpl(
+      {required this.blockchainAdapter,
+      required this.stakeAddress,
+      required this.walletName})
+      : networkId = stakeAddress.toBech32().startsWith('stake_test')
+            ? NetworkId.testnet
+            : NetworkId.mainnet;
 
   @override
   Map<String, Coin> get currencies {
-    return transactions
-        .map((t) => t.currencies)
-        .expand((m) => m.entries)
-        .fold(<String, Coin>{}, (result, entry) => result..[entry.key] = entry.value + (result[entry.key] ?? 0));
+    return transactions.map((t) => t.currencies).expand((m) => m.entries).fold(
+        <String, Coin>{},
+        (result, entry) =>
+            result..[entry.key] = entry.value + (result[entry.key] ?? 0));
   }
 
   @override
   Coin get calculatedBalance {
-    final Coin rewardsSum = stakeAccounts.map((s) => s.withdrawalsSum).fold(0, (p, c) => p + c); //TODO figure out the math
+    final Coin rewardsSum = stakeAccounts
+        .map((s) => s.withdrawalsSum)
+        .fold(0, (p, c) => p + c); //TODO figure out the math
     final Coin lovelaceSum = currencies[lovelaceHex] as Coin;
     final result = lovelaceSum + rewardsSum;
     return result;
@@ -75,7 +82,10 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     if (_transactions.length != transactions.length) {
       change = true;
       //swap raw transactions for wallet-centric transactions:
-      _transactions = transactions.map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: _usedAddresses.toSet())).toList();
+      _transactions = transactions
+          .map((t) => WalletTransactionImpl(
+              rawTransaction: t, addressSet: _usedAddresses.toSet()))
+          .toList();
     }
     if (_stakeAccounts.length != stakeAccounts.length) {
       change = true;
@@ -113,13 +123,17 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       transactions.where((t) => t.containsCurrency(assetId: assetId)).toList();
 
   @override
-  CurrencyAsset? findAssetByTicker(String ticker) => findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
+  CurrencyAsset? findAssetByTicker(String ticker) =>
+      findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
 
   @override
-  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) => _assets.values.firstWhere(matcher);
+  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) =>
+      _assets.values.firstWhere(matcher);
 
   @override
-  List<WalletTransaction> get unspentTransactions => transactions.where((tx) => tx.status == TransactionStatus.unspent).toList();
+  List<WalletTransaction> get unspentTransactions => transactions
+      .where((tx) => tx.status == TransactionStatus.unspent)
+      .toList();
 
   /// used to track update in-progress and timeout conditions
   int _updateCalledTime = 0;
@@ -133,7 +147,8 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       return Err('$walletName update already in progress');
     }
     _updateCalledTime = DateTime.now().millisecondsSinceEpoch;
-    final result = await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
+    final result =
+        await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
     bool changed = false;
     result.when(
       ok: (update) {
@@ -154,6 +169,9 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   }
 
   @override
-  Duration get loadingTime =>
-      _updateCalledTime == 0 ? Duration.zero : Duration(milliseconds: DateTime.now().millisecondsSinceEpoch - _updateCalledTime);
+  Duration get loadingTime => _updateCalledTime == 0
+      ? Duration.zero
+      : Duration(
+          milliseconds:
+              DateTime.now().millisecondsSinceEpoch - _updateCalledTime);
 }
