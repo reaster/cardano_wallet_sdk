@@ -16,10 +16,10 @@ dependencies:
     sdk: flutter
   cardano_wallet_sdk:
     path: ../../
-  speed_dial_fab: ^2.1.1
   flutter_riverpod: ^1.0.0
   oxidized: ^5.1.0
   flutter_slidable: ^1.1.0
+  url_launcher: ^6.0.14
 
 dev_dependencies:
   flutter_test:
