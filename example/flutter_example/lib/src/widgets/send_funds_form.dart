@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:flutter_example/src/providers.dart';
 import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
+import 'package:flutter_example/src/widgets/alert_dialog.dart';
 
 ///
 /// Create a send funds form. All biz logic passed in via functions.
@@ -184,3 +186,53 @@ class _SendFundsFormState extends State<SendFundsForm> {
         ),
       );
 }
+
+/// Function to load SendFundsForm wrapped in a AlertDialog.
+Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
+  final form = SendFundsForm(
+    key: const Key('sendAdaForm'),
+    wallet: wallet,
+    toAddress: null,
+    lovelace: 0,
+    doSendAda: _send,
+    doCancel: (context) => Navigator.of(context).pop(),
+  );
+  return await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(content: form),
+  );
+}
+
+void _send(
+    {required BuildContext context,
+    required Wallet wallet,
+    required ShelleyAddress toAddress,
+    required int lovelace}) async {
+  Navigator.of(context).pop();
+  final result = await walletStateNotifier.sendAda(
+      wallet: wallet,
+      toAddress: toAddress,
+      lovelace: lovelace,
+      context: context);
+  result.when(
+    ok: (tx) {
+      final message =
+          'sent ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...';
+      debugPrint(message);
+      _showSnackBar(context, message);
+    },
+    err: (message) {
+      debugPrint("error sending ada: $message");
+      asyncAlertDialog(
+          context,
+          'Error sending ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...',
+          message);
+    },
+  );
+}
+
+final _formatter = AdaFormattter.compactCurrency();
+
+void _showSnackBar(BuildContext context, String message) =>
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));

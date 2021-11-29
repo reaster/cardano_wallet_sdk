@@ -3,10 +3,9 @@
 
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-
-final formatter = AdaFormattter.compactCurrency();
 
 ///
 /// Demonstrates using the BlockchainAdapter and WalletBuilder to create read-only wallets,
@@ -14,6 +13,8 @@ final formatter = AdaFormattter.compactCurrency();
 /// payments to other wallets.
 ///
 void main() async {
+  Logger.level = Level.info;
+
   // fish the blockfrost key out of a text file
   final adapterKey = _readApiKey();
 
@@ -93,3 +94,5 @@ String _readApiKey() {
 }
 
 const apiKeyFilePath = '../blockfrost_project_id.txt';
+
+final formatter = AdaFormattter.compactCurrency();
