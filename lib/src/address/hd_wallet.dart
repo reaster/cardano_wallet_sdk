@@ -119,7 +119,8 @@ class HdWallet {
 
   /// The magic of parent-to-child key-pair derivation happens here. If a parent signing key is
   /// provided, a child signing key is generated. If a parent verify key is provided and the index
-  /// is NOT hardened, then a child verify key is also included.
+  /// is NOT hardened, then a child verify key is also included. If hardened and no signingKey is
+  /// provied, it returns an empty pair (i.e. error condition).
   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
     // computes a child extended private key from the parent extended private key.
     Bip32SigningKey? signingKey = keys.signingKey != null
@@ -232,9 +233,14 @@ class ShelleyAddressKit extends Bip32KeyPair {
 /// They are denoted by a single quote in chain values.
 const int hardenedOffset = 0x80000000;
 
-/// default purpose. Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
+/// Default purpose. The year Ada Lovelace passed away.
+/// Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
 const int defaultPurpose = 1852 | hardenedOffset;
+
+/// Coin-type for Cardano ADA. Ada Lovelace's year of birth.
 const int defaultCoinType = 1815 | hardenedOffset;
+
+/// Is zero. This returns the base account address.
 const int defaultAccountIndex = 0 | hardenedOffset;
 
 /// role 0=external/payments
@@ -253,9 +259,14 @@ const cip16ExtendedSigningKeySize = 96;
 /// Extended public key size in bytes
 const cip16ExtendedVerificationgKeySize = 64;
 
+/// Hardens index, meaning it won't have a public key
 int harden(int index) => index | hardenedOffset;
+
+/// Returns true if index is hardened.
 bool isHardened(int index) => index & hardenedOffset != 0;
 
+/// Function used to test address usage. Returns true if it has not been used in a transaction.
 typedef UnusedAddressFunction = bool Function(ShelleyAddress address);
 
+/// UnusedAddressFunction that will always return true (i.e. You'll always get the base spend/change address).
 bool alwaysUnused(_) => true;

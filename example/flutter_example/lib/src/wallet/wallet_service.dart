@@ -85,6 +85,10 @@ class WalletService {
     return result;
   }
 
+  /// Lookup a wallet by walletId.
+  ReadOnlyWallet? findByWalletId(String walletId) =>
+      wallets.firstWhereOrNull((wallet) => wallet.walletId == walletId);
+
   /// Check if a wallet name has not been used yet.
   bool isWalletNameAvailable(String walletName) =>
       !wallets.any((wallet) => wallet.walletName == walletName);

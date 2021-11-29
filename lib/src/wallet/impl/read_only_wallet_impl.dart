@@ -1,6 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:quiver/strings.dart';
+import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/asset/asset.dart';
 import 'package:cardano_wallet_sdk/src/network/network_id.dart';
@@ -8,8 +10,6 @@ import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:oxidized/oxidized.dart';
-import 'package:quiver/strings.dart';
 import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 
 ///
@@ -32,27 +32,20 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
-  ReadOnlyWalletImpl(
-      {required this.blockchainAdapter,
-      required this.stakeAddress,
-      required this.walletName})
-      : networkId = stakeAddress.toBech32().startsWith('stake_test')
-            ? NetworkId.testnet
-            : NetworkId.mainnet;
+  ReadOnlyWalletImpl({required this.blockchainAdapter, required this.stakeAddress, required this.walletName})
+      : networkId = stakeAddress.toBech32().startsWith('stake_test') ? NetworkId.testnet : NetworkId.mainnet;
 
   @override
   Map<String, Coin> get currencies {
-    return transactions.map((t) => t.currencies).expand((m) => m.entries).fold(
-        <String, Coin>{},
-        (result, entry) =>
-            result..[entry.key] = entry.value + (result[entry.key] ?? 0));
+    return transactions
+        .map((t) => t.currencies)
+        .expand((m) => m.entries)
+        .fold(<String, Coin>{}, (result, entry) => result..[entry.key] = entry.value + (result[entry.key] ?? 0));
   }
 
   @override
   Coin get calculatedBalance {
-    final Coin rewardsSum = stakeAccounts
-        .map((s) => s.withdrawalsSum)
-        .fold(0, (p, c) => p + c); //TODO figure out the math
+    final Coin rewardsSum = stakeAccounts.map((s) => s.withdrawalsSum).fold(0, (p, c) => p + c); //TODO figure out the math
     final Coin lovelaceSum = currencies[lovelaceHex] as Coin;
     final result = lovelaceSum + rewardsSum;
     return result;
@@ -82,10 +75,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     if (_transactions.length != transactions.length) {
       change = true;
       //swap raw transactions for wallet-centric transactions:
-      _transactions = transactions
-          .map((t) => WalletTransactionImpl(
-              rawTransaction: t, addressSet: _usedAddresses.toSet()))
-          .toList();
+      _transactions = transactions.map((t) => WalletTransactionImpl(rawTransaction: t, addressSet: _usedAddresses.toSet())).toList();
     }
     if (_stakeAccounts.length != stakeAccounts.length) {
       change = true;
@@ -123,22 +113,27 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       transactions.where((t) => t.containsCurrency(assetId: assetId)).toList();
 
   @override
-  CurrencyAsset? findAssetByTicker(String ticker) =>
-      findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
+  CurrencyAsset? findAssetByTicker(String ticker) => findAssetWhere((a) => equalsIgnoreCase(a.metadata?.ticker, ticker));
 
   @override
-  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) =>
-      _assets.values.firstWhere(matcher);
+  CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher) => _assets.values.firstWhere(matcher);
 
   @override
-  List<WalletTransaction> get unspentTransactions => transactions
-      .where((tx) => tx.status == TransactionStatus.unspent)
-      .toList();
+  List<WalletTransaction> get unspentTransactions => transactions.where((tx) => tx.status == TransactionStatus.unspent).toList();
+
+  /// used to track update in-progress and timeout conditions
+  int _updateCalledTime = 0;
+
+  /// Timeout on update call. Hard-coded to 2 minutes
+  Duration get updateTimeout => const Duration(minutes: 2);
 
   @override
   Future<Result<bool, String>> update() async {
-    final result =
-        await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
+    if (_updateCalledTime != 0 && loadingTime < updateTimeout) {
+      return Err('$walletName update already in progress');
+    }
+    _updateCalledTime = DateTime.now().millisecondsSinceEpoch;
+    final result = await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
     bool changed = false;
     result.when(
       ok: (update) {
@@ -150,9 +145,15 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
             stakeAccounts: update.stakeAccounts);
       },
       err: (err) {
+        _updateCalledTime = 0; //reset timeout
         return Err(err);
       },
     );
+    _updateCalledTime = 0; //reset timeout
     return Ok(changed);
   }
+
+  @override
+  Duration get loadingTime =>
+      _updateCalledTime == 0 ? Duration.zero : Duration(milliseconds: DateTime.now().millisecondsSinceEpoch - _updateCalledTime);
 }

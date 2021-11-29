@@ -62,5 +62,10 @@ abstract class ReadOnlyWallet {
   CurrencyAsset? findAssetWhere(bool Function(CurrencyAsset asset) matcher);
   CurrencyAsset? findAssetByTicker(String ticker);
 
+  /// Duration since update was called. Set to zero when update completes.
+  Duration get loadingTime;
+
+  /// Update or sync wallet transactions with blockchain. Return true if data changed.
+  /// Is ignored if loadingTime is not zero.
   Future<Result<bool, String>> update();
 }

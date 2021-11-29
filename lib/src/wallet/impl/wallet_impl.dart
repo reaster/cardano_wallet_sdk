@@ -1,6 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:hex/hex.dart';
+import 'package:oxidized/oxidized.dart';
+import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
+import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
 import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
 import 'package:cardano_wallet_sdk/src/transaction/coin_selection.dart';
@@ -8,11 +12,6 @@ import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
 import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
 import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
-import 'package:logger/logger.dart';
-import 'package:oxidized/oxidized.dart';
-import 'package:hex/hex.dart';
 
 ///
 /// Build transactional wallet by combining features of HdWallet, TransactionBuilder and
@@ -26,7 +25,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   @override
   final Bip32KeyPair addressKeyPair;
   final CoinSelectionAlgorithm coinSelectionFunction;
-  final logger = Logger();
+  // final logger = Logger();
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
   WalletImpl({
@@ -51,14 +50,18 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
       .deriveUnusedBaseAddressKit(
-          role: changeRole,
-          networkId: networkId,
-          unusedCallback: isUnusedAddress)
+        role: changeRole,
+        networkId: networkId,
+        unusedCallback: isUnusedAddress,
+      )
       .address;
   // to duplicate cardano-client-lib we always return the 1st paymentAddress.
   // ShelleyAddress get firstUnusedChangeAddress => hdWallet
   //     .deriveUnusedBaseAddressKit(
-  //         role: paymentRole, networkId: networkId, unusedCallback: alwaysUnused)
+  //       role: paymentRole,
+  //       networkId: networkId,
+  //       unusedCallback: alwaysUnused,
+  //     )
   //     .address;
 
   /// return true if the address has not been used before
@@ -94,10 +97,10 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       return Err(txResult.unwrapErr());
     }
     if (logTxHex) {
-      logger.i("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
+      print("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
     }
     if (logTx) {
-      logger.i("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
+      print("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
     }
     final sendResult = submitTransaction(
       tx: txResult.unwrap(),
