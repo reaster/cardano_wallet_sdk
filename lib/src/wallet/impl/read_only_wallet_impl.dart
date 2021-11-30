@@ -41,12 +41,11 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
             : NetworkId.mainnet;
 
   @override
-  Map<String, Coin> get currencies {
-    return transactions.map((t) => t.currencies).expand((m) => m.entries).fold(
-        <String, Coin>{},
-        (result, entry) =>
-            result..[entry.key] = entry.value + (result[entry.key] ?? 0));
-  }
+  Map<String, Coin> get currencies =>
+      transactions.map((t) => t.currencies).expand((m) => m.entries).fold(
+          <String, Coin>{},
+          (result, entry) =>
+              result..[entry.key] = entry.value + (result[entry.key] ?? 0));
 
   @override
   Coin get calculatedBalance {
@@ -149,21 +148,19 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     _updateCalledTime = DateTime.now().millisecondsSinceEpoch;
     final result =
         await blockchainAdapter.updateWallet(stakeAddress: stakeAddress);
+    if (result.isErr()) {
+      _updateCalledTime = 0;
+      return Err(result.unwrapErr());
+    }
     bool changed = false;
-    result.when(
-      ok: (update) {
-        changed = refresh(
-            balance: update.balance,
-            transactions: update.transactions,
-            usedAddresses: update.addresses,
-            assets: update.assets,
-            stakeAccounts: update.stakeAccounts);
-      },
-      err: (err) {
-        _updateCalledTime = 0; //reset timeout
-        return Err(err);
-      },
-    );
+    final update = result.unwrap();
+    changed = refresh(
+        balance: update.balance,
+        transactions: update.transactions,
+        usedAddresses: update.addresses,
+        assets: update.assets,
+        stakeAccounts: update.stakeAccounts);
+
     _updateCalledTime = 0; //reset timeout
     return Ok(changed);
   }

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_example/src/widgets/alert_dialog.dart';
@@ -22,9 +24,6 @@ class WalletListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //bool isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
-    bool isDark = settingsController.themeMode == ThemeMode.dark;
-    print('settingsController.themeMode: ${settingsController.themeMode}');
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -32,10 +31,7 @@ class WalletListView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              walletStateNotifier.reloadAll();
-              //Navigator.restorablePushNamed(context, SettingsView.routeName);
-            },
+            onPressed: () => synchWalletsWithBlockchain(context),
           ),
         ],
       ),
@@ -43,76 +39,133 @@ class WalletListView extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => openNewWalletForm(context),
         child: const Icon(Icons.add),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.blueAccent.withOpacity(0.8),
       ),
-      body: Container(
-        decoration: isDark ? darkGradientBackground : gradientBackground,
-        // decoration: isDark ? FlutterLogoDecoration() : gradientBackground,
-        child: const WalletList(),
-      ),
+      body: _wrapWithBlurredLogoBackground(child: const WalletList()),
+    );
+  }
+
+  Future<void> synchWalletsWithBlockchain(BuildContext context) async {
+    final result = await walletStateNotifier.reloadAll();
+    result.when(
+      ok: (updated) {
+        final message = updated ? 'refreshed wallets' : 'wallets up-to-date';
+        debugPrint(message);
+        _showSnackBar(message);
+      },
+      err: (message) {
+        debugPrint('Refresh Error: $message');
+        asyncAlertDialog(context, 'Refresh Error', message);
+      },
     );
   }
 
   Future<void> openNewWalletForm(BuildContext context) async {
+    String walletName = '';
+    List<String> mnemonic = [];
     final form = CreateOrRestoreWalletForm(
       key: const Key('openNewWalletForm'),
       isNew: true,
       suggestedWalletName: 'Wallet #${++_walletNameCounter}',
       isWalletNameUnique: (walletId) => true,
       isMnemonicUnique: (addr) => true,
-      doCreateWallet: _createNewWallet,
-      doCancel: (context) => Navigator.of(context).pop(),
+      doCreateWallet: (BuildContext context, String walletNameField,
+          List<String> mnemonicField) {
+        walletName = walletNameField;
+        mnemonic = mnemonicField;
+        Navigator.of(context).pop(true);
+      },
+      doCancel: (context) => Navigator.of(context).pop(false),
     );
-    return await showDialog(
+    bool formCompleted = await showDialog(
       context: context,
       builder: (context) => AlertDialog(content: form),
     );
+    if (formCompleted) {
+      final result = walletStateNotifier.createNewWallet(
+          context: context, walletName: walletName, mnemonic: mnemonic);
+      result.when(
+        ok: (wallet) {
+          final message = 'created new wallet: $walletName';
+          debugPrint(message);
+          _showSnackBar(message);
+        },
+        err: (message) {
+          debugPrint('ERROR: $message');
+          asyncAlertDialog(context, 'Error Creating New Wallet', message);
+        },
+      );
+    }
   }
 
   Future<void> openReadOnlyWalletForm(BuildContext context) async {
+    String walletName = '';
+    late ShelleyAddress stakeAddress;
     final form = CreateReadOnlyWalletForm(
       key: const Key('openReadOnlyWalletForm'),
       suggestedWalletName: 'Wallet #${++_walletNameCounter}',
       isWalletNameUnique: (walletId) => true,
       isAddressUnique: (addr) => true,
-      doCreateWallet: _createReadOnlyWallet,
-      doCancel: (context) => Navigator.of(context).pop(),
+      doCreateWallet: (BuildContext context, String walletNameField,
+          ShelleyAddress stakeAddressField) {
+        walletName = walletNameField;
+        stakeAddress = stakeAddressField;
+        Navigator.of(context).pop(true);
+      },
+      doCancel: (context) => Navigator.of(context).pop(false),
     );
-    return await showDialog(
+    bool formCompleted = await showDialog(
       context: context,
       builder: (context) => AlertDialog(content: form),
     );
+    if (formCompleted) {
+      final result = await walletStateNotifier.createReadOnlyWallet(
+          context: context, walletName: walletName, stakeAddress: stakeAddress);
+      result.when(ok: (wallet) {
+        final message = 'created read-only wallet: $walletName';
+        debugPrint(message);
+        _showSnackBar(message);
+      }, err: (message) {
+        debugPrint('ERROR: $message');
+        asyncAlertDialog(context, 'Error Creating Read-only Wallet', message);
+      });
+    }
   }
 
   Future<void> openRestoreWalletForm(BuildContext context) async {
+    String walletName = '';
+    List<String> mnemonic = [];
     final form = CreateOrRestoreWalletForm(
       key: const Key('openRestoreWalletForm'),
       isNew: false,
       suggestedWalletName: 'Wallet #${++_walletNameCounter}',
       isWalletNameUnique: (walletId) => true,
       isMnemonicUnique: (addr) => true,
-      doCreateWallet: _restoreWallet,
-      doCancel: (context) => Navigator.of(context).pop(),
+      doCreateWallet: (BuildContext context, String walletNameField,
+          List<String> mnemonicField) {
+        walletName = walletNameField;
+        mnemonic = mnemonicField;
+        Navigator.of(context).pop(true);
+      },
+      doCancel: (context) => Navigator.of(context).pop(false),
     );
-    return await showDialog(
+    bool formCompleted = await showDialog(
       context: context,
       builder: (context) => AlertDialog(content: form),
     );
+    if (formCompleted) {
+      final result = await walletStateNotifier.restoreWallet(
+          context: context, walletName: walletName, mnemonic: mnemonic);
+      result.when(ok: (wallet) {
+        final message = 'restored wallet: $walletName';
+        debugPrint(message);
+        _showSnackBar(message);
+      }, err: (message) {
+        debugPrint('ERROR: $message');
+        asyncAlertDialog(context, 'Error Restoring Wallet', message);
+      });
+    }
   }
-
-  static const gradientBackground = BoxDecoration(
-      gradient: LinearGradient(
-    begin: Alignment.topRight,
-    end: Alignment.bottomLeft,
-    colors: [Colors.white, Colors.grey],
-  ));
-
-  static const darkGradientBackground = BoxDecoration(
-      gradient: LinearGradient(
-    begin: Alignment.topRight,
-    end: Alignment.bottomLeft,
-    colors: [Colors.black, Colors.grey],
-  ));
 }
 
 ///
@@ -152,21 +205,27 @@ class WalletList extends ConsumerWidget {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(wallet.walletName, style: titleStyle),
+                  Text(wallet.walletName,
+                      style: titleStyle, overflow: TextOverflow.clip),
                   Hero(
                     tag: 'tx-${wallet.walletId}',
                     transitionOnUserGestures: true,
                     child: Text(
-                        "${wallet.transactions.length} ${wide ? 'transactions' : 'txs'}",
-                        style: titleStyle),
+                      "${wallet.transactions.length} ${wide ? 'transactions' : 'txs'}",
+                      style: titleStyle,
+                      overflow: TextOverflow.clip,
+                    ),
                   ),
                 ],
               ),
               subtitle: Hero(
                 tag: 'bal-${wallet.walletId}',
                 transitionOnUserGestures: true,
-                child: Text(_formatter.format(wallet.balance),
-                    style: subtitleStyle),
+                child: Text(
+                  _formatter.format(wallet.balance),
+                  style: subtitleStyle,
+                  overflow: TextOverflow.clip,
+                ),
               ),
               leading: Hero(
                 tag: wallet.walletId,
@@ -196,110 +255,26 @@ class WalletList extends ConsumerWidget {
   }
 }
 
-// void _send({required BuildContext context, required Wallet wallet, required ShelleyAddress toAddress, required int lovelace}) async {
-//   Navigator.of(context).pop();
-//   final result = await walletStateNotifier.sendAda(wallet: wallet, toAddress: toAddress, lovelace: lovelace, context: context);
-//   result.when(
-//     ok: (tx) {
-//       final message = 'sent ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...';
-//       debugPrint(message);
-//       _showSnackBar(message);
-//     },
-//     err: (message) {
-//       debugPrint("error sending ada: $message");
-//       asyncAlertDialog(_scaffoldKey.currentContext!,
-//           'Error sending ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...', message);
-//     },
-//   );
-// }
-
 void _deleteWallet(BuildContext context, ReadOnlyWallet wallet) {
   final result =
       walletStateNotifier.deleteWallet(context: context, wallet: wallet);
-  result.when(
-    ok: (wallet) {
-      final message = 'deleted wallet: ${wallet.walletName}';
-      debugPrint(message);
-      _showSnackBar(message);
-    },
-    err: (message) =>
-        asyncAlertDialog(context, 'Error Restoring Wallet', message),
-  );
+  result.when(ok: (wallet) {
+    final message = 'deleted wallet: ${wallet.walletName}';
+    debugPrint(message);
+    _showSnackBar(message);
+  }, err: (message) {
+    debugPrint('ERROR: $message');
+    asyncAlertDialog(context, 'Error Deleting Wallet',
+        'deleting ${wallet.walletName}: $message');
+  });
 }
-
-void _createNewWallet(
-    BuildContext context, String walletName, List<String> mnemonic) {
-  Navigator.of(context).pop();
-  final result = walletStateNotifier.createNewWallet(
-      context: context, walletName: walletName, mnemonic: mnemonic);
-  result.when(
-    ok: (wallet) {
-      final message = 'created new wallet: $walletName';
-      debugPrint(message);
-      _showSnackBar(message);
-    },
-    err: (message) =>
-        asyncAlertDialog(context, 'Error Creating New Wallet', message),
-  );
-}
-
-void _createReadOnlyWallet(BuildContext context, String walletName,
-    ShelleyAddress stakeAddress) async {
-  Navigator.of(context).pop();
-  final result = await walletStateNotifier.createReadOnlyWallet(
-      context: context, walletName: walletName, stakeAddress: stakeAddress);
-  result.when(
-    ok: (wallet) {
-      final message = 'created read-only wallet: $walletName';
-      debugPrint(message);
-      _showSnackBar(message);
-    },
-    err: (message) =>
-        asyncAlertDialog(context, 'Error Creating Read-only Wallet', message),
-  );
-}
-
-void _restoreWallet(
-    BuildContext context, String walletName, List<String> mnemonic) async {
-  Navigator.of(context).pop();
-  final result = await walletStateNotifier.restoreWallet(
-      context: context, walletName: walletName, mnemonic: mnemonic);
-  result.when(
-    ok: (wallet) {
-      final message = 'restored wallet: $walletName';
-      debugPrint(message);
-      _showSnackBar(message);
-    },
-    err: (message) =>
-        asyncAlertDialog(context, 'Error Restoring Wallet', message),
-  );
-}
-
-// Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
-//   final form = SendFundsForm(
-//     key: const Key('sendAdaForm'),
-//     wallet: wallet,
-//     toAddress: null,
-//     lovelace: 0,
-//     doSendAda: _send,
-//     doCancel: (context) => Navigator.of(context).pop(),
-//   );
-//   return await showDialog(
-//     context: context,
-//     builder: (context) => AlertDialog(content: form),
-//   );
-// }
 
 void _copyReceiveAddressToClipboard(BuildContext context, Wallet wallet) {
   final toAddress = wallet.firstUnusedReceiveAddress.toBech32();
   Clipboard.setData(ClipboardData(text: toAddress)).then((_) {
-    _showSnackBar('address copied to clipboard');
+    _showSnackBar('${wallet.walletName} address copied to clipboard');
   });
 }
-
-void _showSnackBar(String message) =>
-    ScaffoldMessenger.of(_scaffoldKey.currentContext!)
-        .showSnackBar(SnackBar(content: Text(message)));
 
 Widget _wrapInSlidable(
         {required ReadOnlyWallet wallet,
@@ -344,6 +319,22 @@ Widget _wrapInSlidable(
       child: child,
     );
 
+Widget _wrapWithBlurredLogoBackground({required Widget child}) => Container(
+      height: double.maxFinite,
+      width: double.maxFinite,
+      decoration: FlutterLogoDecoration(),
+      child: ClipRRect(
+        // make sure we apply clip it properly
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+              alignment: Alignment.center,
+              color: Colors.grey.withOpacity(0.1),
+              child: child),
+        ),
+      ),
+    );
+
 Widget _buildDrawer(
         WalletListView walletItemListView, BuildContext originContext) =>
     Drawer(
@@ -375,7 +366,7 @@ Widget _buildDrawer(
             },
           ),
           ListTile(
-            leading: const Icon(Icons.book),
+            leading: const Icon(Icons.auto_stories_outlined),
             title: const Text('Create Read-only Wallet'),
             onTap: () {
               Navigator.of(context).pop();
@@ -394,6 +385,12 @@ Widget _buildDrawer(
       }),
     );
 
+void _showSnackBar(String message) =>
+    ScaffoldMessenger.of(_scaffoldKey.currentContext!)
+        .showSnackBar(SnackBar(content: Text(message)));
+
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
 final _formatter = AdaFormattter.compactCurrency();
+
 int _walletNameCounter = 0;

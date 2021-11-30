@@ -4,18 +4,6 @@ import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:flutter_example/src/wallet/wallet_service.dart';
 
-// class Refresh {
-//   /// Return true of all wallets have been updated (i.e. turn off Busy Widget)
-//   final bool finished;
-
-//   /// Human readable status of update.
-//   final String message;
-
-//   Refresh({required this.finished, required this.message});
-// }
-
-// typedef RefreshWalletCallback = void Function(Result<Refresh, String> update);
-
 ///
 /// WalletStateNotifier notifies UI widgets when the list of Wallet changes.
 ///
@@ -42,31 +30,20 @@ class WalletStateNotifier extends StateNotifier<List<ReadOnlyWallet>> {
   // Map<String, bool> _reloadStatus = {};
 
   /// Refresh all wallets
-  Future<void> reloadAll() async {
+  Future<Result<bool, String>> reloadAll() async {
+    bool updated = false;
     for (final wallet in walletService.wallets) {
-      await wallet.update();
-      state = walletService
-          .wallets; //always reset state to trigger both data and spinner updates.
+      final result = await wallet.update();
+      if (result.isErr()) {
+        state = walletService.wallets; //trigger view refresh to stop spinners
+        return Err(result.unwrapErr());
+      } else if (result.unwrap()) {
+        updated = true;
+      }
     }
+    state = walletService.wallets;
+    return Ok(updated);
   }
-
-  // Future<void> reloadAll(RefreshWalletCallback? callback) async {
-  //   for (final wallet in walletService.wallets) {
-  //     if (_reloadStatus.containsKey(wallet.walletId)) continue; // skip b/c already updating
-  //     _reloadStatus[wallet.walletId] = true;
-  //     final result = await wallet.update();
-  //     _reloadStatus.remove(wallet.walletId);
-  //     if (result.isOk() && result.unwrap()) {
-  //       state = walletService.wallets;
-  //     }
-  //     if (callback != null) {
-  //       final refreshResult = result.isOk()
-  //           ? Ok(Refresh(finished: _reloadStatus.isEmpty, message: "${wallet.walletName} ${result.unwrap() ? ' updated' : ' is current'}"))
-  //           : Err(result.unwrapErr());
-  //       callback(refreshResult);
-  //     }
-  //   }
-  // }
 
   /// Create new ReadOnlyWallet and add to list.
   Future<Result<ReadOnlyWallet, String>> createReadOnlyWallet(
@@ -94,7 +71,6 @@ class WalletStateNotifier extends StateNotifier<List<ReadOnlyWallet>> {
   }
 
   Future<Result<ShelleyTransaction, String>> sendAda({
-    required BuildContext context,
     required Wallet wallet,
     required ShelleyAddress toAddress,
     required int lovelace,
