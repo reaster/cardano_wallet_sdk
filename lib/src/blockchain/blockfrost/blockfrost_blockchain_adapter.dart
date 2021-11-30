@@ -130,9 +130,18 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       return Err(content.unwrapErr());
     }
     final account = content.unwrap();
-    final controlledAmount = content.isOk()
-        ? int.tryParse(content.unwrap().controlledAmount) ?? 0
-        : 0;
+    final controlledAmount =
+        content.isOk() ? int.tryParse(account.controlledAmount) ?? 0 : 0;
+    if (controlledAmount == coinZero && account.active == false) {
+      //likely new wallet with no transactions, bail out
+      return Ok(WalletUpdate(
+        balance: controlledAmount,
+        transactions: [],
+        addresses: [],
+        assets: {},
+        stakeAccounts: [],
+      ));
+    }
     final addressesResult =
         await _addresses(stakeAddress: stakeAddress.toBech32());
     if (addressesResult.isErr()) {
@@ -562,7 +571,8 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     if (cachedAccountContent != null) {
       return Ok(cachedAccountContent);
     }
-    return dioCall<AccountContent>(
+    bool notFound404 = false;
+    final result = await dioCall<AccountContent>(
       request: () => blockfrost
           .getCardanoAccountsApi()
           .accountsStakeAddressGet(stakeAddress: stakeAddress),
@@ -572,8 +582,26 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
             "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, data)}");
       },
       errorSubject: 'address',
+      onError: (
+          {Response? response, DioError? dioError, Exception? exception}) {
+        notFound404 = dioError?.response?.statusCode == 404;
+        print('notFound404: $notFound404');
+      },
     );
+    if (notFound404) {
+      return Ok(_emptyAccountContent());
+    }
+    return result;
   }
+
+  AccountContent _emptyAccountContent() => AccountContent((b) => b
+    ..active = false
+    ..controlledAmount = '0'
+    ..rewardsSum = '0'
+    ..withdrawalsSum = '0'
+    ..reservesSum = '0'
+    ..treasurySum = '0'
+    ..withdrawableAmount = '0');
 
   Future<Result<Block, String>> _loadBlock(
       {required String hashOrNumber}) async {
