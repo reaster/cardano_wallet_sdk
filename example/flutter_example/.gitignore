@@ -9,6 +9,7 @@
 .history
 .svn/
 
+# Required, but unique to each developer.
 /assets/res/blockfrost_project_id.txt
 
 # IntelliJ related
