@@ -189,46 +189,50 @@ class _SendFundsFormState extends State<SendFundsForm> {
 
 /// Function to load SendFundsForm wrapped in a AlertDialog.
 Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
+  late ShelleyAddress targetAddress;
+  Coin lovelaceToSend = coinZero;
   final form = SendFundsForm(
     key: const Key('sendAdaForm'),
     wallet: wallet,
     toAddress: null,
     lovelace: 0,
-    doSendAda: _send,
-    doCancel: (context) => Navigator.of(context).pop(),
+    doSendAda: (
+        {required BuildContext context,
+        required Wallet wallet,
+        required ShelleyAddress toAddress,
+        required int lovelace}) {
+      targetAddress = toAddress;
+      lovelaceToSend = lovelace;
+      Navigator.of(context).pop(true);
+    },
+    doCancel: (context) => Navigator.of(context).pop(false),
   );
-  return await showDialog(
+  final formCompleted = await showDialog(
     context: context,
     builder: (context) => AlertDialog(content: form),
   );
-}
-
-void _send(
-    {required BuildContext context,
-    required Wallet wallet,
-    required ShelleyAddress toAddress,
-    required int lovelace}) async {
-  Navigator.of(context).pop();
-  final result = await walletStateNotifier.sendAda(
+  if (formCompleted) {
+    final result = await walletStateNotifier.sendAda(
       wallet: wallet,
-      toAddress: toAddress,
-      lovelace: lovelace,
-      context: context);
-  result.when(
-    ok: (tx) {
-      final message =
-          'sent ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...';
-      debugPrint(message);
-      _showSnackBar(context, message);
-    },
-    err: (message) {
-      debugPrint("error sending ada: $message");
-      asyncAlertDialog(
-          context,
-          'Error sending ${_formatter.format(lovelace)} to ${toAddress.toBech32().substring(0, 30)}...',
-          message);
-    },
-  );
+      toAddress: targetAddress,
+      lovelace: lovelaceToSend,
+    );
+    result.when(
+      ok: (tx) {
+        final message =
+            'sent ${_formatter.format(lovelaceToSend)} to ${targetAddress.toBech32().substring(0, 30)}...';
+        debugPrint(message);
+        _showSnackBar(context, message);
+      },
+      err: (message) {
+        debugPrint("error sending ada: $message");
+        asyncAlertDialog(
+            context,
+            'Error sending ${_formatter.format(lovelaceToSend)} to ${targetAddress.toBech32().substring(0, 30)}...',
+            message);
+      },
+    );
+  }
 }
 
 final _formatter = AdaFormattter.compactCurrency();
