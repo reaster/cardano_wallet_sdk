@@ -15,6 +15,13 @@
 
 SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutter](https://flutter.dev) using the [Dart](https://dart.dev) programming language.
 
+<div align="center">
+    <img src="example/flutter_example/screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
+    <img src="example/flutter_example/screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
+    <img src="example/flutter_example/screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
+    <img src="example/flutter_example/screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
+</div>
+
 ## Status
 
 Currently this project is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
