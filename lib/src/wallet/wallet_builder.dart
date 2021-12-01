@@ -34,7 +34,7 @@ import 'package:dio/dio.dart';
 class WalletBuilder {
   NetworkId? _networkId;
   String? _walletName;
-  BlockchainAdapter? _adapter;
+  BlockchainAdapter? _blockchainAdapter;
   String? _testnetAdapterKey;
   String? _mainnetAdapterKey;
   ShelleyAddress? _stakeAddress;
@@ -58,7 +58,8 @@ class WalletBuilder {
       _mainnetAdapterKey = mainnetAdapterKey;
 
   /// Set a pre-configured adapter used for accessing the blockchain.
-  set adapter(BlockchainAdapter adapter) => _adapter = adapter;
+  set blockchainAdapter(BlockchainAdapter adapter) =>
+      _blockchainAdapter = adapter;
 
   /// Set optional wallet name, like the owner or purpose of the wallet.
   set walletName(String? walletName) => _walletName = walletName;
@@ -88,9 +89,10 @@ class WalletBuilder {
       return Err("Read-only wallet creation requires a staking address");
     }
     _walletName ??= "Wallet #${_walletNameIndex++}";
-    if (_adapter != null) {
-      if (_adapter! is BlockfrostBlockchainAdapter) {
-        _networkId = (_adapter as BlockfrostBlockchainAdapter).networkId;
+    if (_blockchainAdapter != null) {
+      if (_blockchainAdapter! is BlockfrostBlockchainAdapter) {
+        _networkId =
+            (_blockchainAdapter as BlockfrostBlockchainAdapter).networkId;
       }
     } else {
       _networkId ??= NetworkId.mainnet;
@@ -101,11 +103,11 @@ class WalletBuilder {
             : _testnetAdapterKey,
       );
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
-      _adapter = adapterResult.unwrap();
+      _blockchainAdapter = adapterResult.unwrap();
     }
 
     final wallet = ReadOnlyWalletImpl(
-      blockchainAdapter: _adapter!,
+      blockchainAdapter: _blockchainAdapter!,
       stakeAddress: _stakeAddress!,
       walletName: _walletName!,
     );
@@ -137,9 +139,10 @@ class WalletBuilder {
       }
     }
     _walletName ??= "Wallet #${_walletNameIndex++}";
-    if (_adapter != null) {
-      if (_adapter! is BlockfrostBlockchainAdapter) {
-        _networkId = (_adapter as BlockfrostBlockchainAdapter).networkId;
+    if (_blockchainAdapter != null) {
+      if (_blockchainAdapter! is BlockfrostBlockchainAdapter) {
+        _networkId =
+            (_blockchainAdapter as BlockfrostBlockchainAdapter).networkId;
       }
     } else {
       _networkId ??= NetworkId.mainnet;
@@ -150,7 +153,7 @@ class WalletBuilder {
             : _testnetAdapterKey,
       );
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
-      _adapter = adapterResult.unwrap();
+      _blockchainAdapter = adapterResult.unwrap();
     }
     final stakeKeyPair = _hdWallet!.deriveAddressKeys(role: stakingRole);
     final stakeAddress = _hdWallet!.toRewardAddress(
@@ -158,7 +161,7 @@ class WalletBuilder {
     final addressKeyPair = _hdWallet!.deriveAddressKeys(account: accountIndex);
     //printKey(addressKeyPair);
     final wallet = WalletImpl(
-      blockchainAdapter: _adapter!,
+      blockchainAdapter: _blockchainAdapter!,
       stakeAddress: stakeAddress,
       addressKeyPair: addressKeyPair,
       walletName: _walletName!,

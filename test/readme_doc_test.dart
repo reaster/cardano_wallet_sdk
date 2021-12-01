@@ -39,7 +39,7 @@ void main() {
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..stakeAddress = address
-        ..adapter = mockAdapter;
+        ..blockchainAdapter = mockAdapter;
       Result<ReadOnlyWallet, String> result =
           await walletBuilder.readOnlyBuildAndSync();
       result.when(
@@ -53,7 +53,7 @@ void main() {
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
-        ..adapter = mockAdapter;
+        ..blockchainAdapter = mockAdapter;
       Result<Wallet, String> result = await walletBuilder.buildAndSync();
       if (result.isOk()) {
         var wallet = result.unwrap();
@@ -65,7 +65,7 @@ void main() {
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
-        ..adapter = mockAdapter;
+        ..blockchainAdapter = mockAdapter;
       Result<Wallet, String> result = walletBuilder.build();
       Wallet wallet = result.unwrap();
       Coin oldBalance = wallet.balance;
@@ -86,7 +86,7 @@ void main() {
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
-        ..adapter = mockAdapter;
+        ..blockchainAdapter = mockAdapter;
       final walletResult = await walletBuilder.buildAndSync();
       if (walletResult.isOk()) {
         var wallet = walletResult.unwrap();
