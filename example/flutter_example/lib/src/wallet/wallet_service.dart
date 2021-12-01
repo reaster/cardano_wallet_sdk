@@ -41,7 +41,7 @@ class WalletService {
   Future<Result<ReadOnlyWallet, String>> createReadOnlyWallet(
       String walletName, ShelleyAddress stakeAddress) async {
     final builder = WalletBuilder()
-      ..adapter = blockchainAdapter
+      ..blockchainAdapter = blockchainAdapter
       ..walletName = walletName
       ..stakeAddress = stakeAddress;
     final result = await builder.readOnlyBuildAndSync();
@@ -58,7 +58,7 @@ class WalletService {
   Future<Result<Wallet, String>> restoreWallet(
       String walletName, List<String> mnemonic) async {
     final builder = WalletBuilder()
-      ..adapter = blockchainAdapter
+      ..blockchainAdapter = blockchainAdapter
       ..walletName = walletName
       ..mnemonic = mnemonic;
     final result = await builder.buildAndSync();
@@ -75,7 +75,7 @@ class WalletService {
   Result<Wallet, String> createNewWallet(
       String walletName, List<String> mnemonic) {
     final builder = WalletBuilder()
-      ..adapter = blockchainAdapter
+      ..blockchainAdapter = blockchainAdapter
       ..walletName = walletName
       ..mnemonic = mnemonic;
     final result = builder.build();
