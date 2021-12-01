@@ -1,30 +1,37 @@
-# flutter_example
+# Flutter Example App
 
-A new Flutter project.
+This Flutter app demonstrates using the Cardano Wallet SDK to manage wallets, 
+send payments, handle input validation, process errors, list transactions and 
+verify them in a blockchain browser. 
+It is a multi-platform app that has been tested on iOS, Android, macOS and the web.
+
+<div align="center">
+    <img src="screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
+    <img src="screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
+    <img src="screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
+    <img src="screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
+</div>
+
 
 ## Getting Started
 
-This project is a starting point for a Flutter application that follows the
-[simple app state management
-tutorial](https://flutter.dev/docs/development/data-and-backend/state-mgmt/simple).
+This project requires that a testnet policy-id key from [BlockFrost](https://blockfrost.io/) 
+be placed in the `assets/res` project folder (the same file required to run the integration tests):
 
-For help getting started with Flutter, view our
+```
+flutter_example/assets/res/blockfrost_project_id.txt
+```
+
+For more general help getting started with Flutter, view the
 [online documentation](https://flutter.dev/docs), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
-## Assets
+## Implementation
 
-The `assets` directory houses images, fonts, and any other files you want to
-include with your application.
+This project started with the Flutter 2.5 skeleton template:
+```
+flutter create -t skeleton flutter_example
+```
+Which produced a multi-platform,  [internationalization-ready](https://flutter.dev/docs/development/accessibility-and-localization/internationalization), [multi-page](https://docs.flutter.dev/development/ui/navigation) master-detail starting app. This code was combined with [Riverpod](https://riverpod.dev) to create a [reactive state management template app](https://github.com/reaster/skeleton_riverpod). Finally, adding the [Cardano Wallet SDK](https://pub.dev/packages/cardano_wallet_sdk) produced a robust, multi-account Cardano wallet app. 
 
-The `assets/images` directory contains [resolution-aware
-images](https://flutter.dev/docs/development/ui/assets-and-images#resolution-aware).
 
-## Localization
-
-This project generates localized messages based on arb files found in
-the `lib/src/localization` directory.
-
-To support additional languages, please visit the tutorial on
-[Internationalizing Flutter
-apps](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
