@@ -3,7 +3,6 @@
 
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 
@@ -13,14 +12,12 @@ import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 /// payments to other wallets.
 ///
 void main() async {
-  Logger.level = Level.info;
-
   // fish the blockfrost key out of a text file
-  final adapterKey = _readApiKey();
+  final blockfrostKey = _readApiKey();
 
   // the adapter talks to the blockchain and caches immutable data
-  final adapter = BlockchainAdapterFactory.fromKey(
-    key: adapterKey,
+  final blockchainAdapter = BlockchainAdapterFactory.fromKey(
+    key: blockfrostKey,
     networkId: NetworkId.testnet,
   ).adapter();
 
@@ -29,17 +26,18 @@ void main() async {
       'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg');
   final walletBuilder1 = WalletBuilder()
     ..walletName = 'Fred'
-    ..adapter = adapter
+    ..blockchainAdapter = blockchainAdapter
     ..stakeAddress = stakeAddress;
-  final Result<ReadOnlyWallet, String> fred =
+  final Result<ReadOnlyWallet, String> result1 =
       await walletBuilder1.readOnlyBuildAndSync();
-  fred.when(
+  result1.when(
     ok: (wallet) {
       print(
           "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}");
       for (final tx in wallet.transactions) {
-        final txType = tx.type.toString().split('.')[1];
-        print("    $txType ${tx.time} ${tx.amount} + ${tx.fees} fee");
+        final type =
+            tx.type == TransactionType.deposit ? 'deposit' : 'withdrawal';
+        print("    $type ${tx.time} ${tx.amount} + ${tx.fees} fee");
       }
     },
     err: (message) => print("Error: $message"),
@@ -51,37 +49,40 @@ void main() async {
           .split(' ');
   final walletBuilder2 = WalletBuilder()
     ..walletName = 'Bob'
-    ..adapter = adapter
+    ..blockchainAdapter = blockchainAdapter
     ..mnemonic = mnemonic;
-  final Result<Wallet, String> bob = await walletBuilder2.buildAndSync();
-  bob.when(
-    ok: (wallet) => print(
-        "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}"),
-    err: (message) => print("Error: $message"),
-  );
+  final Result<Wallet, String> result2 = await walletBuilder2.buildAndSync();
+  if (result2.isErr()) {
+    print("Error: ${result2.unwrapErr()}");
+    return;
+  }
+  final bobsWallet = result2.unwrap();
+  print("${bobsWallet.walletName}'s: ${formatter.format(bobsWallet.balance)}");
 
   //create a new wallet
   final mnemonic2 = WalletBuilder.generateNewMnemonic();
   final walletBuilder3 = WalletBuilder()
     ..walletName = 'Alice'
-    ..adapter = adapter
+    ..blockchainAdapter = blockchainAdapter
     ..mnemonic = mnemonic2;
-  final Result<Wallet, String> alice = await walletBuilder3.buildAndSync();
-  alice.when(
-    ok: (wallet) => print(
-        "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}"),
-    err: (message) => print("Error: $message"),
-  );
+  final Result<Wallet, String> result3 = await walletBuilder3.buildAndSync();
+  if (result3.isErr()) {
+    print("Error: ${result3.unwrapErr()}");
+    return;
+  }
+  final alicesWallet = result3.unwrap();
+  print(
+      "${alicesWallet.walletName}'s: ${formatter.format(alicesWallet.balance)}");
 
   // Bob sends 2 ADA to Alice
   const lovelace = 2 * 1000000;
-  final result = await bob.unwrap().sendAda(
-        toAddress: alice.unwrap().firstUnusedReceiveAddress,
-        lovelace: lovelace,
-        logTx: true,
-        logTxHex: true,
-      );
-  result.when(
+  final sendResult = await bobsWallet.sendAda(
+    toAddress: alicesWallet.firstUnusedReceiveAddress,
+    lovelace: lovelace,
+    logTx: true,
+    logTxHex: true,
+  );
+  sendResult.when(
     ok: (tx) => print(
         "Bob sent ${formatter.format(lovelace)} with a ${formatter.format(tx.body.fee)} fee to Alice."),
     err: (message) => print("Error: $message"),

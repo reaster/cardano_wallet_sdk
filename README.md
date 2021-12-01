@@ -62,7 +62,7 @@ final walletBuilder = WalletBuilder()
 
 Create a read-only wallet using a staking address.
 ```dart
-var address = ShelleyAddress.fromBech32('stake_test1uq...vwl7a');
+var address = ShelleyAddress.fromBech32('stake_test1uqvwl7a...');
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = blockfrostKey
@@ -76,7 +76,7 @@ result.when(
 
 Restore existing wallet using 24 word mnemonic.
 ```dart
-var mnemonic = 'rude stadium move...gallery receive just'.split(' ');
+var mnemonic = 'rude stadium move gallery receive just...'.split(' ');
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = blockfrostKey
