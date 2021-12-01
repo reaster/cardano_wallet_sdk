@@ -78,9 +78,10 @@ class WalletListView extends StatelessWidget {
       doCancel: (context) => Navigator.of(context).pop(false),
     );
     bool formCompleted = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(content: form),
-    );
+          context: context,
+          builder: (context) => AlertDialog(content: form),
+        ) ??
+        false;
     if (formCompleted) {
       final result = walletStateNotifier.createNewWallet(
           context: context, walletName: walletName, mnemonic: mnemonic);
@@ -115,9 +116,10 @@ class WalletListView extends StatelessWidget {
       doCancel: (context) => Navigator.of(context).pop(false),
     );
     bool formCompleted = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(content: form),
-    );
+          context: context,
+          builder: (context) => AlertDialog(content: form),
+        ) ??
+        false;
     if (formCompleted) {
       final result = await walletStateNotifier.createReadOnlyWallet(
           context: context, walletName: walletName, stakeAddress: stakeAddress);
@@ -150,9 +152,10 @@ class WalletListView extends StatelessWidget {
       doCancel: (context) => Navigator.of(context).pop(false),
     );
     bool formCompleted = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(content: form),
-    );
+          context: context,
+          builder: (context) => AlertDialog(content: form),
+        ) ??
+        false;
     if (formCompleted) {
       final result = await walletStateNotifier.restoreWallet(
           context: context, walletName: walletName, mnemonic: mnemonic);

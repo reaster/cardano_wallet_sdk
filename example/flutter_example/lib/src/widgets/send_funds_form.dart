@@ -208,9 +208,10 @@ Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
     doCancel: (context) => Navigator.of(context).pop(false),
   );
   final formCompleted = await showDialog(
-    context: context,
-    builder: (context) => AlertDialog(content: form),
-  );
+        context: context,
+        builder: (context) => AlertDialog(content: form),
+      ) ??
+      false;
   if (formCompleted) {
     final result = await walletStateNotifier.sendAda(
       wallet: wallet,
