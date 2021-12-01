@@ -1,5 +1,7 @@
-import 'dart:ui';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
 
+import 'dart:ui';
 import 'package:flutter_example/src/widgets/alert_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
