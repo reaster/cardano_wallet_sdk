@@ -30,7 +30,7 @@ Under a Fund 7 proposal this library will be expanded into a fully-functional Ca
 vote for it in Catalyst Fund 7!
 
 ## Kick the Tires
-To see the SDK in action, you can visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
+To see the SDK in action, both a pure [Dart example](https://github.com/reaster/cardano_wallet_sdk/blob/main/example/dart_example.dart) and multi-platform [Flutter example](https://github.com/reaster/cardano_wallet_sdk/tree/main/example/flutter_example) are incuded in this distribution. You can also visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
 
 ## Current ([Fund 5](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088)) Features
 * Create Wallets - Create and restore, both read-only and transactional wallets using staking addresses, mnemonics or private keys.
