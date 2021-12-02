@@ -6,10 +6,10 @@ verify them in a blockchain browser.
 It is a multi-platform app that has been tested on iOS, Android, macOS and the web.
 
 <div align="center">
-    <img style="margin:5px;" src="screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
-    <img style="margin:5px;" src="screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
-    <img style="margin:5px;" src="screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
-    <img style="margin:5px;" src="screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
+    <img style="margin:5px;" src="https://github.com/reaster/cardano_wallet_sdk/raw/main/example/flutter_example/screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
+    <img style="margin:5px;" src="https://github.com/reaster/cardano_wallet_sdk/raw/main/example/flutter_example/screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
+    <img style="margin:5px;" src="https://github.com/reaster/cardano_wallet_sdk/raw/main/example/flutter_example/screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
+    <img style="margin:5px;" src="https://github.com/reaster/cardano_wallet_sdk/raw/main/example/flutter_example/screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
 </div>
 
 
