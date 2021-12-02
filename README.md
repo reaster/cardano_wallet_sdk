@@ -16,10 +16,10 @@
 SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutter](https://flutter.dev) using the [Dart](https://dart.dev) programming language.
 
 <div align="center">
-    <img src="example/flutter_example/screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
-    <img src="example/flutter_example/screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
-    <img src="example/flutter_example/screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
-    <img src="example/flutter_example/screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
+    <img style="margin:5px;" src="example/flutter_example/screenshots/FlutterSDK_Drawer_iPadPro9_7-inch.png" width="200px"</img> 
+    <img style="margin:5px;" src="example/flutter_example/screenshots/FlutterSDK_ListWallets_iPodTouch7thGen.png" width="100px"</img> 
+    <img style="margin:5px;" src="example/flutter_example/screenshots/FlutterSDK_Sliders_MacOS.png" width="200px"</img> 
+    <img style="margin:5px;" src="example/flutter_example/screenshots/FlutterSDK_DarkMode_MacOS.png" width="200px"</img> 
 </div>
 
 ## Status
