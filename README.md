@@ -83,7 +83,7 @@ result.when(
 
 Restore existing wallet using 24 word mnemonic.
 ```dart
-var mnemonic = 'rude stadium move gallery receive just...'.split(' ');
+List<String> mnemonic = 'rude stadium move gallery receive just...'.split(' ');
 final walletBuilder = WalletBuilder()
     ..networkId = NetworkId.testnet
     ..testnetAdapterKey = blockfrostKey
@@ -113,7 +113,7 @@ result2.when(
 
 Create a new 24 word mnemonic.
 ```dart
-List<String> mnemonic = WalletBuilder().generateNewMnemonic();
+List<String> mnemonic = WalletBuilder.generateNewMnemonic();
 print("mnemonic: ${mnemonic.join(' ')}");
 ```
 
