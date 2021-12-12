@@ -26,8 +26,8 @@ SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutt
 
 Currently this project is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
 
-Under a Fund 7 proposal this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management, hardware wallets and other essential features needed to write dApps and other types of Cardano clients. If you'd like to support this project, be sure to 
-vote for it in Catalyst Fund 7!
+Under a [Fund 7 proposal](https://cardano.ideascale.com/a/dtd/Flutter-SDK/381288-48088) this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management and other essential features needed to write dApps and other types of Cardano clients. If you'd like to support this project, be sure to 
+vote for it in [Catalyst Fund 7](https://cardano.ideascale.com/a/dtd/Flutter-SDK/381288-48088)!
 
 ## Kick the Tires
 To see the SDK in action, both a pure [Dart example](https://github.com/reaster/cardano_wallet_sdk/blob/main/example/dart_example.dart) and multi-platform [Flutter example](https://github.com/reaster/cardano_wallet_sdk/tree/main/example/flutter_example) are incuded in this distribution. You can also visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
@@ -189,15 +189,12 @@ if (result.isOk()) {
 
 ### Planned Features
 * Smart Contracts - Consisting of examples and supporting code.
-* Persistence - Caching blockchain data to speed state restoration.
 * Native Token/NFT - Provide minting and burning support.
 * Staking - Provide stake pool ranking and stake delegation support.
 * Blockchain Adapter - Abstraction layer to allow multiple blockchain gateways (i.e. Blockfrost, GraphQL, Ogmios and Mithril).
 * Secure Storage - Encrypted storage solution for private keys and passwords.
 * Multi-signature - Support multi-party signatures.
 * Alternate Addresses - Support enterprise, pointer and legacy addresses.
-* Hardware Wallets - Support key storage and signing delegation.
-* DApp Linking - Metamask-like Chrome browser extension.
 
 ### Running Integration Tests
 Several of the integration tests (suffixed with '_itest.dart') require a BlockFrost key to run. Installation steps are as follows:
