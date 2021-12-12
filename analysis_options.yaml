@@ -12,7 +12,7 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - example/**
-    - test/mock_wallet_2.mocks.dart
+    - test/**
 
 linter:
   # The lint rules applied to this project can be customized in the
