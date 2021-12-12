@@ -3,9 +3,8 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:collection/collection.dart';
-
-import 'package:flutter_example/src/settings/settings_service.dart';
 import 'package:oxidized/oxidized.dart';
+import '../settings/settings_service.dart';
 
 ///
 /// Wallet service loads stores wallets in memory along with a name property in

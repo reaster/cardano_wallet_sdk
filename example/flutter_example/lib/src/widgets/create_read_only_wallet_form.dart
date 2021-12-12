@@ -4,7 +4,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
+import './ada_shape_maker.dart';
 
 ///
 /// Create read-only wallet form. All biz logic passed in via functions.

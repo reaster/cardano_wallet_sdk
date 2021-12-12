@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:ui';
-import 'package:flutter_example/src/widgets/alert_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/providers.dart';
-import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
-import 'package:flutter_example/src/widgets/send_funds_form.dart';
+import '../widgets/alert_dialog.dart';
+import '../widgets/ada_shape_maker.dart';
+import '../widgets/send_funds_form.dart';
+import '../providers.dart';
 
 /// Displays wallet balance and transactions.
 class WalletDetailsView extends ConsumerWidget {
@@ -37,7 +37,7 @@ class WalletDetailsView extends ConsumerWidget {
         body: Center(
           child: Text(
             'no wallet found for walletId: $walletId',
-            style: TextStyle(color: Colors.red),
+            style: const TextStyle(color: Colors.red),
           ),
         ),
       );
@@ -105,7 +105,7 @@ class WalletCustomScrollView extends StatelessWidget {
                       tag: wallet.walletId,
                       transitionOnUserGestures: true,
                       child: Padding(
-                        padding: EdgeInsets.only(right: 16.0),
+                        padding: const EdgeInsets.only(right: 16.0),
                         child: CustomPaint(
                           size: const Size(80, 80),
                           painter: AdaCustomPainter(color: titleColor),
@@ -143,7 +143,7 @@ class WalletCustomScrollView extends StatelessWidget {
               ),
             ),
             SliverList(
-                delegate: new SliverChildBuilderDelegate(
+                delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
                 WalletTransaction tx = wallet.transactions[index];
                 final txType = tx.type == TransactionType.deposit
@@ -179,7 +179,7 @@ class WalletCustomScrollView extends StatelessWidget {
                     ),
                     onTap: () => _launchBrowser(tx, wallet.networkId),
                     //exit_to_app, call_made_outlined, insert_link, launch, logout, open_in_browser, open_in_new, visibility_outlined
-                    trailing: Icon(Icons.insert_link, color: Colors.grey),
+                    trailing: const Icon(Icons.insert_link, color: Colors.grey),
                   ),
                 );
               },
@@ -209,32 +209,32 @@ class WalletCustomScrollView extends StatelessWidget {
   void _launchBrowser(WalletTransaction tx, NetworkId networkId) async {
     final browser = CardanoScanBlockchainExplorer.fromNetwork(networkId);
     final url = browser.transactionUrl(transactionIdHex32: tx.txId);
-    print(url);
+    debugPrint(url);
     try {
       if (!await launch(url)) {
         _showSnackBar('Could not launch $url');
       }
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
   }
 
   Widget _leading(WalletTransaction tx) {
-    final size = 34.0;
+    const size = 34.0;
     switch (tx.type) {
       case TransactionType.deposit:
-        return Icon(Icons.save_alt, color: Colors.blue, size: size);
+        return const Icon(Icons.save_alt, color: Colors.blue, size: size);
       case TransactionType.withdrawal:
-        return Icon(Icons.send, color: Colors.blue, size: size);
+        return const Icon(Icons.send, color: Colors.blue, size: size);
       default:
-        return Icon(Icons.warning, color: Colors.red, size: size);
+        return const Icon(Icons.warning, color: Colors.red, size: size);
     }
   }
 
   Widget _wrapWithBlurredLogo({required Widget child}) => Container(
         height: double.maxFinite,
         width: double.maxFinite,
-        decoration: FlutterLogoDecoration(),
+        decoration: const FlutterLogoDecoration(),
         child: ClipRRect(
           // make sure we apply clip it properly
           child: BackdropFilter(

@@ -1,8 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
+import './stake_pool.dart';
+import './stake_pool_metadata.dart';
 
 // '["active",true,"active_epoch",135,"controlled_amount","398515694","rewards_sum","690831","withdrawals_sum","0","reserves_sum","0","treasury_sum","0","withdrawable_amount","690831","pool_id","pool14pdhhugxlqp9vta49pyfu5e2d5s82zmtukcy9x5ylukpkekqk8l"]',
 

@@ -1,11 +1,11 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import '../../address/shelley_address.dart';
+import '../../stake/stake_account.dart';
+import '../../transaction/transaction.dart';
+import '../../asset/asset.dart';
+import '../../util/ada_types.dart';
 
 ///
 /// Pass-back object used to update existing or new wallets.

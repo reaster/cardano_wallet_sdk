@@ -2,20 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_example/src/widgets/alert_dialog.dart';
-import 'package:flutter_example/src/widgets/send_funds_form.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_example/src/providers.dart';
-import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
-import 'package:flutter_example/src/widgets/create_or_restore_wallet_form.dart';
-import 'package:flutter_example/src/widgets/create_read_only_wallet_form.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import '../widgets/alert_dialog.dart';
 import '../settings/settings_view.dart';
-import 'wallet_details_view.dart';
+import '../widgets/send_funds_form.dart';
+import '../widgets/ada_shape_maker.dart';
+import '../widgets/create_or_restore_wallet_form.dart';
+import '../widgets/create_read_only_wallet_form.dart';
+import '../providers.dart';
+import './wallet_details_view.dart';
 
 ///
 /// Displays a list of wallets.
@@ -42,9 +41,10 @@ class WalletListView extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => openNewWalletForm(context),
         child: const Icon(Icons.add),
-        backgroundColor: Colors.blueAccent.withOpacity(0.8),
+        backgroundColor: Colors.blueAccent, //.withOpacity(0.8),
       ),
-      body: _wrapWithBlurredLogoBackground(child: const WalletList()),
+      body: wrapWithBlurredLogoBackground(child: const WalletList()),
+      // body: wrapWithGradientBackground(child: const WalletList()),
     );
   }
 
@@ -244,7 +244,7 @@ class WalletList extends ConsumerWidget {
                         painter: AdaCustomPainter(color: titleColor),
                       ),
               ),
-              trailing: Icon(Icons.chevron_right),
+              trailing: const Icon(Icons.chevron_right),
               // trailing: Icon(wallet.readOnly ? Icons.money_off : Icons.monetization_on_outlined, color: subtitleColor),
               onTap: () {
                 Navigator.restorablePushNamed(
@@ -325,10 +325,10 @@ Widget _wrapInSlidable(
       child: child,
     );
 
-Widget _wrapWithBlurredLogoBackground({required Widget child}) => Container(
+Widget wrapWithBlurredLogoBackground({required Widget child}) => Container(
       height: double.maxFinite,
       width: double.maxFinite,
-      decoration: FlutterLogoDecoration(),
+      decoration: const FlutterLogoDecoration(),
       child: ClipRRect(
         // make sure we apply clip it properly
         child: BackdropFilter(
@@ -341,12 +341,21 @@ Widget _wrapWithBlurredLogoBackground({required Widget child}) => Container(
       ),
     );
 
+Widget wrapWithGradientBackground({required Widget child}) => Container(
+    decoration: const BoxDecoration(
+        gradient: LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: [Colors.white, Colors.grey],
+    )),
+    child: child);
+
 Widget _buildDrawer(
         WalletListView walletItemListView, BuildContext originContext) =>
     Drawer(
       child: Consumer(builder: (context, watch, child) {
         return ListView(padding: EdgeInsets.zero, children: [
-          DrawerHeader(
+          const DrawerHeader(
             decoration: FlutterLogoDecoration(),
             child: Text(
               'Flutter SDK',

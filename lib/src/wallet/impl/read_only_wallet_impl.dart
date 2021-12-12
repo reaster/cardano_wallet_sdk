@@ -3,14 +3,14 @@
 
 import 'package:quiver/strings.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import '../../address/shelley_address.dart';
+import '../../asset/asset.dart';
+import '../../network/network_id.dart';
+import '../../stake/stake_account.dart';
+import '../../transaction/transaction.dart';
+import '../../blockchain/blockchain_adapter.dart';
+import '../../util/ada_types.dart';
+import '../read_only_wallet.dart';
 
 ///
 /// Given a stakingAddress, generate a read-only wallet with balances of all native assets,

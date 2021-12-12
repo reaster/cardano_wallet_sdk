@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/wallet/wallet_service.dart';
+import './wallet_service.dart';
 
 ///
 /// WalletStateNotifier notifies UI widgets when the list of Wallet changes.

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import '../asset/asset.dart';
+import '../transaction/transaction.dart';
+import '../util/ada_types.dart';
 
 ///
 /// The cache holds invariant block chain data.

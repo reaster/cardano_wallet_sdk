@@ -1,13 +1,13 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:blockfrost/blockfrost.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_api_key_auth.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:blockfrost/blockfrost.dart';
+import '../network/network_id.dart';
+import './blockchain_adapter.dart';
+import './blockfrost/blockfrost_api_key_auth.dart';
+import './blockfrost/blockfrost_blockchain_adapter.dart';
 
 ///
 /// Provides a properly configured BlockchainAdapter for the requirested network.

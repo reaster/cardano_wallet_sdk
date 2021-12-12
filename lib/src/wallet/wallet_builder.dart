@@ -1,22 +1,22 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter_factory.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
-import 'package:cardano_wallet_sdk/src/transaction/coin_selection.dart';
-import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
-import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_impl.dart';
-import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
+import '../address/hd_wallet.dart';
+import '../address/shelley_address.dart';
+import '../blockchain/blockchain_adapter.dart';
+import '../blockchain/blockchain_adapter_factory.dart';
+import '../blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
+import '../network/network_id.dart';
+import '../transaction/coin_selection.dart';
+import './impl/read_only_wallet_impl.dart';
+import './impl/wallet_impl.dart';
+import './read_only_wallet.dart';
+import './wallet.dart';
 
 ///
 /// This builder creates both read-only and transactional wallets from provided

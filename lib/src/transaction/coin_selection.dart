@@ -1,13 +1,13 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:logger/logger.dart';
 import 'package:oxidized/oxidized.dart';
+import '../address/shelley_address.dart';
+import '../util/ada_types.dart';
+import '../asset/asset.dart';
+import './spec/shelley_spec.dart';
+import './transaction.dart';
 
 ///
 /// Coin selection is the process of picking UTxO inputs to perticipate in a spending transaction.

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
-import 'package:flutter_example/src/providers.dart';
+import '../providers.dart';
 
 /// Displays the various settings that can be customized by the user.
 ///

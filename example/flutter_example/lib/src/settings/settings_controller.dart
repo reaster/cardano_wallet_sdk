@@ -1,10 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import 'settings_service.dart';
+import './settings_service.dart';
 
 /// A class that many Widgets can interact with to read user settings, update
 /// user settings, or listen to user settings changes.

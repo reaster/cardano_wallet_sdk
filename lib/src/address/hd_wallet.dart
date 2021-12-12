@@ -6,8 +6,8 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:logger/logger.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
+import '../address/shelley_address.dart';
+import '../network/network_id.dart';
 
 ///
 /// This class implements a hierarchical deterministic wallet that generates cryptographic keys and

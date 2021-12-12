@@ -1,19 +1,6 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_pool.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_pool_metadata.dart';
-import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_time.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockfrost/dio_call.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:cardano_wallet_sdk/src/wallet/impl/wallet_update.dart';
 import 'package:blockfrost/blockfrost.dart';
 import 'package:dio/dio.dart';
 import 'dart:typed_data';
@@ -21,6 +8,19 @@ import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:logger/logger.dart';
+import '../../address/shelley_address.dart';
+import '../../network/network_id.dart';
+import '../../stake/stake_account.dart';
+import '../../stake/stake_pool.dart';
+import '../../stake/stake_pool_metadata.dart';
+import '../../transaction/min_fee_function.dart';
+import '../../transaction/transaction.dart';
+import '../../util/ada_time.dart';
+import '../../asset/asset.dart';
+import '../../util/ada_types.dart';
+import '../../wallet/impl/wallet_update.dart';
+import '../blockchain_adapter.dart';
+import './dio_call.dart';
 
 ///
 /// Loads BlockFrost data into this wallet model

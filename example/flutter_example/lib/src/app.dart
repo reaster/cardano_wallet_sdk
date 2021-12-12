@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
-import 'package:flutter_example/src/providers.dart';
-import 'package:flutter_example/src/wallet/wallet_details_view.dart';
-import 'package:flutter_example/src/wallet/wallet_list_view.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'settings/settings_view.dart';
+import './wallet/wallet_details_view.dart';
+import './wallet/wallet_list_view.dart';
+import './settings/settings_view.dart';
+import './providers.dart';
 
 /// The Widget that configures your application.
 class MyApp extends StatelessWidget {
@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
               builder: (BuildContext context) {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
-                    return SettingsView();
+                    return const SettingsView();
                   case WalletDetailsView.routeName:
                     final args = routeSettings.arguments as String;
                     return WalletDetailsView(

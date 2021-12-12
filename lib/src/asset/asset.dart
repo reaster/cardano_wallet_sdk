@@ -1,10 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:hex/hex.dart';
 import 'package:pinenacl/encoding.dart';
+import '../util/blake2bhash.dart';
+import '../util/codec.dart';
 
 //
 // An AssetId uniquly identifies a native token by combining the policyId with the token name.

@@ -1,15 +1,17 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/wallet/wallet_state_notifier.dart';
-import 'package:flutter_example/src/wallet/wallet_service.dart';
 import 'package:riverpod/riverpod.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_service.dart';
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import './wallet/wallet_state_notifier.dart';
+import './wallet/wallet_service.dart';
 
 ///
-/// This is just one of many ways services, controllers and providers can be
+/// Declare services, controllers and providers globally.
+///
+/// Note: This is just one of many ways services, controllers and providers can be
 /// orginized. Having all the state management declarations in one file
 /// simplfies the app at the expnse of modularity and testability.
 ///

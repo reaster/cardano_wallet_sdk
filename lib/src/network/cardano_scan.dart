@@ -1,7 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
+import './network_id.dart';
 
 ///
 /// Cardano Scan Blockchain Explorer url generator for common blockchain web pages.

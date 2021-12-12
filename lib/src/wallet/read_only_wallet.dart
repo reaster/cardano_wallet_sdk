@@ -1,14 +1,14 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
-import 'package:cardano_wallet_sdk/src/stake/stake_account.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
 import 'package:oxidized/oxidized.dart';
+import '../address/shelley_address.dart';
+import '../asset/asset.dart';
+import '../blockchain/blockchain_adapter.dart';
+import '../network/network_id.dart';
+import '../stake/stake_account.dart';
+import '../transaction/transaction.dart';
+import '../util/ada_types.dart';
 
 ///
 /// Cardano read-only wallet that holds transactions, staking rewards and their associated

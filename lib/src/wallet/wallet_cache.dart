@@ -1,8 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/wallet/read_only_wallet.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
+import '../util/ada_types.dart';
+import './read_only_wallet.dart';
 
 ///
 /// Wallet cache interface.

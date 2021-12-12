@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:cardano_wallet_sdk/src/network/network_id.dart';
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
 import 'package:quiver/core.dart';
+import '../network/network_id.dart';
+import '../util/blake2bhash.dart';
 
 ///
 /// Encapsulates Shelley address types. Handles proper bech32 encoding and decoding mainnet and testnet addresses.

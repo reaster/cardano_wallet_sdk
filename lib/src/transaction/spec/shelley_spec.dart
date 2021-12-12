@@ -2,15 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:typed_data';
-
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:typed_data/typed_data.dart';
 import 'package:oxidized/oxidized.dart';
 import 'dart:convert' as convertor;
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
+import '../../util/blake2bhash.dart';
+import '../../util/ada_types.dart';
+import '../../util/codec.dart';
 
 ///
 /// These classes define the data stored on the Cardano blockchain as defined by the shelley.cddl specification.

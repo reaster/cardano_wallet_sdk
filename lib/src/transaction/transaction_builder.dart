@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/api.dart';
-import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/asset/asset.dart';
-import 'package:cardano_wallet_sdk/src/transaction/min_fee_function.dart';
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_tx_body_logic_ext.dart';
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:pinenacl/tweetnacl.dart';
+import '../address/hd_wallet.dart';
+import '../address/shelley_address.dart';
+import '../asset/asset.dart';
+import '../util/blake2bhash.dart';
+import '../util/ada_types.dart';
+import '../blockchain/blockchain_adapter.dart';
+import './spec/shelley_spec.dart';
+import './spec/shelley_tx_body_logic_ext.dart';
+import './min_fee_function.dart';
 
 ///
 /// This builder manages the details of assembling a balanced transaction, including

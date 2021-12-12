@@ -1,10 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/util/blake2bhash.dart';
-import 'package:cardano_wallet_sdk/src/util/codec.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
+import '../../util/blake2bhash.dart';
+import '../../util/codec.dart';
+import './shelley_spec.dart';
 
 ///
 /// Extends ShelleyTransaction to handle signature verification.

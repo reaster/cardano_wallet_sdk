@@ -3,15 +3,15 @@
 
 import 'package:hex/hex.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:cardano_wallet_sdk/src/wallet/wallet.dart';
-import 'package:cardano_wallet_sdk/src/util/ada_types.dart';
-import 'package:cardano_wallet_sdk/src/address/hd_wallet.dart';
-import 'package:cardano_wallet_sdk/src/address/shelley_address.dart';
-import 'package:cardano_wallet_sdk/src/transaction/coin_selection.dart';
-import 'package:cardano_wallet_sdk/src/transaction/spec/shelley_spec.dart';
-import 'package:cardano_wallet_sdk/src/transaction/transaction_builder.dart';
-import 'package:cardano_wallet_sdk/src/blockchain/blockchain_adapter.dart';
-import 'package:cardano_wallet_sdk/src/wallet/impl/read_only_wallet_impl.dart';
+import '../../wallet/wallet.dart';
+import '../../util/ada_types.dart';
+import '../../address/hd_wallet.dart';
+import '../../address/shelley_address.dart';
+import '../../transaction/coin_selection.dart';
+import '../../transaction/spec/shelley_spec.dart';
+import '../../transaction/transaction_builder.dart';
+import '../../blockchain/blockchain_adapter.dart';
+import './read_only_wallet_impl.dart';
 
 ///
 /// Build transactional wallet by combining features of HdWallet, TransactionBuilder and

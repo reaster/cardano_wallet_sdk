@@ -1,7 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:io';
+import 'dart:io' show File;
 import 'package:dio/dio.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';

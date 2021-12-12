@@ -4,9 +4,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:flutter_example/src/providers.dart';
-import 'package:flutter_example/src/widgets/ada_shape_maker.dart';
-import 'package:flutter_example/src/widgets/alert_dialog.dart';
+import '../providers.dart';
+import './ada_shape_maker.dart';
+import './alert_dialog.dart';
 
 ///
 /// Create a send funds form. All biz logic passed in via functions.
