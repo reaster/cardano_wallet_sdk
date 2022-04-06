@@ -224,8 +224,8 @@ addr.xvk                                key_for_account_0_address_1.txt         
       final verifyKey = stakeAddress0Pair.verifyKey!;
       print("verifyKey: ${verifyKey.encode()}");
       expect(
-          //verifyKey.encode(Bech32Coder(hrp: 'ed25519bip32_pk')),
-          verifyKey.encode(),
+          verifyKey.encode(Bech32Coder(hrp: 'root_xpk')),
+          // verifyKey.encode(),
           'root_xpk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucqas6km0');
       final stakeTest =
           hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
