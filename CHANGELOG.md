@@ -1,3 +1,8 @@
+## [0.1.0-alpha.11] - 2022-04-05
+
+* fix signing bug
+* F5 prototype completion
+
 ## [0.1.0-alpha.10] - 2021-12-01
 
 * add screenshots

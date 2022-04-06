@@ -9,6 +9,13 @@ import 'package:bip32_ed25519/bip32_ed25519.dart';
 import '../address/shelley_address.dart';
 import '../network/network_id.dart';
 
+/// Private/signing and public/varification key pair.
+class Bip32KeyPair {
+  final Bip32SigningKey? signingKey;
+  final Bip32VerifyKey? verifyKey;
+  const Bip32KeyPair({this.signingKey, this.verifyKey});
+}
+
 ///
 /// This class implements a hierarchical deterministic wallet that generates cryptographic keys and
 /// addresses given a root signing key. It also supports the creation/restoration of the root signing
@@ -29,7 +36,7 @@ import '../network/network_id.dart';
 /// https://cips.cardano.org/cips/cip19/      - address structure
 /// https://cips.cardano.org/cips/cip1852/    - 1852 purpose field
 /// https://cips.cardano.org/cips/cip1855/    - forging keys
-/// https://raw.githubusercontent.com/input-output-hk/adrestia/master/user-guide/static/Ed25519_BIP.pdf
+/// https://github.com/LedgerHQ/orakolo/blob/master/papers/Ed25519_BIP%20Final.pdf
 ///
 ///
 /// BIP-44 path:
@@ -89,7 +96,7 @@ import '../network/network_id.dart';
 class HdWallet {
   final Bip32SigningKey rootSigningKey;
   final _derivator = Bip32Ed25519KeyDerivation.instance;
-
+  static const maxOverrun = 10;
   final logger = Logger();
 
   /// root constructor taking a root signing key
@@ -151,6 +158,25 @@ class HdWallet {
     return addressKeys;
   }
 
+  /// return account keypair.
+  Bip32KeyPair accountKeys({int account = defaultAccountIndex}) =>
+      deriveAddressKeys(account: account);
+
+  Bip32KeyPair stakingKeyPair({
+    int account = defaultAccountIndex,
+    int index = defaultAddressIndex,
+    NetworkId networkId = NetworkId.testnet,
+  }) {
+    final rootKeys =
+        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+    final accountKey = derive(keys: coinKey, index: account);
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+    return stakeAddressKeys;
+  }
+
   /// iterate key chain until an unused address is found, then return keys and address.
   ShelleyAddressKit deriveUnusedBaseAddressKit(
       {int account = defaultAccountIndex,
@@ -191,6 +217,54 @@ class HdWallet {
     return result;
   }
 
+  /// Build a cache of spend or change addresses their keys. When used addresses are encounted, cache size is increased to maintain beyondUsedOffset.
+  List<ShelleyAddressKit> buildAddressKitCache({
+    Set<ShelleyAddress> usedSet = const {},
+    int account = defaultAccountIndex,
+    int role = paymentRole,
+    int index = defaultAddressIndex,
+    NetworkId networkId = NetworkId.testnet,
+    int beyondUsedOffset = maxOverrun,
+  }) {
+    assert(role == paymentRole || role == changeRole);
+    final rootKeys =
+        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+    final accountKey = derive(keys: coinKey, index: account);
+    //stake chain:
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+    //address chain:
+    int i = index;
+    int cutoff = beyondUsedOffset;
+    final spendRoleKeys = derive(keys: accountKey, index: role);
+    List<ShelleyAddressKit> results = [];
+    do {
+      final Bip32KeyPair keyPair = derive(keys: spendRoleKeys, index: i);
+      final ShelleyAddress addr = toBaseAddress(
+          spend: keyPair.verifyKey!,
+          stake: stakeAddressKeys.verifyKey!,
+          networkId: networkId);
+      final result = ShelleyAddressKit(
+        account: account,
+        role: role,
+        index: i,
+        signingKey: keyPair.signingKey,
+        verifyKey: keyPair.verifyKey,
+        address: addr,
+      );
+      results.add(result);
+      final isUsed = usedSet.contains(addr);
+      //logger.i("addr[$i][role:$role] used:{$isUsed}: $addr");
+      if (isUsed) {
+        //extend cache size?
+        cutoff = beyondUsedOffset + i + 1;
+      }
+    } while (++i < cutoff);
+    return results;
+  }
+
   /// construct a Shelley base address give a public spend key, public stake key and networkId
   ShelleyAddress toBaseAddress(
           {required Bip32PublicKey spend,
@@ -204,13 +278,6 @@ class HdWallet {
           {required Bip32PublicKey spend,
           NetworkId networkId = NetworkId.testnet}) =>
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
-}
-
-/// Private/signing and public/varification key pair.
-class Bip32KeyPair {
-  final Bip32SigningKey? signingKey;
-  final Bip32VerifyKey? verifyKey;
-  const Bip32KeyPair({this.signingKey, this.verifyKey});
 }
 
 /// Everything you need to add a spend (or change) address to a UTxO transaction.

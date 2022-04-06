@@ -50,7 +50,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   final Map<String, Block> _blockCache = {};
   final Map<String, AccountContent> _accountContentCache = {};
   final Map<String, CurrencyAsset> _assetCache = {
-    lovelaceHex: lovelacePseudoAsset
+    lovelaceAssetId: lovelacePseudoAsset
   };
 
   BlockfrostBlockchainAdapter(

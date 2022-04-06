@@ -1,10 +1,11 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'dart:io' show File;
+import 'dart:io' show File, sleep;
 import 'package:dio/dio.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
 
 ///
 /// Demonstrates using the BlockchainAdapter and WalletBuilder to create read-only wallets,
@@ -20,6 +21,29 @@ void main() async {
     key: blockfrostKey,
     networkId: NetworkId.testnet,
   ).adapter();
+
+  final mnemonic0 =
+      'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat';
+  final hdWallet = HdWallet.fromMnemonic(mnemonic0);
+  final Bip32SigningKey rootSigningKey = hdWallet.rootSigningKey;
+
+  final walletBuilder = WalletBuilder()
+    ..networkId = NetworkId.testnet
+    ..testnetAdapterKey = blockfrostKey
+    ..rootSigningKey = rootSigningKey;
+  Result<Wallet, String> result = walletBuilder.build();
+  Wallet wallet = result.unwrap();
+  Coin oldBalance = wallet.balance;
+  for (int i = 0; i < 20; i++) {
+    sleep(Duration(seconds: 1));
+    var result2 = await wallet.update();
+    result2.when(
+      ok: (changed) => print(
+          "#$i: old:$oldBalance ADA, new: ${wallet.balance} ADA, changed: $changed"),
+      err: (message) => print("Error: $message"),
+    );
+  }
+  if (oldBalance >= 0) return;
 
   //build a read-only wallet from a staking address
   final stakeAddress = ShelleyAddress.fromBech32(

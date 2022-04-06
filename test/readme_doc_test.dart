@@ -18,6 +18,7 @@ void main() {
   final mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin'
           .split(' ');
+  final formatter = AdaFormattter.compactSimpleCurrency();
 
   group('coding style -', () {
     test('WalletBuilders build method', () async {
@@ -79,9 +80,10 @@ void main() {
       List<String> mnemonic = WalletBuilder.generateNewMnemonic();
       print("mnemonic: ${mnemonic.join(' ')}");
     });
-    test('Send 3 ADA to Bob', () async {
+    test('Send ADA to Bob', () async {
       var bobsAddress = ShelleyAddress.fromBech32(
           'addr_test1qqwncl938qg3sf46z8n878z26fnq426ttyarv3hk58keyzpxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsq32vnr');
+      final adaAmount = 2 * 1000000;
       final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
         ..testnetAdapterKey = blockfrostKey
@@ -92,11 +94,12 @@ void main() {
         var wallet = walletResult.unwrap();
         final Result<ShelleyTransaction, String> result = await wallet.sendAda(
           toAddress: bobsAddress,
-          lovelace: 3 * 1000000,
+          lovelace: adaAmount,
         );
         if (result.isOk()) {
           final tx = result.unwrap();
-          print("ADA sent. Fee: ${tx.body.fee} lovelace");
+          print(
+              "${formatter.format(adaAmount)} sent to Bob. Fee: ${tx.body.fee} lovelace");
         }
       }
     });

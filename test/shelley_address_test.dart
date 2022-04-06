@@ -72,6 +72,13 @@ void main() {
       expect(set.contains(c), isTrue, reason: 'equals works');
     });
 
+    // test('isPublicKeyMatch', () {
+    //   var addr = ShelleyAddress.toBaseAddress(
+    //       spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
+    //   expect(addr.isPublicKeyMatch(spendPair.verifyKey!), isTrue,
+    //       reason: 'matching verify key');
+    // });
+
     // test('bech32', () {
     //   final decoded = bech32.decode(addr, 108);
     //   final hrp = decoded.hrp;

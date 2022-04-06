@@ -24,10 +24,16 @@ SDK for building [Cardano](https://cardano.org) blockchain mobile apps in [Flutt
 
 ## Status
 
-Currently this project is a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. It implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
+This project started as a [Fund 5 Project Catalyst](https://cardano.ideascale.com/a/dtd/Cardano-Wallet-Flutter-SDK/352623-48088) proof-of-concept prototype with limited use-cases. The prototype SDK implements a light-weight client library using the [BlockFrost API](https://pub.dev/packages/blockfrost) service for blockchain access and supports loading wallet balances and submitting simple transactions. 
 
-Under a [Fund 7 proposal](https://cardano.ideascale.com/a/dtd/Flutter-SDK/381288-48088) this library will be expanded into a fully-functional Cardano SDK, supporting smart contracts, minting, staking, key management and other essential features needed to write dApps and other types of Cardano clients. If you'd like to support this project, be sure to 
-vote for it in [Catalyst Fund 7](https://cardano.ideascale.com/a/dtd/Flutter-SDK/381288-48088)!
+Currently this library is being refactored into a production quality Cardano SDK, supporting simple smart contracts, minting, staking, key management and other features needed to write dApps and other types of Cardano clients. This phase is scheduled to be completed in 2022 using a [Fund 7 grant](https://cardano.ideascale.com/a/dtd/Flutter-SDK/381288-48088).
+
+This is an ambitious project and will require much ongoing maintenance, development and community support. If you'd like to see this project succeed, please support us by voting for the Flutter SDK in [Fund 8](https://cardano.ideascale.com/c/idea/400720)! This will go towards higher-level smart contract features, backend improvements, third-party dependency reductions, architectural improvements, documentation and tutorials.
+
+If you'd like to can contribute directly, the Flutter SDK has a dedicated wallet:
+```
+  addr1qx90lkpwhpwu42jnw00w483krjyfvhhpgk97hdfw9nz3xqaqg6dycrrc4qw0l5fsvfgx95gnqmrfxhgrfy8afsxxje5qgplx9r
+```
 
 ## Kick the Tires
 To see the SDK in action, both a pure [Dart example](https://github.com/reaster/cardano_wallet_sdk/blob/main/example/dart_example.dart) and multi-platform [Flutter example](https://github.com/reaster/cardano_wallet_sdk/tree/main/example/flutter_example) are incuded in this distribution. You can also visit the live [Flutter Demonstration Wallet](https://flutter-cardano-wallet.web.app/) hosted on google cloud.
@@ -106,7 +112,7 @@ Wallet wallet = result.unwrap();
 Coin oldBalance = wallet.balance;
 var result2 = await wallet.update();
 result2.when(
-    ok: (_) => print("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
+    ok: (_) => print("old:$oldBalance lovelace, new: ${wallet.balance} lovelace"),
     err: (message) => print("Error: $message"),
 );
 ```
@@ -188,13 +194,14 @@ if (result.isOk()) {
 
 
 ### Planned Features
-* Smart Contracts - Consisting of examples and supporting code.
-* Native Token/NFT - Provide minting and burning support.
-* Staking - Provide stake pool ranking and stake delegation support.
-* Blockchain Adapter - Abstraction layer to allow multiple blockchain gateways (i.e. Blockfrost, GraphQL, Ogmios and Mithril).
-* Secure Storage - Encrypted storage solution for private keys and passwords.
-* Multi-signature - Support multi-party signatures.
-* Alternate Addresses - Support enterprise, pointer and legacy addresses.
+* Smart Contracts - 2022: Consisting of examples and supporting code.
+* Native Token/NFT - 2022: Provide minting and burning support.
+* Staking - 2022: Provide stake pool ranking and stake delegation support.
+* Secure Storage - 2022: Encrypted storage solution for private keys and passwords.
+* Alternate Addresses - 2022: Support enterprise, pointer and legacy addresses.
+* Multi-signature - 2023: Support multi-party signatures.
+* Blockchain Adapter - 2023: Abstraction layer to allow multiple blockchain gateways (i.e. Blockfrost, GraphQL, Ogmios and 
+Mithril).
 
 ### Running Integration Tests
 Several of the integration tests (suffixed with '_itest.dart') require a BlockFrost key to run. Installation steps are as follows:

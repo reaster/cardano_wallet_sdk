@@ -1,6 +1,6 @@
 name: cardano_wallet_sdk
 description: Targeting Flutter apps, the Cardano Wallet SDK is a high-level Dart library for managing cryptocurrency accounts & executing transactions on the blockchain.
-version: 0.1.0-alpha.10
+version: 0.1.0-alpha.11
 homepage: https://github.com/reaster/cardano_wallet_sdk
 
 environment:
@@ -32,7 +32,9 @@ dev_dependencies:
   lints: ^1.0.1
   http: ^0.13.4
   flutter_lints: ^1.0.0
-# dependency_overrides:
+dependency_overrides:
+  bip32_ed25519:
+    path: ../bip32-ed25519-dart
 #  blockfrost:
 # git: git@github.com:reaster/blockfrost_api.git
 # path: ../blockfrost_api

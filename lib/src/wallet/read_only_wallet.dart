@@ -47,10 +47,10 @@ abstract class ReadOnlyWallet {
   BlockchainAdapter get blockchainAdapter;
 
   /// assets present in this wallet indexed by assetId
-  Map<String, CurrencyAsset> get assets;
+  Map<AssetId, CurrencyAsset> get assets;
   List<WalletTransaction> get transactions;
   List<WalletTransaction> get unspentTransactions;
-  List<WalletTransaction> filterTransactions({required String assetId});
+  List<WalletTransaction> filterTransactions({required AssetId assetId});
   List<ShelleyAddress> get addresses;
   bool refresh(
       {required int balance,

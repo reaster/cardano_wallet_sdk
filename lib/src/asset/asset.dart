@@ -6,37 +6,6 @@ import 'package:pinenacl/encoding.dart';
 import '../util/blake2bhash.dart';
 import '../util/codec.dart';
 
-//
-// An AssetId uniquly identifies a native token by combining the policyId with the token name.
-// Some properties name this type 'unit'.
-//
-// class AssetId {
-//   /// Policy ID of the asset as a hex encoded hash. Blank for non-mintable tokens (i.e. ADA).
-//   final String policyId;
-
-//   /// Hex-encoded asset name of the asset
-//   final String name;
-
-//   AssetId({required this.policyId, required this.name});
-
-//   /// ADA assetId has no policyId, just 'lovelace' hex encoded.
-//   factory AssetId.ada() => AssetId(policyId: '', name: lovelaceHex);
-
-//   /// return hex encoded assetId by appending policyId+name
-//   @override
-//   String toString() => policyId + name;
-//   @override
-//   int get hashCode => policyId.hashCode + name.hashCode;
-//   @override
-//   bool operator ==(Object other) {
-//     final isEqual =
-//         identical(this, other) || other is AssetId && runtimeType == other.runtimeType && length == other.length;
-//     return isEqual && this.policyId == (other as AssetId).policyId && this.name == other.name;
-//   }
-
-//   int get length => policyId.length + name.length;
-// }
-
 class CurrencyAsset {
   /// unique ID for this asset (i.e. policyId+assetName)
   final String assetId;
@@ -74,8 +43,8 @@ class CurrencyAsset {
         fingerprint = fingerprint ??
             calculateFingerprint(policyId: policyId, assetNameHex: assetName);
 
-  bool get isNativeToken => assetId != lovelaceHex;
-  bool get isADA => assetId == lovelaceHex;
+  bool get isNativeToken => assetId != lovelaceAssetId;
+  bool get isADA => assetId == lovelaceAssetId;
 
   /// return first non-null match from: ticker, metadata.name, name
   String get symbol => metadata?.ticker ?? metadata?.name ?? name;
@@ -87,7 +56,8 @@ class CurrencyAsset {
 
 /// 'lovelace' encoded as a hex string (i.e. str2hex.encode('lovelace') or '6c6f76656c616365').
 const lovelaceHex = '6c6f76656c616365';
-const lovelaceAssetId = lovelaceHex;
+const lovelaceAssetId =
+    lovelaceHex; // TODO nonstandard. All other libraries just use 'lovelace'
 
 class CurrencyAssetMetadata {
   /// Asset name
@@ -185,3 +155,34 @@ List<int> convertBits(List<int> data, int fromWidth, int toWidth, bool pad) {
 
   return ret;
 }
+
+//
+// An AssetId uniquly identifies a native token by combining the policyId with the token name.
+// Some properties name this type 'unit'.
+//
+// class AssetId {
+//   /// Policy ID of the asset as a hex encoded hash. Blank for non-mintable tokens (i.e. ADA).
+//   final String policyId;
+
+//   /// Hex-encoded asset name of the asset
+//   final String name;
+
+//   AssetId({required this.policyId, required this.name});
+
+//   /// ADA assetId has no policyId, just 'lovelace' hex encoded.
+//   factory AssetId.ada() => AssetId(policyId: '', name: lovelaceHex);
+
+//   /// return hex encoded assetId by appending policyId+name
+//   @override
+//   String toString() => policyId + name;
+//   @override
+//   int get hashCode => policyId.hashCode + name.hashCode;
+//   @override
+//   bool operator ==(Object other) {
+//     final isEqual =
+//         identical(this, other) || other is AssetId && runtimeType == other.runtimeType && length == other.length;
+//     return isEqual && this.policyId == (other as AssetId).policyId && this.name == other.name;
+//   }
+
+//   int get length => policyId.length + name.length;
+// }

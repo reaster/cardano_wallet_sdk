@@ -172,6 +172,7 @@ class RawTransactionImpl implements RawTransaction {
     required this.time,
   });
 
+  /// set status property, returning a new immutable RawTransactionImpl copy
   RawTransactionImpl toStatus(TransactionStatus status) => this.status == status
       ? this
       : RawTransactionImpl(
@@ -247,7 +248,6 @@ extension TransactionScanner on RawTransaction {
 
   ///
   /// filter addresses to those found in this wallet
-  /// TODO does this actually do anything?
   ///
   Set<ShelleyAddress> filterAddresses(
       {required Set<ShelleyAddress> addressSet}) {
