@@ -83,7 +83,16 @@ class WalletBuilder {
   set coinSelectionAlgorithm(CoinSelectionAlgorithm coinSelectionAlgorithm) =>
       _coinSelectionFunction = coinSelectionAlgorithm;
 
-  /// Create a read-only wallet matching the supplied properties.
+  /// Reset wallet-specific properties. Preserves that NetworkId and BlockchainAdapter.
+  void reset() {
+    _stakeAddress = null;
+    _walletName = null;
+    _rootSigningKey = null;
+    _hdWallet = null;
+    _mnemonic = null;
+  }
+
+  /// Create a read-only wallet matching the supplied properties. Resets the builder.
   Result<ReadOnlyWallet, String> readOnlyBuild() {
     if (_stakeAddress == null) {
       return Err("Read-only wallet creation requires a staking address");
@@ -111,10 +120,12 @@ class WalletBuilder {
       stakeAddress: _stakeAddress!,
       walletName: _walletName!,
     );
+    reset();
     return Ok(wallet);
   }
 
   /// Create a read-only wallet and syncronize it's transactions with the blockchain.
+  /// Resets the builder.
   Future<Result<ReadOnlyWallet, String>> readOnlyBuildAndSync() async {
     final walletResult = readOnlyBuild();
     if (walletResult.isErr()) return Err(walletResult.unwrapErr());
@@ -125,6 +136,7 @@ class WalletBuilder {
   }
 
   /// Create a transactional wallet matching the supplied properties.
+  /// Resets the builder.
   Result<Wallet, String> build() {
     if (_hdWallet != null) {
       _rootSigningKey = _hdWallet!.rootSigningKey;
@@ -168,10 +180,12 @@ class WalletBuilder {
       hdWallet: _hdWallet!,
       coinSelectionFunction: _coinSelectionFunction,
     );
+    reset();
     return Ok(wallet);
   }
 
   /// Create a transactinoal wallet and syncronize it's transactions with the blockchain.
+  /// Resets the builder.
   Future<Result<Wallet, String>> buildAndSync() async {
     final walletResult = build();
     if (walletResult.isErr()) return Err(walletResult.unwrapErr());
