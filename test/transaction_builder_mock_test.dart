@@ -30,14 +30,6 @@ void main() {
 
   group('TransactionBuilder -', () {
     setUp(() async {
-      // final builder = WalletBuilder()
-      //   ..stakeAddress = stakeAddress
-      //   ..networkId = NetworkId.testnet
-      //   ..adapter = mockWalletAdapter
-      //   ..mnemonic = mnemonic.split(' ')
-      //   ..walletName = 'mock wallet';
-      // final result = await builder.buildAndSync();
-      // expect(result.isOk(), isTrue);
       //setup wallet
       final updateResult =
           await mockAdapter.updateWallet(stakeAddress: stakeAddress);
@@ -86,7 +78,7 @@ void main() {
       Result<ShelleyTransaction, String> result =
           await wallet.sendAda(toAddress: toAddress, lovelace: ada * 200);
       expect(result.isErr(), isTrue);
-      print("Error: ${result.unwrapErr()}");
+      //print("Error: ${result.unwrapErr()}");
     });
     // test('send multi-asset transaction using builder', () async {
     //   //build multi-asset request of 5 ADD and 1 TEST token
