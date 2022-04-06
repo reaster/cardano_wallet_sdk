@@ -12,6 +12,7 @@ export './src/blockchain/blockfrost/dio_call.dart';
 export './src/blockchain/blockchain_adapter_factory.dart';
 export './src/blockchain/blockchain_adapter.dart';
 export './src/blockchain/blockchain_cache.dart';
+export './src/crypto/sign_ed25519.dart';
 export './src/network/blockchain_explorer.dart';
 export './src/network/cardano_scan.dart';
 export './src/network/network_id.dart';
