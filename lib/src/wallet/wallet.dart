@@ -33,6 +33,13 @@ abstract class Wallet extends ReadOnlyWallet {
   /// Returns first unused change address, used to return unspent change to this wallet.
   ShelleyAddress get firstUnusedChangeAddress;
 
+  /// Find signing key for spend or change address.
+  Bip32KeyPair? findKeyPairForChangeAddress({
+    required ShelleyAddress address,
+    int account = defaultAccountIndex,
+    int index = defaultAddressIndex,
+  });
+
   /// Send ADA to another address.
   Future<Result<ShelleyTransaction, String>> sendAda({
     required ShelleyAddress toAddress,

@@ -7,9 +7,11 @@ import 'package:pinenacl/tweetnacl.dart';
 import '../address/hd_wallet.dart';
 import '../address/shelley_address.dart';
 import '../asset/asset.dart';
+import '../blockchain/blockchain_adapter.dart';
 import '../util/blake2bhash.dart';
 import '../util/ada_types.dart';
-import '../blockchain/blockchain_adapter.dart';
+import './transaction.dart';
+import '../wallet/wallet.dart';
 import './spec/shelley_spec.dart';
 import './spec/shelley_tx_body_logic_ext.dart';
 import './min_fee_function.dart';
@@ -27,6 +29,7 @@ import './min_fee_function.dart';
 ///
 class TransactionBuilder {
   BlockchainAdapter? _blockchainAdapter;
+  Wallet? _wallet;
   Bip32KeyPair? _keyPair;
   List<ShelleyTransactionInput> _inputs = [];
   List<ShelleyTransactionOutput> _outputs = [];
@@ -52,6 +55,16 @@ class TransactionBuilder {
   /// How often to check current slot. If 1 minute old, update
   final staleSlotCuttoff = const Duration(seconds: 60);
 
+  ShelleyTransactionBody _buildBody() => ShelleyTransactionBody(
+        inputs: _inputs,
+        outputs: _outputs,
+        fee: _fee,
+        ttl: _ttl,
+        metadataHash: _metadataHash,
+        validityStartInterval: _validityStartInterval ?? 0,
+        mint: _mint,
+      );
+
   /// simple build - assemble transaction without any validation
   ShelleyTransaction build() => ShelleyTransaction(
       body: _buildBody(), witnessSet: _witnessSet, metadata: _metadata);
@@ -59,7 +72,8 @@ class TransactionBuilder {
   /// manually sign transacion and set single witnessSet.
   ShelleyTransaction sign() {
     final body = _buildBody();
-    _witnessSet = _sign(body: body, keyPair: _keyPair!);
+    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = _loadUtxosAndTheirKeys();
+    _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
     return ShelleyTransaction(
         body: body, witnessSet: _witnessSet, metadata: _metadata);
   }
@@ -69,6 +83,47 @@ class TransactionBuilder {
     final result = _buildBody()
         .transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
     return result.isOk() && result.unwrap();
+  }
+
+  ShelleyAddress? _utxosFromTransaction(
+      ShelleyTransactionInput input, Set<ShelleyAddress> ownSet) {
+    final RawTransaction? tx =
+        _blockchainAdapter!.cachedTransaction(input.transactionId);
+    if (tx != null) {
+      final txOutput = tx.outputs[input.index];
+      if (ownSet.contains(txOutput.address)) {
+        return txOutput.address;
+      }
+    }
+    return null;
+  }
+
+  Map<ShelleyAddress, Bip32KeyPair> _loadUtxosAndTheirKeys() {
+    Set<ShelleyAddress> ownedAddresses = _wallet!.addresses.toSet();
+    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = {};
+    for (ShelleyTransactionInput input in _inputs) {
+      ShelleyAddress? utxo = _utxosFromTransaction(input, ownedAddresses);
+      if (utxo != null) {
+        Bip32KeyPair? keyPair =
+            _wallet!.findKeyPairForChangeAddress(address: utxo);
+        if (keyPair != null) {
+          utxoKeyPairs[utxo] = keyPair;
+        }
+      }
+    }
+    return utxoKeyPairs;
+  }
+
+  ShelleyTransactionWitnessSet signAndBuildWitnesses(
+      Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs, List<int> signature) {
+    List<ShelleyVkeyWitness> vkeyWitnesses = [];
+    for (final keyPair in utxoKeyPairs.values) {
+      final ShelleyVkeyWitness witness = ShelleyVkeyWitness(
+          signature: signature, vkey: keyPair.verifyKey!.rawKey);
+      vkeyWitnesses.add(witness);
+    }
+    return ShelleyTransactionWitnessSet(
+        vkeyWitnesses: vkeyWitnesses, nativeScripts: []);
   }
 
   ///
@@ -112,7 +167,14 @@ class TransactionBuilder {
     _outputs = balanceResult.unwrap();
     //build the complete signed transaction so we can calculate a more accurate fee
     body = _buildBody();
-    _witnessSet = _sign(body: body, keyPair: _keyPair!, fakeSignature: true);
+    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = _loadUtxosAndTheirKeys();
+    if (utxoKeyPairs.isEmpty) {
+      return Err("no UTxOs found in transaction");
+    }
+    _witnessSet = _sign(
+        body: body,
+        keyPairSet: utxoKeyPairs.values.toSet(),
+        fakeSignature: true);
     var tx = ShelleyTransaction(
         body: body, witnessSet: _witnessSet, metadata: _metadata);
     _fee = calculateMinFee(tx: tx, minFee: _minFee);
@@ -123,7 +185,7 @@ class TransactionBuilder {
     _outputs = balanceResult2.unwrap();
     body = _buildBody();
     //re-sign to capture changes
-    _witnessSet = _sign(body: body, keyPair: _keyPair!);
+    _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
     tx = ShelleyTransaction(
         body: body, witnessSet: _witnessSet, metadata: _metadata);
     if (mustBalance) {
@@ -136,17 +198,21 @@ class TransactionBuilder {
 
   ShelleyTransactionWitnessSet _sign({
     required ShelleyTransactionBody body,
-    required Bip32KeyPair keyPair,
+    required Set<Bip32KeyPair> keyPairSet,
     bool fakeSignature = false,
   }) {
     final bodyData = body.toCborMap().getData();
     List<int> hash = blake2bHash256(bodyData);
-    final signedMessage =
-        fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
-    final witness = ShelleyVkeyWitness(
-        vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
+    List<ShelleyVkeyWitness> witnesses = [];
+    for (Bip32KeyPair keyPair in keyPairSet) {
+      final signedMessage =
+          fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
+      final witness = ShelleyVkeyWitness(
+          vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
+      witnesses.add(witness);
+    }
     return ShelleyTransactionWitnessSet(
-        vkeyWitnesses: [witness], nativeScripts: []);
+        vkeyWitnesses: witnesses, nativeScripts: []);
   }
 
   /// Generate fake signature that just has to be correct length for size calculation.
@@ -158,16 +224,6 @@ class TransactionBuilder {
   }
 
   //List<int> get transactionBodyHash => blake2bHash256(_buildBody().toCborMap().getData());
-
-  ShelleyTransactionBody _buildBody() => ShelleyTransactionBody(
-        inputs: _inputs,
-        outputs: _outputs,
-        fee: _fee,
-        ttl: _ttl,
-        metadataHash: _metadataHash,
-        validityStartInterval: _validityStartInterval ?? 0,
-        mint: _mint,
-      );
 
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) {
@@ -237,7 +293,12 @@ class TransactionBuilder {
   void blockchainAdapter(BlockchainAdapter blockchainAdapter) =>
       _blockchainAdapter = blockchainAdapter;
 
-  void keyPair(Bip32KeyPair keyPair) => _keyPair = keyPair;
+  // void keyPair(Bip32KeyPair keyPair) => _keyPair = keyPair;
+
+  void wallet(Wallet wallet) {
+    _wallet = wallet;
+    _keyPair = _wallet!.rootKeyPair;
+  }
 
   void value(ShelleyValue value) => _value = value;
 

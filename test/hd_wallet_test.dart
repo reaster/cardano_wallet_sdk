@@ -223,8 +223,10 @@ addr.xvk                                key_for_account_0_address_1.txt         
           hdWallet.deriveAddressKeys(role: stakingRole);
       final verifyKey = stakeAddress0Pair.verifyKey!;
       print("verifyKey: ${verifyKey.encode()}");
-      expect(verifyKey.encode(),
-          'ed25519bip32_pk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucq3m3kde');
+      expect(
+          //verifyKey.encode(Bech32Coder(hrp: 'ed25519bip32_pk')),
+          verifyKey.encode(),
+          'root_xpk18qvnk9eppdf0qnl7csz5h7lwdhf4jhjhu6x8a6m7fmmgz94zu9pv5xkazdaavyeq0xv9lz7cpj3u4yz5q5p4wk3hksppsskdrkm6ucqas6km0');
       final stakeTest =
           hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
       expect(stakeTest.toBech32(),
@@ -257,6 +259,29 @@ addr.xvk                                key_for_account_0_address_1.txt         
               networkId: NetworkId.mainnet, role: changeRole)
           .address;
       expect(change0.toBech32(), change0Mainnet);
+    });
+
+    test('buildAddressKitCache', () {
+      final mnemonicBob =
+          'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat';
+      final spend9 =
+          'addr_test1qpgtfaalupum9evdwqleqcp5rhac8nty720mahpse4pc35p7v8d0ph6h78xxlkc4e6nxz5xk873akuwfp78nx7tqysas3zacqu';
+      final change0 =
+          'addr_test1qqnfp25ptct0gg3xust2jty863g0l8lugjgvkz4nn5x2tcp7v8d0ph6h78xxlkc4e6nxz5xk873akuwfp78nx7tqysasgzufcd';
+      final hdWallet = HdWallet.fromMnemonic(mnemonicBob);
+      List<ShelleyAddressKit> spendResults =
+          hdWallet.buildAddressKitCache(usedSet: {});
+      expect(spendResults[9].address.toBech32(), spend9);
+      List<ShelleyAddressKit> changeResults = hdWallet.buildAddressKitCache(
+          role: changeRole, beyondUsedOffset: 5, usedSet: {});
+      expect(changeResults.length, 5, reason: 'overrun 5');
+      expect(changeResults[0].address.toBech32(), change0);
+      List<ShelleyAddressKit> changeResults2 = hdWallet.buildAddressKitCache(
+          role: changeRole,
+          beyondUsedOffset: 5,
+          usedSet: {ShelleyAddress.fromBech32(change0)});
+      expect(changeResults2.length, 6,
+          reason: 'overrun 5 beyond existing used addresses');
     });
   });
 

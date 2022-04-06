@@ -461,10 +461,14 @@ class ShelleyTransactionWitnessSet {
 class ShelleyTransaction {
   late final ShelleyTransactionBody body;
   final ShelleyTransactionWitnessSet? witnessSet;
+  final bool? isValid;
   final CBORMetadata? metadata;
 
   ShelleyTransaction(
-      {required ShelleyTransactionBody body, this.witnessSet, this.metadata})
+      {required ShelleyTransactionBody body,
+      this.witnessSet,
+      this.isValid = true,
+      this.metadata})
       : body = ShelleyTransactionBody(
           //rebuild body to include metadataHash
           inputs: body.inputs,
@@ -485,32 +489,54 @@ class ShelleyTransaction {
     if (list.length != 1) throw CborDeserializationException();
     final tx = list[0];
     if (tx.length < 3) throw CborDeserializationException();
+    final body = tx[0] as Map;
+    final witnetssSet = tx[1] as Map;
+    final bool? isValid = tx[2] != null || tx[2] is bool ? tx[2] as bool : null;
+    final metadata = isValid == null || tx[3] == null ? null : tx[3] as Map;
     return ShelleyTransaction.deserialize(
-        cBody: tx[0] as Map,
-        cWitnessSet: tx[1] as Map,
-        cMetadata: tx[2] == null ? null : tx[2] as Map);
+      cBody: body,
+      cWitnessSet: witnetssSet,
+      isValid: isValid,
+      cMetadata: metadata,
+    );
   }
   factory ShelleyTransaction.deserialize(
-      {required Map cBody, required Map cWitnessSet, Map? cMetadata}) {
+      {required Map cBody,
+      required Map cWitnessSet,
+      required bool? isValid,
+      Map? cMetadata}) {
     final body = ShelleyTransactionBody.deserialize(cMap: cBody);
     final ShelleyTransactionWitnessSet witnessSet =
         ShelleyTransactionWitnessSet.deserialize(cMap: cWitnessSet);
     //if (MajorType.MAP.equals(metadata.getMajorType())) { //Metadata available
     final CBORMetadata? metadata = cMetadata == null ? null : null; //TODO
     return ShelleyTransaction(
-        body: body, witnessSet: witnessSet, metadata: metadata);
+      body: body,
+      witnessSet: witnessSet,
+      isValid: isValid,
+      metadata: metadata,
+    );
   }
 
   ListBuilder toCborList({bool forJson = false}) {
     final listBuilder = ListBuilder.builder();
     bool base64 = true;
+    //body
     listBuilder.addBuilderOutput(body.toCborMap(forJson: forJson).getData());
+    //witnessSet
     if (witnessSet == null) {
       listBuilder.writeMap({});
     } else {
       listBuilder.addBuilderOutput(
           witnessSet!.toCborMap(forJson: forJson, base64: base64).getData());
     }
+    //isValid
+    if (isValid == null) {
+      listBuilder.writeNull();
+    } else {
+      listBuilder.writeBool(isValid ?? true);
+    }
+    //metadata
     if (metadata == null) {
       listBuilder.writeNull();
     } else {
@@ -547,6 +573,9 @@ class ShelleyTransaction {
   }
 
   String get toCborHex => HEX.encode(serialize);
+
+  @override
+  String toString() => HEX.encode(serialize);
 }
 
 ///

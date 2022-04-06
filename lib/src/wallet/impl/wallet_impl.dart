@@ -9,6 +9,7 @@ import '../../address/hd_wallet.dart';
 import '../../address/shelley_address.dart';
 import '../../transaction/coin_selection.dart';
 import '../../transaction/spec/shelley_spec.dart';
+import '../../transaction/spec/shelley_tx_logic.dart';
 import '../../transaction/transaction_builder.dart';
 import '../../blockchain/blockchain_adapter.dart';
 import './read_only_wallet_impl.dart';
@@ -25,6 +26,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   @override
   final Bip32KeyPair addressKeyPair;
   final CoinSelectionAlgorithm coinSelectionFunction;
+  final Map<ShelleyAddress, ShelleyAddressKit> _addressCache = {};
   // final logger = Logger();
 
   /// Normaly WalletFactory is used to build a wallet and call this method.
@@ -47,12 +49,47 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
           networkId: networkId, unusedCallback: isUnusedAddress)
       .address;
 
+  /// Find signing key for spend or change address.
+  @override
+  Bip32KeyPair? findKeyPairForChangeAddress({
+    required ShelleyAddress address,
+    int account = defaultAccountIndex,
+    int index = defaultAddressIndex,
+  }) {
+    if (_addressCache.isEmpty) {
+      final spends = hdWallet.buildAddressKitCache(
+          usedSet: addresses.toSet(),
+          account: account,
+          role: paymentRole,
+          index: index,
+          networkId: networkId,
+          beyondUsedOffset: HdWallet.maxOverrun);
+      for (var kit in spends) {
+        _addressCache[kit.address] = kit;
+      }
+      final change = hdWallet.buildAddressKitCache(
+          usedSet: addresses.toSet(),
+          account: account,
+          role: changeRole,
+          index: index,
+          networkId: networkId,
+          beyondUsedOffset: HdWallet.maxOverrun);
+      for (var kit in change) {
+        _addressCache[kit.address] = kit;
+      }
+    }
+    final kit = _addressCache[address];
+    return kit == null
+        ? null
+        : Bip32KeyPair(signingKey: kit.signingKey, verifyKey: kit.verifyKey);
+  }
+
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
       .deriveUnusedBaseAddressKit(
         role: changeRole,
         networkId: networkId,
-        unusedCallback: isUnusedAddress,
+        unusedCallback: (addr) => true,
       )
       .address;
   // to duplicate cardano-client-lib we always return the 1st paymentAddress.
@@ -135,17 +172,20 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
     //use builder to build ShelleyTransaction
+    //final pair = hdWallet.accountKeys();
     final builder = TransactionBuilder()
       ..inputs(inputsResult.unwrap().inputs)
       ..value(ShelleyValue(coin: lovelace, multiAssets: []))
       ..toAddress(toAddress)
-      ..keyPair(hdWallet
-          .deriveUnusedBaseAddressKit()) //contains sign key & verify key
+      ..wallet(this) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
       ..changeAddress(firstUnusedChangeAddress)
       ..ttl(ttl)
       ..fee(fee);
     final txResult = await builder.buildAndSign();
+    if (txResult.isOk() && !txResult.unwrap().verify) {
+      return Err('transaction validation failed');
+    }
     return txResult;
   }
 

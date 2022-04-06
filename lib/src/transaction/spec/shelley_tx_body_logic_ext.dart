@@ -139,6 +139,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
     for (final out in list) {
       if (out.address == address) return out;
     }
+    return null;
   }
 
   /// fish out the balance for a give policyId+name from an existing change output
