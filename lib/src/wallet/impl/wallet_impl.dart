@@ -89,7 +89,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       .deriveUnusedBaseAddressKit(
         role: changeRole,
         networkId: networkId,
-        unusedCallback: (addr) => true,
+        unusedCallback: isUnusedAddress,
       )
       .address;
   // to duplicate cardano-client-lib we always return the 1st paymentAddress.
