@@ -1,3 +1,8 @@
+## [0.1.0-alpha.12] - 2022-04-05
+
+* fix minor bugs
+* prepare for release
+
 ## [0.1.0-alpha.11] - 2022-04-05
 
 * fix signing bug
