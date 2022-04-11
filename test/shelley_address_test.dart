@@ -12,6 +12,21 @@ void main() {
   const addrTest2 =
       'addr_test1qrqeavr4pa4vtzuf64m9z3cjke582vk7qvc6pcc6e5m9txa24kyuyck0xp0a7n7rah0gxj5mq3zdrc6xnaqph967c2kqcun0nj';
 
+  group('java tests -', () {
+          final mnemonic = "damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital";
+          final hdWallet = HdWallet.fromHexEntropy(mnemonic);
+test('', () {
+        final ShelleyAddress address = hdWallet.toBaseAddress(spend: spend, stake: stake)
+
+        Address address = new Address(account.baseAddress());
+
+        assertThat(address.getAddressType()).isEqualTo(AddressType.Base);
+        assertThat(address.getNetwork()).isEqualTo(Networks.mainnet());
+        assertThat(address.getPrefix()).isEqualTo("addr");
+
+});
+  })
+
   group('shelley address test -', () {
     const testEntropy =
         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
