@@ -10,7 +10,7 @@ dependencies:
   blockfrost: ^1.0.0-dev.8
   bip32_ed25519: ^0.2.1
   pinenacl: ^0.3.3
-  bip39: ^1.0.6
+  # bip39: ^1.0.6
   cbor: ^4.1.0
   dio: ^4.0.3
   convert: ^3.0.0
@@ -24,6 +24,7 @@ dependencies:
   oxidized: ^5.1.0 #TODO swap oxidized Result for dartz Either?
   coingecko_dart: ^0.1.0 #TODO remove coingecko_dart
   logger: ^1.1.0
+  freezed_annotation: ^1.1.0
 
 dev_dependencies:
   test: any
@@ -32,9 +33,15 @@ dev_dependencies:
   lints: ^1.0.1
   http: ^0.13.4
   flutter_lints: ^1.0.0
+  freezed:
+  json_serializable:
 # dependency_overrides:
 # bip32_ed25519:
 #   path: ../bip32-ed25519-dart
 #  blockfrost:
 # git: git@github.com:reaster/blockfrost_api.git
 # path: ../blockfrost_api
+
+flutter:
+  assets:
+    - assets/bip39/english.txt
