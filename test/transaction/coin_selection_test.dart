@@ -3,7 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:test/test.dart';
-import 'mock_wallet_2.dart';
+import '../wallet/mock_wallet_2.dart';
 
 const ada = 1000000;
 void main() {

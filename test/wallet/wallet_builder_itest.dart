@@ -90,7 +90,7 @@ final rootXskCoder = Bech32Coder(hrp: 'root_xsk');
 
 String generateRootXskBip32() {
   final rootSigningKey =
-      HdWallet.fromMnemonic(WalletBuilder.generateNewMnemonic().join(' '))
+      HdWallet.fromMnemonic(mnemonic: WalletBuilder.generateNewMnemonic())
           .rootSigningKey;
   final bip32 = rootXskCoder.encode(rootSigningKey);
   return bip32;

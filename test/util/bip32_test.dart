@@ -1,9 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:test/test.dart';
-import 'package:bip39/bip39.dart' as bip39;
+// import 'package:bip39/bip39.dart' as bip39;
 
 //
 // BIP-44 path: m / purpose' / coin_type' / account_ix' / change_chain / address_ix
@@ -117,15 +118,17 @@ void main() {
 
   group('key generation - ', () {
     test('mnemoic to entropy', () {
-      final String entropy = bip39.mnemonicToEntropy(testMnemonic1);
+      final String entropy = mnemonicToEntropyHex(
+          mnemonic: testMnemonic1.split(' '),
+          loadWordsFunction: loadEnglishMnemonicWords);
       expect(entropy, equals(testEntropy1));
     });
-    test('mnemonic to seed hex', () {
-      final seedHex =
-          bip39.mnemonicToSeedHex(testMnemonic1, passphrase: "TREZOR");
-      print("seedHex: $seedHex");
-      expect(seedHex, equals(testHexSeed1));
-    });
+    // test('mnemonic to seed hex', () {
+    //   final seedHex =
+    //       mnemonicToMasterHex(testMnemonic1.split(' '), passphrase: "TREZOR");
+    //   print("seedHex: $seedHex");
+    //   expect(seedHex, equals(testHexSeed1));
+    // });
     // test('seed hex to master bech32', () async {
     //   var masterPrivate = await ED25519_HD_KEY.getMasterKeyFromSeed(hex.HEX.decode(testHexSeed1));
     //   final masterPrivateHex = hex.HEX.encode(masterPrivate.key);

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -71,6 +72,15 @@ void main() {
       Set<ShelleyAddress> set = {a, b};
       expect(set.contains(c), isTrue, reason: 'equals works');
     });
+    // test('enterprise', () {
+    //   final publicKey = Bip32PublicKey();
+    //   var a = ShelleyAddress.enterpriseAddress(publicKey);
+    //   var b = ShelleyAddress.fromBech32(addrTest2);
+    //   var c = ShelleyAddress.fromBech32(addrTest);
+    //   expect(a == c, isTrue, reason: 'equals works');
+    //   Set<ShelleyAddress> set = {a, b};
+    //   expect(set.contains(c), isTrue, reason: 'equals works');
+    // });
 
     // test('isPublicKeyMatch', () {
     //   var addr = ShelleyAddress.toBaseAddress(
