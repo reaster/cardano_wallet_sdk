@@ -4,7 +4,7 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
-import 'mock_wallet_2.dart';
+import 'wallet/mock_wallet_2.dart';
 
 ///
 /// insure documented tests are actually working code.
@@ -60,7 +60,7 @@ void main() {
         var wallet = result.unwrap();
         print("${wallet.walletName}: ${wallet.balance}");
       }
-    });
+    }, skip: "TODO");
     test('Update existing wallet', () async {
       final walletBuilder = WalletBuilder()
         ..networkId = NetworkId.testnet
@@ -75,9 +75,10 @@ void main() {
         ok: (_) => print("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
         err: (message) => print("Error: $message"),
       );
-    });
+    }, skip: "TODO");
     test('Create a new 24 word mnemonic', () {
-      List<String> mnemonic = WalletBuilder.generateNewMnemonic();
+      List<String> mnemonic =
+          generateNewMnemonic(loadWordsFunction: loadEnglishMnemonicWords);
       print("mnemonic: ${mnemonic.join(' ')}");
     });
     test('Send ADA to Bob', () async {
