@@ -24,7 +24,7 @@ void main() async {
 
   final mnemonic0 =
       'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat';
-  final hdWallet = HdWallet.fromMnemonic(mnemonic0);
+  final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonic0.split(' '));
   final Bip32SigningKey rootSigningKey = hdWallet.rootSigningKey;
 
   final walletBuilder = WalletBuilder()

@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:bip39/bip39.dart' as bip39;
+// import 'package:cardano_wallet_sdk/src/crypto/mnemonic_english.dart';
+// import '../crypto/mnemonic.dart' as bip39;
+// import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
@@ -11,6 +13,7 @@ import '../address/shelley_address.dart';
 import '../blockchain/blockchain_adapter.dart';
 import '../blockchain/blockchain_adapter_factory.dart';
 import '../blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
+// import '../crypto/mnemonic.dart';
 import '../network/network_id.dart';
 import '../transaction/coin_selection.dart';
 import './impl/read_only_wallet_impl.dart';
@@ -43,6 +46,7 @@ class WalletBuilder {
   int accountIndex = defaultAccountIndex;
   HdWallet? _hdWallet;
   CoinSelectionAlgorithm _coinSelectionFunction = largestFirst;
+  //LoadMnemonicWordsFunction loadWordsFunction = loadEnglishMnemonicWords();
 
   static int _walletNameIndex = 1;
 
@@ -142,7 +146,7 @@ class WalletBuilder {
       _rootSigningKey = _hdWallet!.rootSigningKey;
     } else {
       if (_mnemonic != null) {
-        _hdWallet = HdWallet.fromMnemonic(_mnemonic!.join(' '));
+        _hdWallet = HdWallet.fromMnemonic(mnemonic: _mnemonic!);
         _rootSigningKey = _hdWallet!.rootSigningKey;
       } else if (_rootSigningKey != null) {
         _hdWallet = HdWallet(rootSigningKey: _rootSigningKey!);
@@ -197,8 +201,8 @@ class WalletBuilder {
 
   /// Generate a unique 24-word mnumonic phrase which can be used to create a
   /// new wallet.
-  static List<String> generateNewMnemonic() =>
-      (bip39.generateMnemonic(strength: 256)).split(' ');
+  // static List<String> generateNewMnemonic() =>
+  //     (bip39.generateNewMnemonic(strength: 256));
 
   static final Map<NetworkId, BlockchainAdapterFactory>
       _blockchainAdapterFactoryCache = {};
