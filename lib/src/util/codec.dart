@@ -57,7 +57,7 @@ String hexFromUnit8Buffer(Uint8Buffer bytes) => HEX.encode(bytes);
 Uint8Buffer unit8BufferFromShelleyAddress(String bech32) {
   final addr = ShelleyAddress.fromBech32(bech32); //TODO rather inefficient
   final result = Uint8Buffer();
-  result.addAll(addr.buffer.asUint8List());
+  result.addAll(addr.bytes);
   return result;
 }
 

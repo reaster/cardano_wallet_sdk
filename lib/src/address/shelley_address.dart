@@ -16,21 +16,13 @@ import '../util/blake2bhash.dart';
 /// [reference](https://cips.cardano.org/cips/cip19/)
 /// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
 ///
-enum AddressType { base, pointer, enterprise, reward }
-enum CredentialType { key, script }
-
-const String defaultAddrHrp = 'addr';
-const String defaultRewardHrp = 'stake';
-const String testnetHrpSuffix = '_test';
-const int baseDiscrim = 0x00; //0b0000_0000
-const int pointerDiscrim = 0x40; //0b0100_0000
-const int enterpriseDiscrim = 0x60; // 0b0110_0000
-const int rewardDiscrim = 0xe0; //0b1110_0000
-
-class ShelleyAddress extends ByteList {
+class ShelleyAddress {
+  final Uint8List bytes;
   final String hrp;
+
   // final bool isChange;
-  ShelleyAddress(List<int> bytes, {this.hrp = defaultAddrHrp}) : super(bytes);
+  ShelleyAddress(List<int> bytes, {this.hrp = defaultAddrHrp})
+      : bytes = Uint8List.fromList(bytes);
   //  {  assert(addressType == AddressType.Base || !isChange); } //change addresses must be base addresses
 
   factory ShelleyAddress.toBaseAddress({
@@ -64,6 +56,60 @@ class ShelleyAddress extends ByteList {
         hrp: _computeHrp(networkId, hrp),
       );
 
+  factory ShelleyAddress.enterpriseAddress({
+    required Bip32PublicKey spend,
+    NetworkId networkId = NetworkId.testnet,
+    String hrp = defaultAddrHrp,
+    CredentialType paymentType = CredentialType.key,
+  }) =>
+      ShelleyAddress(
+        [
+              enterpriseDiscrim |
+                  (paymentType.index << 4) |
+                  (networkId.index & 0x0f)
+            ] +
+            blake2bHash224(spend.rawKey),
+        hrp: _computeHrp(networkId, hrp),
+      );
+
+  // //header: 0110....
+  // public Address getEntAddress(HdPublicKey paymentKey, Network networkInfo)  {
+  //     if (paymentKey == null)
+  //         throw new AddressRuntimeException("paymentkey cannot be null");
+
+  //     byte[] paymentKeyHash = paymentKey.getKeyHash();
+
+  //     byte headerType = 0b0110_0000;
+
+  //     return getAddress(paymentKeyHash, null, headerType, networkInfo, AddressType.Enterprise);
+  // }
+
+  factory ShelleyAddress.pointerAddress({
+    required Bip32PublicKey spend,
+    required DelegationPointer delegationPointer,
+    NetworkId networkId = NetworkId.testnet,
+    String hrp = defaultAddrHrp,
+    CredentialType paymentType = CredentialType.key,
+  }) =>
+      ShelleyAddress(
+        [pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+            blake2bHash224(spend.rawKey) +
+            delegationPointer.hash,
+        hrp: _computeHrp(networkId, hrp),
+      );
+
+  //   public Address getPointerAddress(HdPublicKey paymentKey, Pointer delegationPointer, Network networkInfo) {
+  //     if (paymentKey == null || delegationPointer == null)
+  //         throw new AddressRuntimeException("paymentkey and delegationKey cannot be null");
+
+  //     byte[] paymentKeyHash = paymentKey.getKeyHash();
+  //     byte[] delegationPointerHash = BytesUtil.merge(variableNatEncode(delegationPointer.slot),
+  //             variableNatEncode(delegationPointer.txIndex), variableNatEncode(delegationPointer.certIndex));
+
+  //     byte headerType = 0b0100_0000;
+  //     return getAddress(paymentKeyHash, delegationPointerHash, headerType, networkInfo, AddressType.Ptr);
+  // }
+
   factory ShelleyAddress.fromBech32(String address) {
     final decoded = bech32.decode(address, 256);
     final hrp = decoded.hrp;
@@ -73,15 +119,25 @@ class ShelleyAddress extends ByteList {
 
   String toBech32({String? prefix}) {
     prefix ??= _computeHrp(networkId, hrp);
-    return encode(Bech32Coder(hrp: prefix));
+    switch (prefix) {
+      case defaultAddrHrp:
+        return mainNetEncoder.encode(bytes);
+      case defaultAddrHrp + testnetHrpSuffix:
+        return testNetEncoder.encode(bytes);
+      case defaultRewardHrp:
+        return mainNetRewardEncoder.encode(bytes);
+      case defaultRewardHrp + testnetHrpSuffix:
+        return testNetRewardEncoder.encode(bytes);
+    }
+    return Bech32Coder(hrp: prefix).encode(bytes);
   }
 
-  NetworkId get networkId => NetworkId.testnet.index == this[0] & 0x0f
+  NetworkId get networkId => NetworkId.testnet.index == bytes[0] & 0x0f
       ? NetworkId.testnet
       : NetworkId.mainnet;
 
   AddressType get addressType {
-    final addrType = (this[0] & 0xf0) >> 4;
+    final addrType = (bytes[0] & 0xf0) >> 4;
     switch (addrType) {
       // Base Address
       case 0:
@@ -105,29 +161,27 @@ class ShelleyAddress extends ByteList {
   }
 
   CredentialType get paymentCredentialType =>
-      (this[0] & 0x10) >> 4 == 0 ? CredentialType.key : CredentialType.script;
+      (bytes[0] & 0x10) >> 4 == 0 ? CredentialType.key : CredentialType.script;
 
   @override
   String toString() => toBech32();
   // "${_enumSuffix(addressType.toString())} ${_enumSuffix(networkId.toString())} ${_enumSuffix(paymentCredentialType.toString())} ${toBech32()}";
 
   @override
-  int get hashCode => hashObjects(this);
+  int get hashCode => hashObjects(bytes);
 
   @override
   bool operator ==(Object other) {
     final isEqual = identical(this, other) ||
         other is ShelleyAddress &&
             runtimeType == other.runtimeType &&
-            length == other.length;
+            bytes.length == other.bytes.length;
     if (!isEqual || hrp != (other as ShelleyAddress).hrp) return false;
-    for (var i = 0; i < length; i++) {
-      if (this[i] != other[i]) return false;
+    for (var i = 0; i < bytes.length; i++) {
+      if (bytes[i] != other.bytes[i]) return false;
     }
     return true;
   }
-
-  //static String _enumSuffix(String enumString) => enumString.substring(enumString.lastIndexOf('.') + 1);
 
   static String _computeHrp(NetworkId id, String prefix) => id ==
           NetworkId.testnet
@@ -141,6 +195,61 @@ class ShelleyAddress extends ByteList {
   ];
   static int addressTypeValue(AddressType addressType) =>
       _addressTypeValues[addressType.index];
+
+  static const Bech32Coder mainNetEncoder = Bech32Coder(hrp: defaultAddrHrp);
+  static const Bech32Coder testNetEncoder =
+      Bech32Coder(hrp: defaultAddrHrp + testnetHrpSuffix);
+  static const Bech32Coder mainNetRewardEncoder =
+      Bech32Coder(hrp: defaultRewardHrp);
+  static const Bech32Coder testNetRewardEncoder =
+      Bech32Coder(hrp: defaultRewardHrp + testnetHrpSuffix);
+}
+
+enum AddressType { base, pointer, enterprise, reward }
+
+enum CredentialType { key, script }
+
+const String defaultAddrHrp = 'addr';
+const String defaultRewardHrp = 'stake';
+const String testnetHrpSuffix = '_test';
+const int baseDiscrim = 0x00; //0b0000_0000
+const int pointerDiscrim = 0x40; //0b0100_0000
+const int enterpriseDiscrim = 0x60; // 0b0110_0000
+const int rewardDiscrim = 0xe0; //0b1110_0000
+
+class DelegationPointer {
+  final int slot;
+  final int txIndex;
+  final int certIndex;
+
+  DelegationPointer(this.slot, this.txIndex, this.certIndex);
+
+  Uint8List get hash => Uint8List.fromList(
+      _natEncode(slot) + _natEncode(txIndex) + _natEncode(certIndex));
+
+  List<int> _natEncode(int num) {
+    List<int> result = [];
+    result.add(num & 0x7f);
+    num = num ~/ 128;
+    while (num > 0) {
+      result.add(num & 0x7f | 0x80);
+      num = num ~/ 128;
+    }
+    return result.reversed.toList();
+  }
+  //   private byte[] variableNatEncode(long num) {
+  //     List<Byte> output = new ArrayList<>();
+  //     output.add((byte)(num & 0x7F));
+
+  //     num /= 128;
+  //     while(num > 0) {
+  //         output.add((byte)((num & 0x7F) | 0x80));
+  //         num /= 128;
+  //     }
+  //     Collections.reverse(output);
+
+  //     return Bytes.toArray(output);
+  // }
 }
 
 class InvalidAddressTypeError extends Error {
