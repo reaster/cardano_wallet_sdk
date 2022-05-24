@@ -23,28 +23,6 @@ void main() {
       PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
   final Bip32SigningKey expectedRootXsk =
       Bip32SigningKey.normalizeBytes(rawMaster);
-  // group('mnemonic_test -', () {
-  //   test('seedToMasterKey', () {
-  //     expect(expectedRootXsk, excpectedXskBip32Bytes, reason: 'sanity check');
-  //     final rootXsk = seedToMasterKey(seed);
-  //     expect(rootXsk, expectedRootXsk);
-  //   });
-  //   test('seedHexToMasterKey', () {
-  //     final _seed = Uint8List.fromList(HEX.decode(seedHex));
-  //     expect(_seed, seed, reason: 'sanity check');
-  //     final rootXsk = seedHexToMasterKey(seedHex);
-  //     expect(rootXsk, expectedRootXsk);
-  //   });
-  //   test('mnemonicToMasterKey', () {
-  //     // final _master = mnemonicToMaster(mnemonic);
-  //     // expect(_entropy, entropy, reason: 'sanity check');
-  //     final seed2 = mnemonicToSeed(mnemonic.split(' '), passphrase: '');
-  //     expect(seed2, seed);
-  //     final rootXsk0 = seedToMasterKey(seed2);
-  //     final rootXsk = mnemonicToMasterKey(mnemonic.split(' '), passphrase: '');
-  //     expect(rootXsk, expectedRootXsk);
-  //   }, skip: "TODO");
-  // });
 
   group('mnemonic -', () {
     test('entropy to seed', () {
@@ -60,11 +38,6 @@ void main() {
       expect(entropy1, equals(testEntropy1));
       final _seedHex = mnemonicToSeedHex(testMnemonic1);
       expect(_seedHex, equals(testHexSeed1));
-      // //final master = mnemonicToMasterHex(testMnemonic1);
-      // final master =
-      //     mnemonicToMasterKey(mnemonic.split(' '), passphrase: 'TREZOR');
-      //final master = mnemonicToMasterHex(testMnemonic1, passphrase: 'TREZOR');
-      //expect(master, equals(testHexSeed1));
     });
     test('entropy vs mnemonic', () {
       final mnemonic1 =
@@ -76,26 +49,6 @@ void main() {
           entropyHex: entropy1, loadWordsFunction: loadEnglishMnemonicWords);
       expect(mnemonic2, equals(mnemonic1));
     });
-    // test('Bip32SigningKey', () {
-    //   final mnemonic =
-    //       'damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital'
-    //           .split(' ');
-    //   final secretKey = Uint8List.fromList(HEX.decode(
-    //       "081ce1ba3f564a53482619f19244ccba385405806467fcc256a02b0be326fe539efe15e0f943d85abfde71980d9753f4dd6f0900ea938d49e8322f208401efc6e27df78203736c5bd7cf50bd8824bf75b658b1cd66db81a86dcb2397fd91ac9b"));
-    //   const rootXprv =
-    //       "xprv1pqwwrw3l2e99xjpxr8cey3xvhgu9gpvqv3nlesjk5q4shcexlefeals4uru58kz6hl08rxqdjaflfht0pyqw4yudf85ryteqssq7l3hz0hmcyqmnd3da0n6shkyzf0m4kevtrntxmwq6smwtywtlmydvnvqx2jel";
-    //   //CardanoKeyIcarus key = CardanoKeyIcarus.seed(seed);
-    //   //final masterHex = mnemonicToMasterHex(mnemonic);
-    //   // final Bip32SigningKey key1 = masterHexToMasterKey(masterHex);
-    //   final Bip32SigningKey key2 = mnemonicToMasterKey(mnemonic);
-    //   expect(key2, equals(secretKey));
-    //   // expect(key2.encode(Bech32Coder(hrp: 'xprv')), equals(rootXprv));
-    //   // final Bip32SigningKey key3 =
-    //   //     masterToMasterKey(Uint8List.fromList(HEX.decode(masterHex)));
-    //   // expect(key3, equals(key2));
-    //   // final Bip32SigningKey key4 = entropyToMasterKey();
-    //   // expect(key4, equals(key2));
-    // }, skip: "TODO");
     test('vectors with passphrase', () {
       for (List<String> vector in _vectors) {
         final entropy1 = vector[0];
