@@ -8,22 +8,6 @@ import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 
 void main() {
-  List<int> tolist(String csv) =>
-      csv.split(',').map((n) => int.parse(n)).toList();
-  const seedHex =
-      '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-  final seed = Uint8List.fromList(HEX.decode(seedHex));
-  final mnemonic =
-      'excess behave track soul table wear ocean cash stay nature item turtle palm soccer lunch horror start stumble month panic right must lock dress';
-  // final mnemonic = entropyBytesToMnemonic(
-  //     entropyBytes: entropy, loadWordsFunction: loadEnglishMnemonicWords);
-  final excpectedXskBip32Bytes = tolist(
-      '152,156,7,208,14,141,61,24,124,24,85,242,84,104,224,19,251,27,202,217,52,48,252,90,41,138,37,152,2,17,143,69,30,132,107,115,166,39,197,74,177,61,73,245,153,91,133,99,179,42,216,96,192,25,162,139,11,149,50,9,205,17,188,24,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166');
-  final rawMaster =
-      PBKDF2.hmac_sha512(Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
-  final Bip32SigningKey expectedRootXsk =
-      Bip32SigningKey.normalizeBytes(rawMaster);
-
   group('mnemonic -', () {
     test('entropy to seed', () {
       final testMnemonic1 =
@@ -60,6 +44,106 @@ void main() {
         final seed2 = mnemonicToSeedHex(mnemonic1, passphrase: 'TREZOR');
         expect(seed1, equals(seed2));
       }
+    });
+  });
+
+  test('validateMnemonic', () {
+    const testMnemonic1 =
+        "elder lottery unlock common assume beauty grant curtain various horn spot youth exclude rude boost fence used two spawn toddler soup awake across use";
+
+    expect(
+        validateMnemonic(
+            mnemonic: 'sleep kitten'.split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isFalse,
+        reason: 'fails for a mnemonic that is too short');
+
+    expect(
+        validateMnemonic(
+            mnemonic: 'sleep kitten sleep kitten sleep kitten'.split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isFalse,
+        reason: 'fails for a mnemonic that is too short');
+
+    expect(
+        validateMnemonic(
+            mnemonic:
+                'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about end grace oxygen maze bright face loan ticket trial leg cruel lizard bread worry reject journey perfect chef section caught neither install industry'
+                    .split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isFalse,
+        reason: 'fails for a mnemonic that is too long');
+
+    expect(
+        validateMnemonic(
+            mnemonic:
+                'turtle front uncle idea crush write shrug there lottery flower risky shell'
+                    .split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isFalse,
+        reason: 'fails if mnemonic words are not in the word list');
+
+    expect(
+        validateMnemonic(
+            mnemonic:
+                'sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten sleep kitten'
+                    .split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isFalse,
+        reason: 'fails for invalid checksum');
+
+    expect(
+        validateMnemonic(
+            mnemonic: testMnemonic1.split(' '),
+            loadWordsFunction: loadEnglishMnemonicWords),
+        isTrue,
+        reason: "testMnemonic1 valid");
+  });
+
+  group('cardano-serialization-lib', () {
+    test('entropy to mnemonic', () {
+      //[0x4e, 0x82, 0x8f, 0x9a, 0x67, 0xdd, 0xcf, 0xf0, 0xe6, 0x39, 0x1a, 0xd4, 0xf2, 0x6d, 0xdb, 0x75, 0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba, 0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda];
+      const testEntropy0 =
+          '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final mnemonic = entropyHexToMnemonic(
+          entropyHex: testEntropy0,
+          loadWordsFunction: loadEnglishMnemonicWords);
+      //final bytes = mnemonicToSeed(mnemonic);
+      //print(bytes.join(','));
+      //print(mnemonic);
+      expect(
+          mnemonic,
+          equals(
+              'excess behave track soul table wear ocean cash stay nature item turtle palm soccer lunch horror start stumble month panic right must lock dress'
+                  .split(' ')));
+    });
+  });
+
+  group('generateNewMnemonic', () {
+    const entropyPlusCs24Words = 256;
+    test('can vary entropy length', () {
+      final words = (generateNewMnemonic(
+          strength: 160, loadWordsFunction: loadEnglishMnemonicWords));
+      expect(words.length, equals(15),
+          reason: 'can vary generated entropy bit length');
+    });
+    test('Cardano Shelley entropy length 24', () {
+      final words = (generateNewMnemonic(
+          strength: entropyPlusCs24Words,
+          loadWordsFunction: loadEnglishMnemonicWords));
+      print(words.join(','));
+      expect(words.length, equals(24),
+          reason: 'can vary generated entropy bit length');
+    });
+
+    test('requests the exact amount of data from an RNG', () {
+      generateNewMnemonic(
+          strength: 160,
+          loadWordsFunction: loadEnglishMnemonicWords,
+          randomBytes: (int size) {
+            expect(size, 160 / 8);
+            return Uint8List(size);
+          });
     });
   });
 }
