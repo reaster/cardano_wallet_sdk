@@ -4,7 +4,7 @@ version: 0.1.0-alpha.12
 homepage: https://github.com/reaster/cardano_wallet_sdk
 
 environment:
-  sdk: ">=2.14.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
   blockfrost: ^1.0.0-dev.8
