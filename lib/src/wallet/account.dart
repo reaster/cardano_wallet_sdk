@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/api.dart';
-import '../../cardano_wallet_sdk.dart';
+import '../address/shelley_address.dart';
 import '../crypto/shelley_key_derivation.dart';
+import '../network/network_id.dart';
+import 'derivation_chain.dart';
 
 ///
 /// Shelley address generator for a fixed account index (defualting to zero).
@@ -15,61 +17,122 @@ import '../crypto/shelley_key_derivation.dart';
 /// Cardano CIP1852 adoption of BIP32 path:
 ///     m / 1852' / 1815' / account' / role / index
 ///
-class Account {
-  final ShelleyKeyDerivation derivation;
-  final NetworkId network;
-  final int accountIndex;
-  final Bip32SigningKey
-      accountSigningKey; //Pvt key at account level m/1852'/1815'/x'
-  final DerivationChain accountPath;
-  late final Bip32VerifyKey publicStakeKey;
+mixin AbstractAccount {
+  ShelleyKeyDerivation get derivation;
+  NetworkId get network;
+  DerivationChain get chain;
+}
 
-  Account({
-    required this.accountSigningKey,
+mixin AutidAccountMixin {}
+
+class AuditAccount implements AbstractAccount {
+  @override
+  final ShelleyKeyDerivation derivation;
+  @override
+  final NetworkId network;
+  @override
+  final DerivationChain chain;
+  late final Bip32VerifyKey publicAccountKey;
+  late final Bip32VerifyKey publicStakeKey;
+  final int accountIndex;
+
+  AuditAccount({
+    required this.publicAccountKey,
+    required this.publicStakeKey,
     this.network = NetworkId.mainnet,
     this.accountIndex = 0,
-  })  : accountPath = const DerivationChain(
-          key: 'm',
+  })  : chain = const DerivationChain(
+          key: 'M',
           segments: [
             // _cip1852,
             // _cip1815,
             // Segment(index: accountIndex, harden: true)
           ],
         ),
+        derivation = ShelleyKeyDerivation(publicAccountKey);
+
+  Bip32VerifyKey spendPublicKey({int index = 0}) =>
+      derivation.fromChain(chain.append2(spendRole, Segment(index: index)))
+          as Bip32VerifyKey;
+
+  ShelleyAddress spendAddress({int index = 0}) => ShelleyAddress.toBaseAddress(
+      spend: spendPublicKey(index: index),
+      stake: publicStakeKey,
+      networkId: network);
+}
+
+class Account implements AbstractAccount {
+  @override
+  final ShelleyKeyDerivation derivation;
+  @override
+  final NetworkId network;
+  final int accountIndex;
+  final Bip32SigningKey
+      accountSigningKey; //Pvt key at account level m/1852'/1815'/x'
+  @override
+  final DerivationChain chain;
+  late final Bip32VerifyKey publicStakeKey;
+
+  Account({
+    required this.accountSigningKey,
+    this.network = NetworkId.mainnet,
+    this.accountIndex = 0,
+  })  : chain = const DerivationChain(
+          key: 'm',
+          segments: [
+            // cip1852,
+            // cip1815,
+            // Segment(index: accountIndex, harden: true)
+          ],
+        ),
         derivation = ShelleyKeyDerivation(accountSigningKey) {
     publicStakeKey = derivation
-        .fromChain(accountPath.append2(_stakeRole, _zeroSoft))
+        .fromChain(chain.append2(stakeRole, zeroSoft))
         .publicKey as Bip32VerifyKey;
   }
 
-  Bip32SigningKey basePrivateKey({int index = 0}) => derivation
-          .fromChain(accountPath.append2(_spendRole, Segment(index: index)))
-      as Bip32SigningKey;
-  Bip32SigningKey changePrivateKey({int index = 0}) => derivation
-          .fromChain(accountPath.append2(_changeRole, Segment(index: index)))
-      as Bip32SigningKey;
+  Bip32SigningKey basePrivateKey({int index = 0}) =>
+      derivation.fromChain(chain.append2(spendRole, Segment(index: index)))
+          as Bip32SigningKey;
+
+  Bip32SigningKey changePrivateKey({int index = 0}) =>
+      derivation.fromChain(chain.append2(changeRole, Segment(index: index)))
+          as Bip32SigningKey;
+
   Bip32SigningKey get stakePrivateKey =>
-      derivation.fromChain(accountPath.append2(_stakeRole, _zeroSoft))
+      derivation.fromChain(chain.append2(stakeRole, zeroSoft))
           as Bip32SigningKey;
 
   ShelleyAddress baseAddress({int index = 0}) => ShelleyAddress.toBaseAddress(
       spend: basePrivateKey(index: index).verifyKey,
       stake: publicStakeKey,
       networkId: network);
+
   ShelleyAddress changeAddress({int index = 0}) => ShelleyAddress.toBaseAddress(
       spend: changePrivateKey(index: index).verifyKey,
       stake: publicStakeKey,
       networkId: network);
+
   ShelleyAddress enterpriseAddress({int index = 0}) =>
       ShelleyAddress.enterpriseAddress(
           spend: changePrivateKey(index: index).verifyKey, networkId: network);
+
   ShelleyAddress get stakeAddress =>
       ShelleyAddress.toRewardAddress(spend: publicStakeKey, networkId: network);
+}
 
-  static const _cip1852 = Segment(index: 1852, harden: true);
-  static const _cip1815 = Segment(index: 1815, harden: true);
-  static const _spendRole = Segment(index: 0); //external
-  static const _changeRole = Segment(index: 1); //internal
-  static const _stakeRole = Segment(index: 2); //reward
-  static const _zeroSoft = Segment(index: 0); //generic zero index
+// const cip1852 = Segment(index: 1852, harden: true);
+// const cip1815 = Segment(index: 1815, harden: true);
+// const spendRole = Segment(index: 0); //external
+// const changeRole = Segment(index: 1); //internal
+// const stakeRole = Segment(index: 2); //reward
+// const zeroSoft = Segment(index: 0); //generic zero index not hardened
+// const zeroHard = Segment(index: 0, harden: true); //generic zero index hardened
+
+enum HdwUseCase {
+  fullWalletSharing,
+  audits,
+  perOfficeBalances,
+  recurrentBToBTx,
+  unsecureMoneyReceiver
 }

@@ -4,8 +4,7 @@
 
 import 'package:bip32_ed25519/api.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-
-import '../address/hd_wallet.dart';
+import '../wallet/derivation_chain.dart';
 import 'icarus_key_derivation.dart';
 
 ///
@@ -40,19 +39,26 @@ import 'icarus_key_derivation.dart';
 ///
 class ShelleyKeyDerivation {
   final IcarusKeyDerivation derivation;
+
   ShelleyKeyDerivation(Bip32Key key) : derivation = IcarusKeyDerivation(key);
+
   ShelleyKeyDerivation.entropy(Uint8List entropy)
       : derivation = IcarusKeyDerivation.entropy(entropy);
+
   ShelleyKeyDerivation.entropyHex(String entropyHex)
       : derivation = IcarusKeyDerivation.entropyHex(entropyHex);
+
   // ShelleyKeyDerivation.bech32(String root_sk)
   //     : derivation = IcarusKeyDerivation(codec.decode(root_sk));
   // ShelleyKeyDerivation.rootKey(Bip32SigningKey rootKey)
   //     : derivation = IcarusKeyDerivation.import(codec.encode(rootKey));
+
   ShelleyKeyDerivation.rootX(String root_xsk)
       : derivation = IcarusKeyDerivation.bech32Key(root_xsk);
+
   ShelleyKeyDerivation.privateAcctX(String acct_xsk)
       : derivation = IcarusKeyDerivation.bech32Key(acct_xsk);
+
   ShelleyKeyDerivation.pubicAcctX(String acct_xvk)
       : derivation = IcarusKeyDerivation.bech32Key(acct_xvk);
 

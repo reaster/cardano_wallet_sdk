@@ -12,6 +12,7 @@ import '../crypto/mnemonic_english.dart';
 import '../crypto/shelley_key_derivation.dart';
 import '../network/network_id.dart';
 import 'account.dart';
+import 'derivation_chain.dart';
 
 ///
 /// A MultiAccountWallet generates accounts based on a unique master secret key.

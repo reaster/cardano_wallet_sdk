@@ -3,7 +3,7 @@
 
 library cardano_wallet_sdk;
 
-export './src/address/hd_wallet.dart';
+export './src/address/hd_wallet.dart'; //TODO remove
 export './src/address/shelley_address.dart';
 export './src/asset/asset.dart';
 export './src/blockchain/blockfrost/blockfrost_api_key_auth.dart';
@@ -18,7 +18,7 @@ export './src/crypto/mnemonic_key.dart';
 export './src/crypto/mnemonic_validation.dart';
 export './src/crypto/sign_ed25519.dart';
 export './src/crypto/icarus_key_derivation.dart';
-export './src/crypto/shelley_key_derivation.dart';
+export './src/crypto/shelley_key_derivation.dart'; //TODO remove
 export './src/network/blockchain_explorer.dart';
 export './src/network/cardano_scan.dart';
 export './src/network/network_id.dart';
@@ -42,6 +42,7 @@ export './src/util/bech32_validation.dart';
 export './src/util/blake2bhash.dart';
 export './src/util/codec.dart';
 export './src/util/misc.dart';
+export './src/wallet/derivation_chain.dart';
 export './src/wallet/impl/read_only_wallet_impl.dart';
 export './src/wallet/impl/wallet_cache_memory.dart';
 export './src/wallet/impl/wallet_impl.dart';

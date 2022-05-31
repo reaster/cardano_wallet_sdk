@@ -7,7 +7,9 @@ import '../util/ada_types.dart';
 import '../asset/asset.dart';
 
 enum TransactionType { deposit, withdrawal }
+
 enum TransactionStatus { pending, unspent, spent }
+
 enum TemperalSortOrder { ascending, descending }
 
 ///
