@@ -38,7 +38,7 @@ String mnemonicToEntropyHex(
         {required ValidMnemonicPhrase mnemonic,
         required LoadMnemonicWordsFunction loadWordsFunction,
         MnemonicLang lang = MnemonicLang.english}) =>
-    _toHex(mnemonicWordsToEntropyBytes(
+    _toHex(mnemonicToEntropy(
         mnemonic: mnemonic, loadWordsFunction: loadWordsFunction, lang: lang));
 
 /// translate a hex entropy back to mnemonic phrase
@@ -189,7 +189,7 @@ bool validateMnemonic(
     required LoadMnemonicWordsFunction loadWordsFunction,
     MnemonicLang lang = MnemonicLang.english}) {
   try {
-    mnemonicWordsToEntropyBytes(
+    mnemonicToEntropy(
         mnemonic: mnemonic, loadWordsFunction: loadWordsFunction, lang: lang);
   } catch (e) {
     return false;
@@ -207,19 +207,18 @@ bool validateMnemonic(
 /// Convert mnemonic phrase to entropy bytes for BIP39 defined language dictionary
 /// throw StateError for length issues
 /// throw ArgumentError for invalid words
-Uint8List mnemonicWordsToEntropyBytes(
+Uint8List mnemonicToEntropy(
     {required ValidMnemonicPhrase mnemonic,
     required LoadMnemonicWordsFunction loadWordsFunction,
     MnemonicLang lang = MnemonicLang.english}) {
   final wordlist = loadWordsFunction(lang: lang);
-  return mnemonicWordsToEntropyBytesUsingWordList(
-      mnemonic: mnemonic, wordList: wordlist);
+  return mnemonicWordsToEntropy(mnemonic: mnemonic, wordList: wordlist);
 }
 
 /// Convert mnemonic phrase to entropy bytes using BIP39 defined word list
 /// throw StateError for length issues
 /// throw ArgumentError for invalid words
-Uint8List mnemonicWordsToEntropyBytesUsingWordList({
+Uint8List mnemonicWordsToEntropy({
   required ValidMnemonicPhrase mnemonic,
   required List<String> wordList,
 }) {

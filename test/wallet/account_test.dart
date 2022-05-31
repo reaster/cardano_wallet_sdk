@@ -20,7 +20,7 @@ void main() {
     final mnemonic =
         "damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital"
             .split(' ');
-    final seed = mnemonicWordsToEntropyBytes(
+    final seed = mnemonicToEntropy(
         mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
     final seedHex = mnemonicToEntropyHex(
         mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
@@ -31,14 +31,17 @@ void main() {
     test('MultiAccountWallet constructors', () {
       final w1 = MultiAccountWallet.entropyHex(seedHex);
       expect(w1.derivation.root is Bip32SigningKey, isTrue);
-      // final Bip32SigningKey key1 = entropyToMasterKey(seed);
-      // expect(w1.derivation.root, equals(key1));
-      // final w2 = MultiAccountWallet.mnemonic(mnemonic);
-      // final Bip32SigningKey key2 = mnemonicToMasterKey(mnemonic);
-      // expect(w2.derivation.root, equals(key2));
-      // expect(w2.derivation.root, equals(w1.derivation.root));
-      // final root_xsk = key.encode(Bech32Coder(hrp: 'root_xsk'));
-      // expect(root_xsk, equals(w2.derivation.root));
+      final Bip32SigningKey key1 = cardanoEntropyToRootSigningKey(seed);
+      expect(w1.derivation.root, equals(key1));
+      final w2 = MultiAccountWallet.mnemonic(
+          mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
+      final entropy = mnemonicToEntropy(
+          mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
+      final Bip32SigningKey key2 = cardanoEntropyToRootSigningKey(entropy);
+      expect(w2.derivation.root, equals(key2));
+      expect(w2.derivation.root, equals(w1.derivation.root));
+      final root_xsk = key1.encode(Bech32Coder(hrp: 'root_xsk'));
+      expect(key1, equals(w2.derivation.root));
     });
 
     test('validate mainnet Account', () {
@@ -96,14 +99,17 @@ void main() {
               .split(' ');
       final addr9 =
           'addr_test1qpgtfaalupum9evdwqleqcp5rhac8nty720mahpse4pc35p7v8d0ph6h78xxlkc4e6nxz5xk873akuwfp78nx7tqysas3zacqu';
+      final entropy = mnemonicToEntropy(
+          mnemonic: mnemonicBob, loadWordsFunction: loadEnglishMnemonicWords);
       final Bip32SigningKey expectedMasterKey =
-          mnemonicToMasterKey(mnemonicBob);
+          cardanoEntropyToRootSigningKey(entropy);
 
       // HdWallet derivation
-      final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonicBob.split(' '));
-      //expect(hdWallet.rootSigningKey, equals(expectedMasterKey));
+      final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonicBob);
+      expect(hdWallet.rootSigningKey, equals(expectedMasterKey));
       final Bip32KeyPair spend9 = hdWallet.deriveAddressKeys(index: 9);
-      final Bip32KeyPair stake = hdWallet.deriveAddressKeys(role: stakingRole);
+      final Bip32KeyPair stake =
+          hdWallet.deriveAddressKeys(role: stakingRoleIndex);
       final addr = ShelleyAddress.toBaseAddress(
         spend: spend9.verifyKey!,
         stake: stake.verifyKey!,
@@ -111,17 +117,19 @@ void main() {
       );
       // print(acctXskCoder.encode(spend.signingKey!));
       // print(stakeXskCoder.encode(stake.signingKey!));
-      //expect(addr.toBech32(), addr9);
+      expect(addr.toBech32(), addr9);
 
       // manual master
-      final _master = mnemonicWordsToEntropyBytes(
+      final _master = mnemonicToEntropy(
           mnemonic: mnemonicBob, loadWordsFunction: loadEnglishMnemonicWords);
-      // final Bip32SigningKey _root = entropyToMasterKey(_master);
-      // expect(_root, equals(expectedMasterKey));
+      final Bip32SigningKey _root = cardanoEntropyToRootSigningKey(_master);
+      expect(_root, equals(expectedMasterKey));
 
       // MultiAccountWallet / Account derivation
-      final wallet =
-          MultiAccountWallet.mnemonic(mnemonicBob, network: NetworkId.testnet);
+      final wallet = MultiAccountWallet.mnemonic(
+          mnemonic: mnemonicBob,
+          loadWordsFunction: loadEnglishMnemonicWords,
+          network: NetworkId.testnet);
       print(rootXskCoder.encode(hdWallet.rootSigningKey));
 
       expect(wallet.derivation.root, equals(expectedMasterKey));
@@ -204,50 +212,50 @@ void main() {
     // }
   });
 
-  group('HdWallet -', () {
-    //   test('private/public key and address generation', () {
-    //     const testEntropy =
-    //         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-    //     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-    //     expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes,
-    //         reason: 'root private/signing key');
-    //     expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes,
-    //         reason: 'root public/verify key');
-    //     final Bip32KeyPair spendAddress0Pair =
-    //         hdWallet.deriveAddressKeys(index: 0);
-    //     expect(spendAddress0Pair.signingKey, expectedSpend0Xsk);
-    //     expect(spendAddress0Pair.verifyKey, expectedSpend0Xvk);
-    //     final Bip32KeyPair stakeAddress0Pair =
-    //         hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
-    //     expect(stakeAddress0Pair.signingKey, expectedStake0Xsk);
-    //     expect(stakeAddress0Pair.verifyKey, expectedStake0Xvk);
-    //     final addr0 = hdWallet.toBaseAddress(
-    //         networkId: NetworkId.mainnet,
-    //         spend: spendAddress0Pair.verifyKey!,
-    //         stake: stakeAddress0Pair.verifyKey!);
-    //     // print(addr0.join(','));
-    //     expect(addr0.toBech32(), expectedSpend0Bech32);
-    //     final addrTest0 = hdWallet.toBaseAddress(
-    //         spend: spendAddress0Pair.verifyKey!,
-    //         stake: stakeAddress0Pair.verifyKey!);
-    //     expect(addrTest0.toBech32(), expectedTestnetSpend0Bech32);
-    //   });
+  // group('HdWallet -', () {
+  //   test('private/public key and address generation', () {
+  //     const testEntropy =
+  //         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+  //     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
+  //     expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes,
+  //         reason: 'root private/signing key');
+  //     expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes,
+  //         reason: 'root public/verify key');
+  //     final Bip32KeyPair spendAddress0Pair =
+  //         hdWallet.deriveAddressKeys(index: 0);
+  //     expect(spendAddress0Pair.signingKey, expectedSpend0Xsk);
+  //     expect(spendAddress0Pair.verifyKey, expectedSpend0Xvk);
+  //     final Bip32KeyPair stakeAddress0Pair =
+  //         hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
+  //     expect(stakeAddress0Pair.signingKey, expectedStake0Xsk);
+  //     expect(stakeAddress0Pair.verifyKey, expectedStake0Xvk);
+  //     final addr0 = hdWallet.toBaseAddress(
+  //         networkId: NetworkId.mainnet,
+  //         spend: spendAddress0Pair.verifyKey!,
+  //         stake: stakeAddress0Pair.verifyKey!);
+  //     // print(addr0.join(','));
+  //     expect(addr0.toBech32(), expectedSpend0Bech32);
+  //     final addrTest0 = hdWallet.toBaseAddress(
+  //         spend: spendAddress0Pair.verifyKey!,
+  //         stake: stakeAddress0Pair.verifyKey!);
+  //     expect(addrTest0.toBech32(), expectedTestnetSpend0Bech32);
+  //   });
 
-    // test('bip32_12_reward address', () {
-    //   //data taken from rust address.rs code
-    //   const mnemonic =
-    //       'test walk nut penalty hip pave soap entry language right filter choice';
-    //   final hdWallet = HdWallet.fromMnemonic(mnemonic);
-    //   final Bip32KeyPair stakeAddress0Pair =
-    //       hdWallet.deriveAddressKeys(role: stakingRole);
-    //   final stake = hdWallet.toRewardAddress(
-    //       networkId: NetworkId.mainnet, spend: stakeAddress0Pair.verifyKey!);
-    //   expect(stake.toBech32(),
-    //       'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
-    //   final stakeTest =
-    //       hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
-    //   expect(stakeTest.toBech32(),
-    //       'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
-    // });
+  // test('bip32_12_reward address', () {
+  //   //data taken from rust address.rs code
+  //   const mnemonic =
+  //       'test walk nut penalty hip pave soap entry language right filter choice';
+  //   final hdWallet = HdWallet.fromMnemonic(mnemonic);
+  //   final Bip32KeyPair stakeAddress0Pair =
+  //       hdWallet.deriveAddressKeys(role: stakingRoleIndex);
+  //   final stake = hdWallet.toRewardAddress(
+  //       networkId: NetworkId.mainnet, spend: stakeAddress0Pair.verifyKey!);
+  //   expect(stake.toBech32(),
+  //       'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
+  //   final stakeTest =
+  //       hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
+  //   expect(stakeTest.toBech32(),
+  //       'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
+  // });
   // }, skip: "TODO");
 }

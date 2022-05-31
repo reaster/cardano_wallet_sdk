@@ -24,8 +24,7 @@ Result<ValidMnemonicPhrase, String> validMnemonic({
   }
   final wordList = loadWordsFunction(lang: lang);
   try {
-    mnemonicWordsToEntropyBytesUsingWordList(
-        mnemonic: mnemonic, wordList: wordList);
+    mnemonicWordsToEntropy(mnemonic: mnemonic, wordList: wordList);
   } on ArgumentError catch (e) {
     //might be a bad word, see if we can find it
     for (String word in mnemonic) {

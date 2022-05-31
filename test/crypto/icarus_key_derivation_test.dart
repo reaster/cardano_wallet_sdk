@@ -14,7 +14,7 @@ void main() {
     const entropyHex =
         "4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da";
     final entropy = HexCoder.instance.decode(entropyHex);
-    //final masterKey = entropyToMasterKey(entropy);
+    final masterKey = cardanoEntropyToRootSigningKey(entropy);
     final excpectedXskBytes96 = tolist(
         '152,156,7,208,14,141,61,24,124,24,85,242,84,104,224,19,251,27,202,217,52,48,252,90,41,138,37,152,2,17,143,69,30,132,107,115,166,39,197,74,177,61,73,245,153,91,133,99,179,42,216,96,192,25,162,139,11,149,50,9,205,17,188,24,67,84,138,25,214,42,52,209,113,75,26,194,25,3,82,78,255,250,186,0,196,244,252,178,3,100,150,97,182,30,44,166');
     //final Bech32Coder rootXsk = Bech32Coder(hrp: 'root_xsk');
