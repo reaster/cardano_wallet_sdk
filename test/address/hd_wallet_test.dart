@@ -140,7 +140,7 @@ void main() {
       expect(spendAddress0Pair.signingKey, expectedSpend0Xsk);
       expect(spendAddress0Pair.verifyKey, expectedSpend0Xvk);
       final Bip32KeyPair stakeAddress0Pair =
-          hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
+          hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
       expect(stakeAddress0Pair.signingKey, expectedStake0Xsk);
       expect(stakeAddress0Pair.verifyKey, expectedStake0Xvk);
       final addr0 = hdWallet.toBaseAddress(
@@ -160,7 +160,7 @@ void main() {
     //       'test walk nut penalty hip pave soap entry language right filter choice';
     //   final hdWallet = HdWallet.fromMnemonic(mnemonic);
     //   final Bip32KeyPair stakeAddress0Pair =
-    //       hdWallet.deriveAddressKeys(role: stakingRole);
+    //       hdWallet.deriveAddressKeys(role: stakingRoleIndex);
     //   final stake = hdWallet.toRewardAddress(
     //       networkId: NetworkId.mainnet, spend: stakeAddress0Pair.verifyKey!);
     //   expect(stake.toBech32(),
@@ -252,7 +252,7 @@ addr.xvk                                key_for_account_0_address_1.txt         
       print("hdWallet.rootSigningKey: ${hdWallet.rootSigningKey.encode()}");
       print("hdWallet.rootVerifyKey:  ${hdWallet.rootVerifyKey.encode()}");
       final Bip32KeyPair stakeAddress0Pair =
-          hdWallet.deriveAddressKeys(role: stakingRole);
+          hdWallet.deriveAddressKeys(role: stakingRoleIndex);
       final verifyKey = stakeAddress0Pair.verifyKey!;
       print("verifyKey: ${verifyKey.encode()}");
       expect(
@@ -288,7 +288,7 @@ addr.xvk                                key_for_account_0_address_1.txt         
       expect(spend0Mainnet.toBech32(), addr0Mainnet);
       ShelleyAddress change0 = hdWallet
           .deriveUnusedBaseAddressKit(
-              networkId: NetworkId.mainnet, role: changeRole)
+              networkId: NetworkId.mainnet, role: changeRoleIndex)
           .address;
       expect(change0.toBech32(), change0Mainnet);
     });
@@ -332,7 +332,7 @@ addr.xvk                                key_for_account_0_address_1.txt         
         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
     final Bip32KeyPair stakeAddress0Pair =
-        hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
+        hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
     setUp(() {});
     test('validate', () {
       final Bip32KeyPair keys0 = hdWallet.deriveAddressKeys(index: 0);

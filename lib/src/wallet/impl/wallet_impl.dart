@@ -60,7 +60,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       final spends = hdWallet.buildAddressKitCache(
           usedSet: addresses.toSet(),
           account: account,
-          role: paymentRole,
+          role: paymentRoleIndex,
           index: index,
           networkId: networkId,
           beyondUsedOffset: HdWallet.maxOverrun);
@@ -70,7 +70,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
       final change = hdWallet.buildAddressKitCache(
           usedSet: addresses.toSet(),
           account: account,
-          role: changeRole,
+          role: changeRoleIndex,
           index: index,
           networkId: networkId,
           beyondUsedOffset: HdWallet.maxOverrun);
@@ -87,7 +87,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   @override
   ShelleyAddress get firstUnusedChangeAddress => hdWallet
       .deriveUnusedBaseAddressKit(
-        role: changeRole,
+        role: changeRoleIndex,
         networkId: networkId,
         unusedCallback: isUnusedAddress,
       )
@@ -95,7 +95,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   // to duplicate cardano-client-lib we always return the 1st paymentAddress.
   // ShelleyAddress get firstUnusedChangeAddress => hdWallet
   //     .deriveUnusedBaseAddressKit(
-  //       role: paymentRole,
+  //       role: paymentRoleIndex,
   //       networkId: networkId,
   //       unusedCallback: alwaysUnused,
   //     )

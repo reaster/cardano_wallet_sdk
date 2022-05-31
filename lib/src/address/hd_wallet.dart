@@ -2,17 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // import 'package:hex/hex.dart';
-import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-
 import '../crypto/mnemonic.dart' as bip39;
 // import 'package:bip39/bip39.dart' as bip39;
 import 'package:pinenacl/key_derivation.dart';
 import 'package:logger/logger.dart';
 // import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import '../address/shelley_address.dart';
-import '../network/network_id.dart';
+// import '../address/shelley_address.dart';
+// import '../network/network_id.dart';
 import 'package:hex/hex.dart';
+
+import '../crypto/mnemonic.dart';
+import '../crypto/mnemonic_english.dart';
+import '../network/network_id.dart';
+import '../wallet/derivation_chain.dart';
+import 'shelley_address.dart';
 
 /// Private/signing and public/varification key pair.
 class Bip32KeyPair {
@@ -165,7 +169,7 @@ class HdWallet {
       {int purpose = defaultPurpose,
       int coinType = defaultCoinType,
       int account = defaultAccountIndex,
-      int role = paymentRole,
+      int role = paymentRoleIndex,
       int index = defaultAddressIndex}) {
     final rootKeys =
         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
@@ -201,7 +205,7 @@ class HdWallet {
     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
     final accountKey = derive(keys: coinKey, index: account);
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
     return stakeAddressKeys;
   }
@@ -209,18 +213,18 @@ class HdWallet {
   /// iterate key chain until an unused address is found, then return keys and address.
   ShelleyAddressKit deriveUnusedBaseAddressKit(
       {int account = defaultAccountIndex,
-      int role = paymentRole,
+      int role = paymentRoleIndex,
       int index = defaultAddressIndex,
       NetworkId networkId = NetworkId.testnet,
       UnusedAddressFunction unusedCallback = alwaysUnused}) {
-    assert(role == paymentRole || role == changeRole);
+    assert(role == paymentRoleIndex || role == changeRoleIndex);
     final rootKeys =
         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
     final accountKey = derive(keys: coinKey, index: account);
     //stake chain:
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
     //address chain:
     int i = index;
@@ -250,19 +254,19 @@ class HdWallet {
   List<ShelleyAddressKit> buildAddressKitCache({
     Set<ShelleyAddress> usedSet = const {},
     int account = defaultAccountIndex,
-    int role = paymentRole,
+    int role = paymentRoleIndex,
     int index = defaultAddressIndex,
     NetworkId networkId = NetworkId.testnet,
     int beyondUsedOffset = maxOverrun,
   }) {
-    assert(role == paymentRole || role == changeRole);
+    assert(role == paymentRoleIndex || role == changeRoleIndex);
     final rootKeys =
         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
     final accountKey = derive(keys: coinKey, index: account);
     //stake chain:
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRole);
+    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
     //address chain:
     int i = index;
@@ -309,97 +313,97 @@ class HdWallet {
       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 }
 
-class Segment {
-  final int index;
-  final bool harden;
-  const Segment({required this.index, this.harden = false});
-  int get value => harden ? index | hardenedOffset : index;
-  @override
-  String toString() => "$index${harden ? '\'' : ''}";
-  Segment inc() => Segment(index: index + 1, harden: harden);
-}
+// class Segment {
+//   final int index;
+//   final bool harden;
+//   const Segment({required this.index, this.harden = false});
+//   int get value => harden ? index | hardenedOffset : index;
+//   @override
+//   String toString() => "$index${harden ? '\'' : ''}";
+//   Segment inc() => Segment(index: index + 1, harden: harden);
+// }
 
-class DerivationChain {
-  final String key;
-  final List<Segment> segments;
+// class DerivationChain {
+//   final String key;
+//   final List<Segment> segments;
 
-  const DerivationChain({required this.key, required this.segments});
+//   const DerivationChain({required this.key, required this.segments});
 
-  DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
-      Segment? seg3, Segment? seg4, Segment? seg5)
-      : segments = [
-          if (seg1 != null) seg1,
-          if (seg2 != null) seg2,
-          if (seg3 != null) seg3,
-          if (seg4 != null) seg4,
-          if (seg5 != null) seg5
-        ];
+//   DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
+//       Segment? seg3, Segment? seg4, Segment? seg5)
+//       : segments = [
+//           if (seg1 != null) seg1,
+//           if (seg2 != null) seg2,
+//           if (seg3 != null) seg3,
+//           if (seg4 != null) seg4,
+//           if (seg5 != null) seg5
+//         ];
 
-  factory DerivationChain.fromPath(String path, {int? segmentLength}) =>
-      DerivationChain(
-          key: parseKey(path),
-          segments: parsePath(path, segmentLength: segmentLength));
+//   factory DerivationChain.fromPath(String path, {int? segmentLength}) =>
+//       DerivationChain(
+//           key: parseKey(path),
+//           segments: parsePath(path, segmentLength: segmentLength));
 
-  static String parseKey(String path) {
-    final key = path.substring(0, 1);
-    if (!_legalPrefixes.contains(key)) {
-      throw ArgumentError("DerivationChain must start with 'm' or 'M'", path);
-    }
-    return key;
-  }
+//   static String parseKey(String path) {
+//     final key = path.substring(0, 1);
+//     if (!_legalPrefixes.contains(key)) {
+//       throw ArgumentError("DerivationChain must start with 'm' or 'M'", path);
+//     }
+//     return key;
+//   }
 
-  static List<Segment> parsePath(String path, {int? segmentLength}) {
-    List<Segment> segments = [];
-    final tokens = path.split('/');
-    segmentLength ??= tokens.length - 1;
-    if (segmentLength != tokens.length - 1) {
-      throw ArgumentError(
-          "path must have $segmentLength segments, not ${tokens.length - 1}",
-          path);
-    }
-    for (int i = 0; i < tokens.length; i++) {
-      if (i > 0) {
-        //ignore 0 key segment
-        final harden = tokens[i].endsWith('\'');
-        final seg =
-            tokens[i].substring(0, tokens[i].length + (harden ? -1 : 0));
-        final value = int.parse(seg);
-        segments.add(Segment(index: value, harden: harden));
-      }
-    }
-    return segments;
-  }
+//   static List<Segment> parsePath(String path, {int? segmentLength}) {
+//     List<Segment> segments = [];
+//     final tokens = path.split('/');
+//     segmentLength ??= tokens.length - 1;
+//     if (segmentLength != tokens.length - 1) {
+//       throw ArgumentError(
+//           "path must have $segmentLength segments, not ${tokens.length - 1}",
+//           path);
+//     }
+//     for (int i = 0; i < tokens.length; i++) {
+//       if (i > 0) {
+//         //ignore 0 key segment
+//         final harden = tokens[i].endsWith('\'');
+//         final seg =
+//             tokens[i].substring(0, tokens[i].length + (harden ? -1 : 0));
+//         final value = int.parse(seg);
+//         segments.add(Segment(index: value, harden: harden));
+//       }
+//     }
+//     return segments;
+//   }
 
-  DerivationChain append(Segment tail) =>
-      DerivationChain(key: key, segments: [...segments, tail]);
-  DerivationChain append2(Segment tail1, Segment tail2) =>
-      DerivationChain(key: key, segments: [...segments, tail1, tail2]);
-  DerivationChain swapTail(Segment tail) => DerivationChain(
-      key: key, segments: [...segments.take(segments.length - 1), tail]);
+//   DerivationChain append(Segment tail) =>
+//       DerivationChain(key: key, segments: [...segments, tail]);
+//   DerivationChain append2(Segment tail1, Segment tail2) =>
+//       DerivationChain(key: key, segments: [...segments, tail1, tail2]);
+//   DerivationChain swapTail(Segment tail) => DerivationChain(
+//       key: key, segments: [...segments.take(segments.length - 1), tail]);
 
-  /// increment the last value in the chain by one.
-  DerivationChain inc() => DerivationChain(
-      key: key,
-      segments: segments.isEmpty
-          ? []
-          : [...segments.take(segments.length - 1), segments.last.inc()]);
+//   /// increment the last value in the chain by one.
+//   DerivationChain inc() => DerivationChain(
+//       key: key,
+//       segments: segments.isEmpty
+//           ? []
+//           : [...segments.take(segments.length - 1), segments.last.inc()]);
 
-  /// return BIP32 path string representation
-  String toPath() => "$key/${segments.join('/')}";
+//   /// return BIP32 path string representation
+//   String toPath() => "$key/${segments.join('/')}";
 
-  @override
-  String toString() => toPath();
+//   @override
+//   String toString() => toPath();
 
-  bool get isPrivateRoot => key == _privateKeyPrefix;
-  bool get isPublicRoot => key == _publicKeyPrefix;
+//   bool get isPrivateRoot => key == _privateKeyPrefix;
+//   bool get isPublicRoot => key == _publicKeyPrefix;
 
-  /// number of segments not incuding key
-  int get length => segments.length;
+//   /// number of segments not incuding key
+//   int get length => segments.length;
 
-  static const _privateKeyPrefix = 'm';
-  static const _publicKeyPrefix = 'M';
-  static const _legalPrefixes = [_privateKeyPrefix, _publicKeyPrefix];
-}
+//   static const _privateKeyPrefix = 'm';
+//   static const _publicKeyPrefix = 'M';
+//   static const _legalPrefixes = [_privateKeyPrefix, _publicKeyPrefix];
+// }
 
 /// Cardano adoption of BIP-44 path:
 ///     m / 1852' / 1851' / account' / role / index
@@ -432,7 +436,7 @@ class ShelleyAddressKit extends Bip32KeyPair {
   final ShelleyAddress address;
   const ShelleyAddressKit(
       {this.account = defaultAccountIndex,
-      this.role = paymentRole,
+      this.role = paymentRoleIndex,
       required this.index,
       required this.address,
       Bip32SigningKey? signingKey,
@@ -440,44 +444,44 @@ class ShelleyAddressKit extends Bip32KeyPair {
       : super(signingKey: signingKey, verifyKey: verifyKey);
 }
 
-/// Hardended chain values should not have public keys.
-/// They are denoted by a single quote in chain values.
-const int hardenedOffset = 0x80000000;
+// /// Hardended chain values should not have public keys.
+// /// They are denoted by a single quote in chain values.
+// const int hardenedOffset = 0x80000000;
 
-/// Default purpose. The year Ada Lovelace passed away.
-/// Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
+// /// Default purpose. The year Ada Lovelace passed away.
+// /// Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
 const int defaultPurpose = 1852 | hardenedOffset;
 
-/// Coin-type for Cardano ADA. Ada Lovelace's year of birth.
+// /// Coin-type for Cardano ADA. Ada Lovelace's year of birth.
 const int defaultCoinType = 1815 | hardenedOffset;
 
-/// Is zero. This returns the base account address.
+// /// Is zero. This returns the base account address.
 const int defaultAccountIndex = 0 | hardenedOffset;
 
-/// role 0=external/payments
-const int paymentRole = 0;
+// /// role 0=external/payments
+const int paymentRoleIndex = 0;
 
-/// role 1=internal/change
-const int changeRole = 1;
+// /// role 1=internal/change
+const int changeRoleIndex = 1;
 
-/// role 2=staking
-const int stakingRole = 2;
+// /// role 2=staking
+const int stakingRoleIndex = 2;
 const int defaultAddressIndex = 0;
 
-/// Extended private key size in bytes
-const cip16ExtendedSigningKeySize = 96;
+// /// Extended private key size in bytes
+// const cip16ExtendedSigningKeySize = 96;
 
-/// Extended public key size in bytes
-const cip16ExtendedVerificationgKeySize = 64;
+// /// Extended public key size in bytes
+// const cip16ExtendedVerificationgKeySize = 64;
 
-/// Hardens index, meaning it won't have a public key
-int harden(int index) => index | hardenedOffset;
+// /// Hardens index, meaning it won't have a public key
+// int harden(int index) => index | hardenedOffset;
 
-/// Returns true if index is hardened.
-bool isHardened(int index) => index & hardenedOffset != 0;
+// /// Returns true if index is hardened.
+// bool isHardened(int index) => index & hardenedOffset != 0;
 
-/// Function used to test address usage. Returns true if it has not been used in a transaction.
-typedef UnusedAddressFunction = bool Function(ShelleyAddress address);
+// /// Function used to test address usage. Returns true if it has not been used in a transaction.
+// typedef UnusedAddressFunction = bool Function(ShelleyAddress address);
 
-/// UnusedAddressFunction that will always return true (i.e. You'll always get the base spend/change address).
-bool alwaysUnused(_) => true;
+// /// UnusedAddressFunction that will always return true (i.e. You'll always get the base spend/change address).
+// bool alwaysUnused(_) => true;

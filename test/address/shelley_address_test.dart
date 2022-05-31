@@ -20,7 +20,7 @@ void main() {
     final Bip32KeyPair spendPair = hdWallet.deriveAddressKeys(index: 0);
     //final Bip32KeyPair changePair = hdWallet.deriveAddress(role: changeRole, index: 0);
     final Bip32KeyPair stakePair =
-        hdWallet.deriveAddressKeys(role: stakingRole, index: 0);
+        hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
     test('network header', () {
       var a = ShelleyAddress.fromBech32(addr);
       expect(a.networkId, NetworkId.mainnet,

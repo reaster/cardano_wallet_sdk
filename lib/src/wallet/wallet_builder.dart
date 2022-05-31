@@ -171,7 +171,7 @@ class WalletBuilder {
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
       _blockchainAdapter = adapterResult.unwrap();
     }
-    final stakeKeyPair = _hdWallet!.deriveAddressKeys(role: stakingRole);
+    final stakeKeyPair = _hdWallet!.deriveAddressKeys(role: stakingRoleIndex);
     final stakeAddress = _hdWallet!.toRewardAddress(
         spend: stakeKeyPair.verifyKey!, networkId: _networkId!);
     final addressKeyPair = _hdWallet!.deriveAddressKeys(account: accountIndex);
