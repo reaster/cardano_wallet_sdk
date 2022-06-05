@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-// import 'package:bip39/bip39.dart' as bip39;
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:hex/hex.dart';
@@ -16,6 +15,58 @@ void main() {
   List<int> tolist(String csv) =>
       csv.split(',').map((n) => int.parse(n)).toList();
 
+  group('Daedalus -', () {
+    test('Account - validate testnet walley wallet', () {
+      //walley
+      final mnemonic =
+          'alpha desert more credit sad balance receive sand someone correct used castle present bar shop borrow inmate estate year flip theory recycle measure silk'
+              .split(' ');
+      final account = MultiAccountWallet.mnemonic(
+              mnemonic: mnemonic, network: NetworkId.testnet)
+          .account();
+      const acct0xvk =
+          'acct_xvk1xfehjaqtvn0vdjqrrfwlgvfk8qedv4fus04thny96lj6rhc2tphsx0wlcdaehpjzjfyj7uref4uqlacrtft55u9ll6eal4h4ac75yzqdnqwtf';
+      final acctVerifyKey =
+          acctXvkCoder.encode(account.accountSigningKey.publicKey);
+      expect(acctVerifyKey, equals(acct0xvk),
+          reason: 'is default account (#0) verification key');
+      const spendAddr0 =
+          'addr_test1qr94pw040yeq5x75g38jnsjg95rv6xy4jyttedukatlpd2424kyuyck0xp0a7n7rah0gxj5mq3zdrc6xnaqph967c2kqja24jq';
+      final _spendAddr0 = account.baseAddress(index: 0).toBech32();
+      expect(_spendAddr0, equals(spendAddr0),
+          reason: 'acct 0, spend address 0');
+      const changeAddr0 =
+          'addr_test1qz52gz9hwr8wxuy5t5sz7jww9eqdnejuh30wqufkemmd20924kyuyck0xp0a7n7rah0gxj5mq3zdrc6xnaqph967c2kqurare7';
+      final _changeAddr0 = account.changeAddress(index: 0).toBech32();
+      expect(_changeAddr0, equals(changeAddr0),
+          reason: 'acct 0, change address 0');
+    });
+    test('Account - validate testnet wallet 2', () {
+      final mnemonic =
+          'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin'
+              .split(' ');
+      const stakeAddr =
+          'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
+      const addr0 =
+          'addr_test1qputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5l924fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sutu8kq';
+      const addr1 =
+          'addr_test1qrektsyevyxxqpytjwnwxvmvrj8xgzv4qsuzf57qkp432ma24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sk7kesv';
+      const addrChange1 =
+          'addr_test1qpcdsfzewqkl3w5kxk553hts5lvw9tdjda9nzt069gqmyud24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9s89kyst';
+      final account = MultiAccountWallet.mnemonic(
+              mnemonic: mnemonic, network: NetworkId.testnet)
+          .account();
+      final _addr0 = account.baseAddress(index: 0).toBech32();
+      expect(_addr0, equals(addr0), reason: 'acct 0, address 0');
+      final _addr1 = account.baseAddress(index: 1).toBech32();
+      expect(_addr1, equals(addr1), reason: 'acct 0, address 1');
+      final _addrChange1 = account.changeAddress(index: 1).toBech32();
+      expect(_addrChange1, equals(addrChange1),
+          reason: 'acct 0, change address 1');
+      final _stakeAddr = account.stakeAddress.toBech32();
+      expect(stakeAddr, equals(_stakeAddr), reason: 'stake address');
+    });
+  });
   group('Account -', () {
     final mnemonic =
         "damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital"
@@ -26,21 +77,21 @@ void main() {
         mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
     final acct0Xsk = Bip32SigningKey.decode(
         'acct_xsk1grmww8c9yftkd6nlmuh7wypx46duh8az7sxyg88fr4k3qpc33azk8gc5ntllturxzee5gj2zd5dy48f0ehp6lqudkwvacxjznz8j0mzd2ad0t2fmmaystgms97k7maz3afvy0ywjxwk7jzt96cyt43tnqsr5dmk0',
-        coder: Bech32Coder(hrp: 'acct_xsk'));
+        coder: acctXskCoder);
 
     test('MultiAccountWallet constructors', () {
       final w1 = MultiAccountWallet.entropyHex(seedHex);
       expect(w1.derivation.root is Bip32SigningKey, isTrue);
-      final Bip32SigningKey key1 = cardanoEntropyToRootSigningKey(seed);
+      final Bip32SigningKey key1 = icarusGenerateMasterKey(seed);
       expect(w1.derivation.root, equals(key1));
       final w2 = MultiAccountWallet.mnemonic(
           mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
       final entropy = mnemonicToEntropy(
           mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
-      final Bip32SigningKey key2 = cardanoEntropyToRootSigningKey(entropy);
+      final Bip32SigningKey key2 = icarusGenerateMasterKey(entropy);
       expect(w2.derivation.root, equals(key2));
       expect(w2.derivation.root, equals(w1.derivation.root));
-      final root_xsk = key1.encode(Bech32Coder(hrp: 'root_xsk'));
+      final root_xsk = key1.encode(rootXskCoder);
       expect(key1, equals(w2.derivation.root));
     });
 
@@ -91,9 +142,6 @@ void main() {
     });
 
     test('account0 mainnet', () {
-      final stakeXskCoder = Bech32Coder(hrp: 'stake_xsk');
-      final acctXskCoder = Bech32Coder(hrp: 'acct_xsk');
-      final rootXskCoder = Bech32Coder(hrp: 'root_xsk');
       final mnemonicBob =
           'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat'
               .split(' ');
@@ -102,27 +150,12 @@ void main() {
       final entropy = mnemonicToEntropy(
           mnemonic: mnemonicBob, loadWordsFunction: loadEnglishMnemonicWords);
       final Bip32SigningKey expectedMasterKey =
-          cardanoEntropyToRootSigningKey(entropy);
-
-      // HdWallet derivation
-      final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonicBob);
-      expect(hdWallet.rootSigningKey, equals(expectedMasterKey));
-      final Bip32KeyPair spend9 = hdWallet.deriveAddressKeys(index: 9);
-      final Bip32KeyPair stake =
-          hdWallet.deriveAddressKeys(role: stakingRoleIndex);
-      final addr = ShelleyAddress.toBaseAddress(
-        spend: spend9.verifyKey!,
-        stake: stake.verifyKey!,
-        networkId: NetworkId.testnet,
-      );
-      // print(acctXskCoder.encode(spend.signingKey!));
-      // print(stakeXskCoder.encode(stake.signingKey!));
-      expect(addr.toBech32(), addr9);
+          icarusGenerateMasterKey(entropy);
 
       // manual master
       final _master = mnemonicToEntropy(
           mnemonic: mnemonicBob, loadWordsFunction: loadEnglishMnemonicWords);
-      final Bip32SigningKey _root = cardanoEntropyToRootSigningKey(_master);
+      final Bip32SigningKey _root = icarusGenerateMasterKey(_master);
       expect(_root, equals(expectedMasterKey));
 
       // MultiAccountWallet / Account derivation
@@ -130,10 +163,10 @@ void main() {
           mnemonic: mnemonicBob,
           loadWordsFunction: loadEnglishMnemonicWords,
           network: NetworkId.testnet);
-      print(rootXskCoder.encode(hdWallet.rootSigningKey));
+      // print(rootXskCoder.encode(hdWallet.rootSigningKey));
 
       expect(wallet.derivation.root, equals(expectedMasterKey));
-      print(rootXskCoder.encode(wallet.derivation.root));
+      // print(rootXskCoder.encode(wallet.derivation.root));
 
       Account account = wallet.account();
       final expectedAcct0PvtKey =
@@ -142,120 +175,19 @@ void main() {
       final md = ShelleyKeyDerivation(expectedAcct0PvtKey);
       final _key9 = md.fromPath("m/0/9") as Bip32SigningKey;
       //expect(_key9, equals(spend9.signingKey!));
-
       final _spendPvtKey = account.basePrivateKey(index: 9);
-      expect(_spendPvtKey, spend9.signingKey!);
-
-      print(acctXskCoder.encode(_spendPvtKey));
-
+      expect(_spendPvtKey, _key9);
+      //print(acctXskCoder.encode(_spendPvtKey));
       final _stakePvtKey = account.stakePrivateKey;
-      print(stakeXskCoder.encode(_stakePvtKey));
+      // print(stakeXskCoder.encode(_stakePvtKey));
       final _addr9 = account.baseAddress(index: 9);
-      //expect(_addr9.toBech32(), equals(addr9));
-
-      // const changeX =
-      //     'addr_test1qpxnznd2j892qln9gr7x7yns9xf6uz4k4ldhv96makgscpe7v8d0ph6h78xxlkc4e6nxz5xk873akuwfp78nx7tqysasxy9yrk';
-      // final baseAddress = account.baseAddress();
-      // expect(
-      //     baseAddress.toBech32(),
-      //     equals(
-      //         'addr_test1qqc5rudyv60ph4mq8c75zquq3mycx759nvvae7pcr4ha2t37v8d0ph6h78xxlkc4e6nxz5xk873akuwfp78nx7tqysas2f3nj9'));
-
-      // final rewardAddress = account.stakeAddress;
-      // expect(rewardAddress.networkId, equals(NetworkId.mainnet));
-      // expect(rewardAddress.addressType, equals(AddressType.reward));
-      // expect(rewardAddress.hrp, equals('stake'));
-      // expect(
-      //     rewardAddress.toBech32(),
-      //     equals(
-      //         'stake1u9xeg0r67z4wca682l28ghg69jxaxgswdmpvnher7at697quawequ'));
+      expect(_addr9.toBech32(), equals(addr9));
+      final __addr9 = ShelleyAddress.toBaseAddress(
+        spend: _key9.verifyKey!,
+        stake: _stakePvtKey.verifyKey!,
+        networkId: NetworkId.testnet,
+      );
+      expect(__addr9.toBech32(), equals(addr9));
     });
-    // test('account1 mainnet', () {
-    //   Account account = wallet.account(index: 1);
-    //   final address = account.stakeAddress;
-    //   expect(address.networkId, equals(NetworkId.mainnet));
-    //   expect(address.addressType, equals(AddressType.reward));
-    //   expect(address.hrp, equals('stake'));
-    //   expect(
-    //       address.toBech32(),
-    //       equals(
-    //           'stake1u9xcv6e9z75qg8pkkzwfyd6aq2t50hgkymv9jq5q5kpj9lcthljzu'));
-    // });
-
-    // @Test
-    // public void testRewardAddress_whenMainnet_Account2() {
-    //     String mnemonic = "damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital";
-
-    //     DerivationChain derivationPath = DerivationChain.createExternalAddressDerivationChain();
-    //     derivationPath.getAccount().setValue(2);
-
-    //     Account account = new Account(Networks.mainnet(), mnemonic, derivationPath);
-
-    //     Address address = new Address(account.stakeAddress());
-
-    //     assertThat(address.getAddressType()).isEqualTo(AddressType.Reward);
-    //     assertThat(address.getNetwork()).isEqualTo(Networks.mainnet());
-    //     assertThat(address.getPrefix()).isEqualTo("stake");
-    //     assertThat(address.getAddress().toString()).isEqualTo("stake1uyzprh5g4anfumuslz52r98g8vx4lrnu6grt9m329y8hwxq9w8v34");
-    // }
-
-    // @Test
-    // public void testRewardAddress_whenTestnet() {
-    //     String mnemonic = "damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital";
-    //     Account account = new Account(Networks.testnet(), mnemonic);
-
-    //     Address address = new Address(account.stakeAddress());
-
-    //     assertThat(address.getAddressType()).isEqualTo(AddressType.Reward);
-    //     assertThat(address.getNetwork()).isEqualTo(Networks.testnet());
-    //     assertThat(address.getPrefix()).isEqualTo("stake_test");
-    // }
   });
-
-  // group('HdWallet -', () {
-  //   test('private/public key and address generation', () {
-  //     const testEntropy =
-  //         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-  //     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-  //     expect(hdWallet.rootSigningKey, excpectedXskBip32Bytes,
-  //         reason: 'root private/signing key');
-  //     expect(hdWallet.rootVerifyKey, expectedXvkBip32Bytes,
-  //         reason: 'root public/verify key');
-  //     final Bip32KeyPair spendAddress0Pair =
-  //         hdWallet.deriveAddressKeys(index: 0);
-  //     expect(spendAddress0Pair.signingKey, expectedSpend0Xsk);
-  //     expect(spendAddress0Pair.verifyKey, expectedSpend0Xvk);
-  //     final Bip32KeyPair stakeAddress0Pair =
-  //         hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
-  //     expect(stakeAddress0Pair.signingKey, expectedStake0Xsk);
-  //     expect(stakeAddress0Pair.verifyKey, expectedStake0Xvk);
-  //     final addr0 = hdWallet.toBaseAddress(
-  //         networkId: NetworkId.mainnet,
-  //         spend: spendAddress0Pair.verifyKey!,
-  //         stake: stakeAddress0Pair.verifyKey!);
-  //     // print(addr0.join(','));
-  //     expect(addr0.toBech32(), expectedSpend0Bech32);
-  //     final addrTest0 = hdWallet.toBaseAddress(
-  //         spend: spendAddress0Pair.verifyKey!,
-  //         stake: stakeAddress0Pair.verifyKey!);
-  //     expect(addrTest0.toBech32(), expectedTestnetSpend0Bech32);
-  //   });
-
-  // test('bip32_12_reward address', () {
-  //   //data taken from rust address.rs code
-  //   const mnemonic =
-  //       'test walk nut penalty hip pave soap entry language right filter choice';
-  //   final hdWallet = HdWallet.fromMnemonic(mnemonic);
-  //   final Bip32KeyPair stakeAddress0Pair =
-  //       hdWallet.deriveAddressKeys(role: stakingRoleIndex);
-  //   final stake = hdWallet.toRewardAddress(
-  //       networkId: NetworkId.mainnet, spend: stakeAddress0Pair.verifyKey!);
-  //   expect(stake.toBech32(),
-  //       'stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz');
-  //   final stakeTest =
-  //       hdWallet.toRewardAddress(spend: stakeAddress0Pair.verifyKey!);
-  //   expect(stakeTest.toBech32(),
-  //       'stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl');
-  // });
-  // }, skip: "TODO");
 }
