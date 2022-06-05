@@ -1,14 +1,15 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:pinenacl/key_derivation.dart';
+// import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:hex/hex.dart';
+import 'master_key_generation.dart';
 
-Bip32SigningKey cardanoEntropyToRootSigningKey(Uint8List entropy) {
-  final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), entropy, 4096, 96);
-  return Bip32SigningKey.normalizeBytes(rawMaster);
-}
+// Bip32SigningKey icarusGenerateMasterKey(Uint8List entropy) {
+//   final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), entropy, 4096, 96);
+//   return Bip32SigningKey.normalizeBytes(rawMaster);
+// }
 
 class IcarusKeyDerivation extends Bip32Ed25519KeyDerivation with Bip32KeyTree {
   IcarusKeyDerivation(Bip32Key key) {
@@ -28,7 +29,7 @@ class IcarusKeyDerivation extends Bip32Ed25519KeyDerivation with Bip32KeyTree {
   /// Use Icarus master key generation algo as used by Yoroi, Daedalus (Shelley era)
   /// https://github.com/cardano-foundation/CIPs/blob/master/CIP-0003/Icarus.md
   @override
-  Bip32Key master(Uint8List seed) => cardanoEntropyToRootSigningKey(seed);
+  Bip32Key master(Uint8List seed) => icarusGenerateMasterKey(seed);
 
   /// Modify to support Cardano bech32 prefixes that make sense.
   /// https://cips.cardano.org/cips/cip5/
@@ -53,8 +54,9 @@ class IcarusKeyDerivation extends Bip32Ed25519KeyDerivation with Bip32KeyTree {
             key);
     }
   }
-
-  static const rootXskCoder = Bech32Coder(hrp: 'root_xsk');
-  static const acctXskCoder = Bech32Coder(hrp: 'acct_xsk');
-  static const acctXvkCoder = Bech32Coder(hrp: 'acct_xvk');
 }
+
+const rootXskCoder = Bech32Coder(hrp: 'root_xsk');
+const acctXskCoder = Bech32Coder(hrp: 'acct_xsk');
+const acctXvkCoder = Bech32Coder(hrp: 'acct_xvk');
+const stakeXskCoder = Bech32Coder(hrp: 'stake_xsk');

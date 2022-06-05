@@ -6,7 +6,7 @@
 import 'package:bip32_ed25519/api.dart';
 
 // import '../address/hd_wallet.dart';
-import '../address/hd_wallet.dart';
+// import '../address/hd_wallet.dart';
 import '../crypto/mnemonic.dart';
 import '../crypto/mnemonic_english.dart';
 import '../crypto/shelley_key_derivation.dart';
