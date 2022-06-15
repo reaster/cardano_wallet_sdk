@@ -3,6 +3,7 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import '../../../cardano_wallet_sdk.dart';
+import 'package:cbor/cbor.dart';
 
 const int secretKeyLength = 32;
 
@@ -21,7 +22,7 @@ extension ShelleyTransactionLogic on ShelleyTransaction {
       final verifyKey =
           VerifyKey(uint8ListFromBytes(witness.vkey.sublist(0, 32)));
       // final verifyKey = Bip32VerifyKey(uint8ListFromBytes(witness.vkey));
-      final bodyData = body.toCborMap().getData();
+      final bodyData = cbor.encode(body.toCborMap());
       final List<int> hash = blake2bHash256(bodyData);
       Uint8List message = Uint8List.fromList(hash);
       // if (!verifyKey.verify(signature: signature, message: message)) {

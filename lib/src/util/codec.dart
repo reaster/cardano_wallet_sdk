@@ -78,3 +78,8 @@ String bech32ShelleyAddressFromBytes(Uint8Buffer bytes) {
   final addr = ShelleyAddress(bytes);
   return addr.toBech32();
 }
+
+String bech32ShelleyAddressFromIntList(List<int> bytes) {
+  final addr = ShelleyAddress(bytes);
+  return addr.toBech32();
+}

@@ -8,13 +8,8 @@ import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 
 void main() {
-  /// Extended Public key size in bytes
-  // const xpub_size = 64;
-  const publicKeySize = 32;
-  // const choin_code_size = 32;
   List<int> tolist(String csv) =>
       csv.split(',').map((n) => int.parse(n)).toList();
-
   group('Daedalus -', () {
     test('Account - validate testnet walley wallet', () {
       //walley
@@ -47,6 +42,8 @@ void main() {
               .split(' ');
       const stakeAddr =
           'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
+      const enterpriseAddr =
+          'addr_test1vputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5lqs8j2jg';
       const addr0 =
           'addr_test1qputeu63ld6c0cd526w90ry2r9upc5ac8y3zetcg85xs5l924fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9sutu8kq';
       const addr1 =
@@ -65,6 +62,15 @@ void main() {
           reason: 'acct 0, change address 1');
       final _stakeAddr = account.stakeAddress.toBech32();
       expect(stakeAddr, equals(_stakeAddr), reason: 'stake address');
+      final enterprise = account.enterpriseAddress;
+      print("enterprise: ${enterprise.toBech32()}");
+      expect(enterprise.networkId, equals(NetworkId.testnet),
+          reason: 'network encoded in header');
+      expect(enterprise.addressType, equals(AddressType.enterprise),
+          reason: 'AddressType encoded in header');
+      expect(enterprise.paymentCredentialType, equals(CredentialType.key),
+          reason: 'CredentialType encoded in header');
+      expect(enterprise.toBech32(), equals(enterpriseAddr));
     });
   });
   group('Account -', () {

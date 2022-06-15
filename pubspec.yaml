@@ -11,7 +11,7 @@ dependencies:
   bip32_ed25519: ^0.2.1
   pinenacl: ^0.3.3
   # bip39: ^1.0.6
-  cbor: ^4.1.0
+  cbor: ^5.0.1
   dio: ^4.0.3
   convert: ^3.0.0
   collection: ^1.15.0
@@ -24,16 +24,17 @@ dependencies:
   oxidized: ^5.1.0 #TODO swap oxidized Result for dartz Either?
   coingecko_dart: ^0.1.0 #TODO remove coingecko_dart
   logger: ^1.1.0
-  freezed_annotation: ^1.1.0
+  freezed_annotation: ^2.0.3
+  json_annotation: ^4.5.0
 
 dev_dependencies:
   test: any
   mockito: ^5.0.10
   build_runner: ^2.1.5
-  lints: ^1.0.1
-  http: ^0.13.4
-  flutter_lints: ^1.0.0
-  freezed:
+  lints: ^2.0.0
+  http: ^0.13.4 
+  flutter_lints: ^2.0.0
+  freezed: ^2.0.3+1
   json_serializable:
 # dependency_overrides:
 # bip32_ed25519:

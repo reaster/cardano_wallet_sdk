@@ -3,6 +3,7 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:quiver/core.dart';
+import '../transaction/spec/script.dart';
 import '../network/network_id.dart';
 import '../util/blake2bhash.dart';
 
@@ -44,6 +45,25 @@ class ShelleyAddress {
         hrp: _computeHrp(networkId, hrp),
       );
 
+  factory ShelleyAddress.toBaseScriptAddress({
+    required NativeScript script,
+    required Bip32PublicKey stake,
+    NetworkId networkId = NetworkId.testnet,
+    String hrp = defaultAddrHrp,
+    CredentialType paymentType = CredentialType.key,
+    CredentialType stakeType = CredentialType.script,
+  }) =>
+      ShelleyAddress(
+        [
+              (stakeType.index << 5) |
+                  (paymentType.index << 4) |
+                  (networkId.index & 0x0f)
+            ] +
+            blake2bHash224(script.serialize) +
+            blake2bHash224(stake.rawKey),
+        hrp: _computeHrp(networkId, hrp),
+      );
+
   factory ShelleyAddress.toRewardAddress({
     required Bip32PublicKey spend,
     NetworkId networkId = NetworkId.testnet,
@@ -64,7 +84,7 @@ class ShelleyAddress {
   }) =>
       ShelleyAddress(
         [
-              enterpriseDiscrim |
+              enterpriseDiscrim | //0b0110_0000;
                   (paymentType.index << 4) |
                   (networkId.index & 0x0f)
             ] +

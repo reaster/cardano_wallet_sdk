@@ -1,6 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:cbor/cbor.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:pinenacl/tweetnacl.dart';
@@ -201,7 +202,7 @@ class TransactionBuilder {
     required Set<Bip32KeyPair> keyPairSet,
     bool fakeSignature = false,
   }) {
-    final bodyData = body.toCborMap().getData();
+    final bodyData = cbor.encode(body.toCborMap());
     List<int> hash = blake2bHash256(bodyData);
     List<ShelleyVkeyWitness> witnesses = [];
     for (Bip32KeyPair keyPair in keyPairSet) {

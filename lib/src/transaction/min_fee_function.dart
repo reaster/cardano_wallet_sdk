@@ -4,6 +4,7 @@
 import 'package:logger/logger.dart';
 import '../util/ada_types.dart';
 import './spec/shelley_spec.dart';
+import 'package:cbor/cbor.dart';
 
 typedef MinFeeFunction = Coin Function(
     {required ShelleyTransaction transaction, LinearFee linearFee});
@@ -15,7 +16,7 @@ Coin simpleMinFee(
     {required ShelleyTransaction transaction,
     LinearFee linearFee = defaultLinearFee}) {
   final logger = Logger();
-  final len = transaction.toCborList().getData().length;
+  final len = cbor.encode(transaction.toCborList()).length;
   final result =
       (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
   logger.i(

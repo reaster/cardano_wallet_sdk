@@ -1,17 +1,11 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-// import 'package:hex/hex.dart';
 import '../crypto/mnemonic.dart' as bip39;
-// import 'package:bip39/bip39.dart' as bip39;
 import 'package:pinenacl/key_derivation.dart';
 import 'package:logger/logger.dart';
-// import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-// import '../address/shelley_address.dart';
-// import '../network/network_id.dart';
 import 'package:hex/hex.dart';
-
 import '../crypto/mnemonic.dart';
 import '../crypto/mnemonic_english.dart';
 import '../network/network_id.dart';

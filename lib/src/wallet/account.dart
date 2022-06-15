@@ -3,6 +3,7 @@
 
 import 'package:bip32_ed25519/api.dart';
 import '../address/shelley_address.dart';
+import '../transaction/spec/script.dart';
 import '../crypto/shelley_key_derivation.dart';
 import '../network/network_id.dart';
 import 'derivation_chain.dart';
@@ -108,14 +109,30 @@ class Account implements AbstractAccount {
       stake: publicStakeKey,
       networkId: network);
 
+  ShelleyAddress baseScriptAddress({required NativeScript script, index = 0}) =>
+      ShelleyAddress.toBaseScriptAddress(
+          script: script, stake: publicStakeKey, networkId: network);
+
+  //header: 0001....
+  // public Address getBaseAddress(Script paymentKey, HdPublicKey delegationKey, Network networkInfo) throws CborSerializationException {
+  //     if (paymentKey == null || delegationKey == null)
+  //         throw new AddressRuntimeException("paymentkey and delegationKey cannot be null");
+
+  //     byte[] paymentKeyHash = paymentKey.getScriptHash();
+  //     byte[] delegationKeyHash = delegationKey.getKeyHash();
+
+  //     byte headerType = 0b0001_0000;
+
+  //     return getAddress(paymentKeyHash, delegationKeyHash, headerType, networkInfo, AddressType.Base);
+  // }
+
   ShelleyAddress changeAddress({int index = 0}) => ShelleyAddress.toBaseAddress(
       spend: changePrivateKey(index: index).verifyKey,
       stake: publicStakeKey,
       networkId: network);
 
-  ShelleyAddress enterpriseAddress({int index = 0}) =>
-      ShelleyAddress.enterpriseAddress(
-          spend: changePrivateKey(index: index).verifyKey, networkId: network);
+  ShelleyAddress get enterpriseAddress => ShelleyAddress.enterpriseAddress(
+      spend: basePrivateKey(index: 0).verifyKey, networkId: network);
 
   ShelleyAddress get stakeAddress =>
       ShelleyAddress.toRewardAddress(spend: publicStakeKey, networkId: network);
