@@ -40,13 +40,13 @@ Uint8Buffer uint8BufferFromHex(String hex,
 ///
 /// Convert List<int> bytes to Uint8Buffer.
 ///
-Uint8Buffer unit8BufferFromBytes(List<int> bytes) =>
-    Uint8Buffer()..addAll(bytes);
+// Uint8Buffer unit8BufferFromBytes(List<int> bytes) =>
+//     Uint8Buffer()..addAll(bytes);
 
 ///
 /// Convert List<int> bytes to Uint8List.
 ///
-Uint8List uint8ListFromBytes(List<int> bytes) => Uint8List.fromList(bytes);
+//Uint8List uint8ListFromBytes(List<int> bytes) => Uint8List.fromList(bytes);
 
 String hexFromUnit8Buffer(Uint8Buffer bytes) => HEX.encode(bytes);
 
