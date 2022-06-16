@@ -9,14 +9,13 @@ import '../../asset/asset.dart';
 import '../../blockchain/blockchain_cache.dart';
 import '../../util/ada_types.dart';
 import '../transaction.dart';
-import './shelley_spec.dart';
+import 'bc_tx.dart';
 
 ///
 /// Handle balance checks and generating/modifying the correct change output so
 /// that the sum of inputs and output is zero (i.e. is balanced).
 ///
-@Deprecated('use bc_tx_body_ext.dart')
-extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
+extension BcTransactionBodyLogic on BcTransactionBody {
   ///
   /// Sum currency amounts accross transaction. The sums should all be zero if the
   /// transaction is balanced.
@@ -43,7 +42,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
         sums[amount.unit] = amount.quantity + (sums[amount.unit] ?? coinZero);
       }
     }
-    for (final ShelleyTransactionOutput output in outputs) {
+    for (final BcTransactionOutput output in outputs) {
       sums[lovelaceHex] = (sums[lovelaceHex] ?? coinZero) - output.value.coin;
       for (final assets in output.value.multiAssets) {
         final policyId = assets.policyId;
@@ -86,7 +85,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   /// All native tokens must have a CurrencyAsset in the cache.
   /// To avoid adding multiple change outputs, changeAddress should be the same for a given tx.
   ///
-  Result<List<ShelleyTransactionOutput>, String> balancedOutputsWithChange({
+  Result<List<BcTransactionOutput>, String> balancedOutputsWithChange({
     required ShelleyAddress changeAddress,
     required BlockchainCache cache,
     Coin fee = 0,
@@ -100,21 +99,20 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
     if (isAllZeros) return Ok(this.outputs);
     final targetAddress = changeAddress.toBech32();
     //copy all outputs except for the change output
-    List<ShelleyTransactionOutput> outputs =
+    List<BcTransactionOutput> outputs =
         this.outputs.where((o) => o.address != targetAddress).toList();
     //find change output if it exists
-    ShelleyTransactionOutput? changeOutput =
-        firstWhere(this.outputs, targetAddress);
+    BcTransactionOutput? changeOutput = firstWhere(this.outputs, targetAddress);
     //break-up assetIds into policyId and name and put in nested maps
     final groupByResult = _groupByPolicyIdThenName(sums: sums, cache: cache);
     if (groupByResult.isErr()) return Err(groupByResult.unwrapErr());
     Map<String, Map<String, Coin>> byPolicyIdThenName = groupByResult.unwrap();
     //build new change output
-    List<ShelleyMultiAsset> multiAssets = [];
+    List<BcMultiAsset> multiAssets = [];
     Coin lovelace = coinZero;
     for (final policyId in byPolicyIdThenName.keys) {
       Map<String, Coin> byName = byPolicyIdThenName[policyId]!;
-      List<ShelleyAsset> assets = [];
+      List<BcAsset> assets = [];
       for (final name in byName.keys) {
         final Coin value = _existingBalance(
             changeOutput: changeOutput, policyId: policyId, name: name);
@@ -122,21 +120,21 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
           //special handling for lovelace
           lovelace = value + (byName[name] ?? coinZero);
         } else {
-          assets.add(ShelleyAsset(
-              name: name, value: value + (byName[name] ?? coinZero)));
+          assets.add(
+              BcAsset(name: name, value: value + (byName[name] ?? coinZero)));
         }
       }
       if (assets.isNotEmpty) {
-        multiAssets.add(ShelleyMultiAsset(policyId: policyId, assets: assets));
+        multiAssets.add(BcMultiAsset(policyId: policyId, assets: assets));
       }
     }
-    final value = ShelleyValue(coin: lovelace, multiAssets: multiAssets);
-    outputs.add(ShelleyTransactionOutput(address: targetAddress, value: value));
+    final value = BcValue(coin: lovelace, multiAssets: multiAssets);
+    outputs.add(BcTransactionOutput(address: targetAddress, value: value));
     return Ok(outputs);
   }
 
-  ShelleyTransactionOutput? firstWhere(
-      List<ShelleyTransactionOutput> list, String address) {
+  BcTransactionOutput? firstWhere(
+      List<BcTransactionOutput> list, String address) {
     for (final out in list) {
       if (out.address == address) return out;
     }
@@ -145,7 +143,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
 
   /// fish out the balance for a give policyId+name from an existing change output
   Coin _existingBalance(
-      {ShelleyTransactionOutput? changeOutput,
+      {BcTransactionOutput? changeOutput,
       required String policyId,
       required String name}) {
     if (changeOutput == null) return coinZero;
@@ -153,12 +151,12 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
       //special handling for lovelace
       return changeOutput.value.coin;
     } else {
-      ShelleyMultiAsset? multiAsset =
+      BcMultiAsset? multiAsset =
           changeOutput.value.multiAssets.firstWhereOrNull(
         (m) => m.policyId == policyId,
       );
       if (multiAsset == null) return coinZero;
-      ShelleyAsset? asset =
+      BcAsset? asset =
           multiAsset.assets.firstWhereOrNull((a) => a.name == name);
       if (asset == null) return coinZero;
       return asset.value;
@@ -166,7 +164,7 @@ extension ShelleyTransactionBodyLogic on ShelleyTransactionBody {
   }
 
   /// Break-up assetId into policyId and name, putting results in nested maps so
-  /// the data structure matches the data nesting in the ShelleyMultiAsset class.
+  /// the data structure matches the data nesting in the BcMultiAsset class.
   /// All native tokens must have a CurrencyAsset in the cache.
   Result<Map<String, Map<String, Coin>>, String> _groupByPolicyIdThenName({
     required Map<AssetId, Coin> sums,

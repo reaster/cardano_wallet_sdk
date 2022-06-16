@@ -26,6 +26,7 @@ import '../model/bc_exception.dart';
 ///
 
 /// an single asset name and value under a MultiAsset policyId
+@Deprecated('use bc_tx.dart')
 class ShelleyAsset {
   final String name;
   final Coin value;
@@ -305,7 +306,7 @@ class ShelleyTransactionBody {
       if (ttl != null) const CborSmallInt(3): CborSmallInt(ttl!),
       //7:metadataHash (optional)
       if (metadataHash != null && metadataHash!.isNotEmpty)
-        const CborSmallInt(7): CborBytes(unit8BufferFromBytes(metadataHash!)),
+        const CborSmallInt(7): CborBytes(metadataHash!),
       //8:validityStartInterval (optional)
       if (validityStartInterval != 0)
         const CborSmallInt(8): CborSmallInt(validityStartInterval),
@@ -409,10 +410,7 @@ class ShelleyVkeyWitness {
   ShelleyVkeyWitness({required this.vkey, required this.signature});
 
   CborList toCborList({bool forJson = false, bool base64 = false}) {
-    return CborList([
-      CborBytes(unit8BufferFromBytes(vkey)),
-      CborBytes(unit8BufferFromBytes(signature))
-    ]);
+    return CborList([CborBytes(vkey), CborBytes(signature)]);
   }
 
   // ListBuilder toCborList({bool forJson = false, bool base64 = false}) {

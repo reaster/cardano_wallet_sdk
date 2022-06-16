@@ -5,18 +5,17 @@ import 'package:bip32_ed25519/bip32_ed25519.dart';
 import '../../../cardano_wallet_sdk.dart';
 import 'package:cbor/cbor.dart';
 
-//const int secretKeyLength = 32;
+const int secretKeyLength = 32;
 
 ///
 /// Extends ShelleyTransaction to handle signature verification.
 ///
-@Deprecated('use bc_tx_ext.dart')
-extension ShelleyTransactionLogic on ShelleyTransaction {
+extension BcTransactionLogic on BcTransaction {
   ///
   /// Verify each witness in the witness set.
   ///
   bool get verify {
-    for (ShelleyVkeyWitness witness in witnessSet!.vkeyWitnesses) {
+    for (BcVkeyWitness witness in witnessSet!.vkeyWitnesses) {
       final signature =
           Signature(Uint8List.fromList(witness.signature.sublist(0, 64)));
       // witness.signature.sublist(0, Signature.signatureLength)));

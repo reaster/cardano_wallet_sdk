@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
-import 'package:typed_data/typed_buffers.dart';
+// import 'package:typed_data/typed_buffers.dart';
 import '../../util/ada_types.dart';
 import '../../util/blake2bhash.dart';
 import '../../util/codec.dart';
@@ -83,12 +83,13 @@ class BcTransactionInput extends BcAbstractCbor {
 
   factory BcTransactionInput.fromCbor({required CborList list}) {
     return BcTransactionInput(
-        transactionId: (list[0] as CborString).toString(),
+        transactionId: HEX.encode((list[0] as CborBytes).bytes),
         index: (list[1] as CborSmallInt).toInt());
   }
 
   CborList toCborList() {
-    return CborList([CborString(transactionId), CborSmallInt(index)]);
+    return CborList(
+        [CborBytes(HEX.decode(transactionId)), CborSmallInt(index)]);
   }
 
   @override
@@ -248,7 +249,7 @@ class BcTransactionBody extends BcAbstractCbor {
       if (ttl != null) const CborSmallInt(3): CborSmallInt(ttl!),
       //7:metadataHash (optional)
       if (metadataHash != null && metadataHash!.isNotEmpty)
-        const CborSmallInt(7): CborBytes(unit8BufferFromBytes(metadataHash!)),
+        const CborSmallInt(7): CborBytes(metadataHash!),
       //8:validityStartInterval (optional)
       if (validityStartInterval != 0)
         const CborSmallInt(8): CborSmallInt(validityStartInterval),
@@ -304,10 +305,7 @@ class BcVkeyWitness extends BcAbstractCbor {
   }
 
   CborList toCborList() {
-    return CborList([
-      CborBytes(unit8BufferFromBytes(vkey)),
-      CborBytes(unit8BufferFromBytes(signature))
-    ]);
+    return CborList([CborBytes(vkey), CborBytes(signature)]);
   }
 
   @override
@@ -373,6 +371,9 @@ class BcTransactionWitnessSet extends BcAbstractCbor {
     });
   }
 
+  bool get isEmpty => vkeyWitnesses.isEmpty && nativeScripts.isEmpty;
+  bool get isNotEmpty => !isEmpty;
+
   @override
   Uint8List get serialize => toUint8List(toCborMap());
 
@@ -402,6 +403,8 @@ class BcMetadata extends BcAbstractCbor {
   String get toCborHex => HEX.encode(serialize);
 
   List<int> get hash => blake2bHash256(serialize);
+
+  bool get isEmpty => value is CborNull;
 
   @override
   String toString() {
@@ -439,9 +442,9 @@ class BcTransaction extends BcAbstractCbor {
     final body = BcTransactionBody.fromCbor(map: list[0] as CborMap);
     final witnessSet =
         BcTransactionWitnessSet.fromCbor(map: list[1] as CborMap);
-    final bool? isValid = list[2] is bool ? list[2] as bool : null;
+    final bool? isValid =
+        list[2] is CborBool ? (list[2] as CborBool).value : null;
     final metadata = (list.length >= 3) ? BcMetadata(value: list[3]) : null;
-    isValid == null ? null : list[3] as CborMap;
     return BcTransaction(
       body: body,
       witnessSet: witnessSet,
@@ -453,16 +456,19 @@ class BcTransaction extends BcAbstractCbor {
   factory BcTransaction.fromHex(String transactionHex) {
     final buff = HEX.decode(transactionHex);
     final cborList = cbor.decode(buff) as CborList;
-    if (cborList.length != 1) throw BcCborDeserializationException();
     return BcTransaction.fromCbor(list: cborList);
   }
 
   CborValue toCborList() {
     return CborList([
       body.toCborMap(),
-      if (witnessSet != null) witnessSet!.toCborMap(),
+      (witnessSet == null || witnessSet!.isEmpty)
+          ? CborMap({})
+          : witnessSet!.toCborMap(),
       if (isValid != null) CborBool(isValid ?? true),
-      if (metadata != null) metadata!.toCborValue(),
+      (metadata == null || metadata!.isEmpty)
+          ? const CborNull()
+          : metadata!.toCborValue(),
     ]);
   }
 

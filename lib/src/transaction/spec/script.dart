@@ -22,7 +22,7 @@ import '../../util/codec.dart';
 ///
 /// see https://github.com/input-output-hk/cardano-node/blob/master/doc/reference/simple-scripts.md
 ///
-
+@Deprecated('use bc_script.dart')
 abstract class Script {
   Uint8Buffer get serialize {
     final Uint8Buffer data = Uint8Buffer()..addAll(cbor.encode(toCborList()));
