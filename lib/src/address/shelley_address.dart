@@ -3,7 +3,8 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:quiver/core.dart';
-import '../transaction/spec/script.dart';
+import '../transaction/model/bc_scripts.dart';
+// import '../transaction/spec/script.dart';
 import '../network/network_id.dart';
 import '../util/blake2bhash.dart';
 
@@ -17,6 +18,39 @@ import '../util/blake2bhash.dart';
 /// [reference](https://cips.cardano.org/cips/cip19/)
 /// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
 ///
+/// https://docs.rs/cardano-sdk/0.1.0/src/cardano_sdk/wallet/address.rs.html
+/// As defined in the CDDL:
+///
+/// address format:
+/// [ 8 bit header | payload ];
+///
+/// shelley payment addresses:
+/// bit 7: 0
+/// bit 6: base/other
+/// bit 5: pointer/enterprise [for base: stake cred is keyhash/scripthash]
+/// bit 4: payment cred is keyhash/scripthash
+/// bits 3-0: network id
+///
+/// reward addresses:
+/// bits 7-5: 111
+/// bit 4: credential is keyhash/scripthash
+/// bits 3-0: network id
+///
+/// byron addresses:
+/// bits 7-4: 1000
+///
+/// 0000: base address: keyhash28,keyhash28
+/// 0001: base address: scripthash28,keyhash28
+/// 0010: base address: keyhash28,scripthash28
+/// 0011: base address: scripthash28,scripthash28
+/// 0100: pointer address: keyhash28, 3 variable length uint
+/// 0101: pointer address: scripthash28, 3 variable length uint
+/// 0110: enterprise address: keyhash28
+/// 0111: enterprise address: scripthash28
+/// 1000: byron address
+/// 1110: reward account: keyhash28
+/// 1111: reward account: scripthash28
+/// 1001 - 1101: future formats
 class ShelleyAddress {
   final Uint8List bytes;
   final String hrp;
@@ -46,7 +80,7 @@ class ShelleyAddress {
       );
 
   factory ShelleyAddress.toBaseScriptAddress({
-    required NativeScript script,
+    required BcNativeScript script,
     required Bip32PublicKey stake,
     NetworkId networkId = NetworkId.testnet,
     String hrp = defaultAddrHrp,
@@ -76,6 +110,37 @@ class ShelleyAddress {
         hrp: _computeHrp(networkId, hrp),
       );
 
+  factory ShelleyAddress.enterpriseScriptAddress({
+    required BcNativeScript script,
+    NetworkId networkId = NetworkId.testnet,
+    String hrp = defaultAddrHrp,
+  }) =>
+      ShelleyAddress(
+        [
+              enterpriseScriptDiscrim | //0b0111_0000;
+                  (CredentialType.script.index << 4) |
+                  (networkId.index & 0x0f)
+            ] +
+            script.scriptHash,
+        hrp: _computeHrp(networkId, hrp),
+      );
+
+  factory ShelleyAddress.enterprisePlutusScriptAddress({
+    required BcPlutusScript script,
+    NetworkId networkId = NetworkId.testnet,
+    String hrp = defaultAddrHrp,
+    CredentialType paymentType = CredentialType.key,
+  }) =>
+      ShelleyAddress(
+        [
+              enterpriseScriptDiscrim | //0b0111_0000;
+                  (paymentType.index << 4) |
+                  (networkId.index & 0x0f)
+            ] +
+            blake2bHash224(script.serialize),
+        hrp: _computeHrp(networkId, hrp),
+      );
+
   factory ShelleyAddress.enterpriseAddress({
     required Bip32PublicKey spend,
     NetworkId networkId = NetworkId.testnet,
@@ -86,7 +151,7 @@ class ShelleyAddress {
         [
               enterpriseDiscrim | //0b0110_0000;
                   (paymentType.index << 4) |
-                  (networkId.index & 0x0f)
+                  (networkId.index & 0x0f) //& 0b0000_1111;
             ] +
             blake2bHash224(spend.rawKey),
         hrp: _computeHrp(networkId, hrp),
@@ -187,6 +252,8 @@ class ShelleyAddress {
   String toString() => toBech32();
   // "${_enumSuffix(addressType.toString())} ${_enumSuffix(networkId.toString())} ${_enumSuffix(paymentCredentialType.toString())} ${toBech32()}";
 
+  String bytesToString() => "[${bytes.join(',')}]";
+
   @override
   int get hashCode => hashObjects(bytes);
 
@@ -235,6 +302,7 @@ const String testnetHrpSuffix = '_test';
 const int baseDiscrim = 0x00; //0b0000_0000
 const int pointerDiscrim = 0x40; //0b0100_0000
 const int enterpriseDiscrim = 0x60; // 0b0110_0000
+const int enterpriseScriptDiscrim = 0x70; //  = 0b0111_0000;
 const int rewardDiscrim = 0xe0; //0b1110_0000
 
 class DelegationPointer {
