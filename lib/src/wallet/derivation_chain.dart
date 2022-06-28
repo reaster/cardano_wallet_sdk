@@ -71,6 +71,17 @@ class DerivationChain {
   @override
   String toString() => toPath();
 
+  @override
+  int get hashCode => toPath().hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    bool isEq = identical(this, other) ||
+        other is DerivationChain && runtimeType == other.runtimeType;
+    if (!isEq) return false;
+    return toString() == other.toString();
+  }
+
   bool get isPrivateRoot => key == _privateKeyPrefix;
   bool get isPublicRoot => key == _publicKeyPrefix;
 
