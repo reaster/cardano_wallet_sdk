@@ -34,7 +34,7 @@ class MultiAccountWallet {
   final NetworkId network;
   final Map<String, Account> _accounts = {};
 
-  MultiAccountWallet(Bip32Key key, {this.network = NetworkId.mainnet})
+  MultiAccountWallet({required Bip32Key key, this.network = NetworkId.mainnet})
       : derivation = ShelleyKeyDerivation(key);
 
   MultiAccountWallet.entropy(Uint8List entropy,
@@ -48,8 +48,8 @@ class MultiAccountWallet {
   MultiAccountWallet.bech32(String root_sk, {this.network = NetworkId.mainnet})
       : derivation = ShelleyKeyDerivation.rootX(root_sk);
 
-  factory MultiAccountWallet.mnemonic({
-    required ValidMnemonicPhrase mnemonic,
+  factory MultiAccountWallet.mnemonic(
+    ValidMnemonicPhrase mnemonic, {
     LoadMnemonicWordsFunction loadWordsFunction = loadEnglishMnemonicWords,
     MnemonicLang lang = MnemonicLang.english,
     NetworkId network = NetworkId.mainnet,
@@ -64,8 +64,9 @@ class MultiAccountWallet {
   /// Lookup and/or create an account if one doesn't exist.
   /// The default zero index will be used if not specified.
   /// Paths are generated using the "m/1852'/1815'/$index'" template.
-  Account account({int index = 0}) {
-    final path = index == 0 ? _defaultAcctPath : _acctPathTemplate(index);
+  Account account({int accountIndex = 0}) {
+    final path =
+        accountIndex == 0 ? _defaultAcctPath : _acctPathTemplate(accountIndex);
     return accountByPath(path, autoCreate: true)!;
   }
 
@@ -87,5 +88,5 @@ class MultiAccountWallet {
   }
 
   static const _defaultAcctPath = "m/1852'/1815'/0'";
-  String _acctPathTemplate(int index) => "m/1852'/1815'/$index'";
+  String _acctPathTemplate(int accountIndex) => "m/1852'/1815'/$accountIndex'";
 }

@@ -3,6 +3,7 @@
 
 import 'package:bip32_ed25519/api.dart';
 import '../address/shelley_address.dart';
+import '../transaction/model/bc_scripts.dart';
 import '../transaction/spec/script.dart';
 import '../crypto/shelley_key_derivation.dart';
 import '../network/network_id.dart';
@@ -22,35 +23,40 @@ mixin AbstractAccount {
   ShelleyKeyDerivation get derivation;
   NetworkId get network;
   DerivationChain get chain;
+  DerivationChain get chainKey;
 }
 
-mixin AutidAccountMixin {}
+//mixin AutidAccountMixin {}
 
+/// Read-only Audit Account
 class AuditAccount implements AbstractAccount {
+  @override
+  final DerivationChain chainKey;
   @override
   final ShelleyKeyDerivation derivation;
   @override
   final NetworkId network;
   @override
   final DerivationChain chain;
-  late final Bip32VerifyKey publicAccountKey;
+  final Bip32VerifyKey publicAccountKey;
   late final Bip32VerifyKey publicStakeKey;
   final int accountIndex;
 
   AuditAccount({
     required this.publicAccountKey,
-    required this.publicStakeKey,
+    //required this.publicStakeKey,
     this.network = NetworkId.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain(
-          key: 'M',
-          segments: [
-            // _cip1852,
-            // _cip1815,
-            // Segment(index: accountIndex, harden: true)
-          ],
-        ),
-        derivation = ShelleyKeyDerivation(publicAccountKey);
+  })  : chain = const DerivationChain(key: 'M', segments: []),
+        chainKey = DerivationChain(key: 'M', segments: [
+          cip1852,
+          cip1815,
+          Segment(index: accountIndex, harden: true)
+        ]),
+        derivation = ShelleyKeyDerivation(publicAccountKey) {
+    publicStakeKey = derivation.fromChain(chain.append2(stakeRole, zeroSoft))
+        as Bip32VerifyKey;
+  }
 
   Bip32VerifyKey spendPublicKey({int index = 0}) =>
       derivation.fromChain(chain.append2(spendRole, Segment(index: index)))
@@ -62,7 +68,38 @@ class AuditAccount implements AbstractAccount {
       networkId: network);
 }
 
+/// Full Wallet Sharing Account
+class WalletAccount implements AbstractAccount {
+  @override
+  final DerivationChain chainKey;
+  @override
+  final ShelleyKeyDerivation derivation;
+  @override
+  final NetworkId network;
+  final int accountIndex;
+  final Bip32SigningKey
+      accountSigningKey; //Pvt key at account level m/1852'/1815'/x'
+  @override
+  final DerivationChain chain;
+  WalletAccount({
+    required this.accountSigningKey,
+    this.network = NetworkId.mainnet,
+    this.accountIndex = 0,
+  })  : chain = const DerivationChain(key: 'm', segments: [
+          cip1852,
+          cip1815,
+        ]),
+        chainKey = const DerivationChain(key: 'm', segments: [
+          cip1852,
+          cip1815,
+        ]),
+        derivation = ShelleyKeyDerivation(accountSigningKey);
+}
+
+/// Office Account
 class Account implements AbstractAccount {
+  @override
+  final DerivationChain chainKey;
   @override
   final ShelleyKeyDerivation derivation;
   @override
@@ -78,14 +115,12 @@ class Account implements AbstractAccount {
     required this.accountSigningKey,
     this.network = NetworkId.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain(
-          key: 'm',
-          segments: [
-            // cip1852,
-            // cip1815,
-            // Segment(index: accountIndex, harden: true)
-          ],
-        ),
+  })  : chain = const DerivationChain(key: 'm', segments: []),
+        chainKey = DerivationChain(key: 'm', segments: [
+          cip1852,
+          cip1815,
+          Segment(index: accountIndex, harden: true)
+        ]),
         derivation = ShelleyKeyDerivation(accountSigningKey) {
     publicStakeKey = derivation
         .fromChain(chain.append2(stakeRole, zeroSoft))
@@ -100,8 +135,8 @@ class Account implements AbstractAccount {
       derivation.fromChain(chain.append2(changeRole, Segment(index: index)))
           as Bip32SigningKey;
 
-  Bip32SigningKey get stakePrivateKey =>
-      derivation.fromChain(chain.append2(stakeRole, zeroSoft))
+  Bip32SigningKey stakePrivateKey({int index = 0}) =>
+      derivation.fromChain(chain.append2(stakeRole, Segment(index: index)))
           as Bip32SigningKey;
 
   ShelleyAddress baseAddress({int index = 0}) => ShelleyAddress.toBaseAddress(
@@ -109,7 +144,7 @@ class Account implements AbstractAccount {
       stake: publicStakeKey,
       networkId: network);
 
-  ShelleyAddress baseScriptAddress({required NativeScript script, index = 0}) =>
+  ShelleyAddress baseScriptAddress({required BcNativeScript script}) =>
       ShelleyAddress.toBaseScriptAddress(
           script: script, stake: publicStakeKey, networkId: network);
 
@@ -131,10 +166,11 @@ class Account implements AbstractAccount {
       stake: publicStakeKey,
       networkId: network);
 
-  ShelleyAddress get enterpriseAddress => ShelleyAddress.enterpriseAddress(
-      spend: basePrivateKey(index: 0).verifyKey, networkId: network);
+  ShelleyAddress enterpriseAddress({int index = 0}) =>
+      ShelleyAddress.enterpriseAddress(
+          spend: basePrivateKey(index: index).verifyKey, networkId: network);
 
-  ShelleyAddress get stakeAddress =>
+  ShelleyAddress stakeAddress({int index = 0}) =>
       ShelleyAddress.toRewardAddress(spend: publicStakeKey, networkId: network);
 }
 
