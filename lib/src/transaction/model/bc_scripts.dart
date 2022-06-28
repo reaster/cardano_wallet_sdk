@@ -97,6 +97,7 @@ class BcScriptPubkey extends BcNativeScript {
     return BcScriptPubkey(keyHash: HEX.encode(keyHash.bytes));
   }
 
+  @override
   CborList toCborList() {
     return CborList([
       CborSmallInt(type.index),

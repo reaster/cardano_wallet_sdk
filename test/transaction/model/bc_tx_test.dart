@@ -20,7 +20,7 @@ import 'package:hex/hex.dart';
 ///
 void main() {
   group('Blockchain CBOR model -', () {
-    test('serialize', () {
+    test('serializeInput', () {
       final input1 = BcTransactionInput(
           transactionId:
               '73198b7ad003862b9798106b88fbccfca464b1a38afb34958275c4a7d7d8d002',
@@ -31,7 +31,8 @@ void main() {
       final input2 = BcTransactionInput.fromCbor(list: val1 as CborList);
       expect(input2, equals(input1));
     });
-    test('serialize2', () {
+
+    test('serializeTx', () {
       final List<BcTransactionInput> inputs = [
         BcTransactionInput(
             transactionId:
@@ -99,30 +100,6 @@ void main() {
       //TODO fix expect(txHex, txHex2);
       //print(tx2.toJson(prettyPrint: true));
       //print(codec.decodedToJSON()); // [1,2,3],67.89,10,{"a":"a/ur1","b":1234567899,"c":"19/04/2020"},"^[12]g"
-    });
-  });
-
-  group('NativeScripts -', () {
-    test('serialize', () {
-      final t0 = BcScriptPubkey(
-          keyHash: 'ad7a7b87959173fc9eac9a85891cc93892f800dd45c0544128228884');
-      final t1 = BcRequireTimeBefore(slot: 12345678);
-      final t2 = BcRequireTimeAfter(slot: 87654321);
-      final t3 = BcScriptAtLeast(amount: 1, scripts: [t0, t1, t2]);
-      final t4 = BcScriptAtLeast(amount: 1, scripts: [t1, t2]);
-      final scripts = [
-        t0,
-        BcScriptAtLeast(amount: 2, scripts: [t0, t1, t2, t3, t4]),
-        BcScriptAll(scripts: [t1, t2, t3, t4]),
-        BcScriptAny(scripts: [t1, t2, t3, t4])
-      ];
-      for (BcNativeScript script1 in scripts) {
-        final bytes1 = cbor.encode(script1.toCborList());
-        CborValue val1 = cbor.decode(bytes1);
-        //print(const CborJsonEncoder().convert(val1));
-        final script2 = BcNativeScript.fromCbor(list: val1 as CborList);
-        expect(script2, equals(script1));
-      }
     });
   });
 }

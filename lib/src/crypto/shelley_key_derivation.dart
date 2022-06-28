@@ -66,13 +66,13 @@ class ShelleyKeyDerivation {
 
   /// Derive key from root key and DerivationChain.
   Bip32Key fromChain(DerivationChain chain) {
-    print(chain.toString());
+    print("ShelleyKeyDerivation.fromChain: ${chain.toString()}");
     return derivation.forPath(chain.toString());
   }
 
   /// Derive key from root key and path.
   Bip32Key fromPath(String path) {
-    print(path.toString());
+    print("ShelleyKeyDerivation.fromPath: ${path.toString()}");
     return derivation.forPath(path.toString());
   }
 
