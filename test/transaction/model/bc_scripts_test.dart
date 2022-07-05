@@ -30,15 +30,20 @@ void main() {
           '103,243,49,70,97,122,94,97,147,96,129,219,59,33,23,203,245,155,210,18,55,72,245,138,201,103,134,86';
       final script = BcPlutusScript(cborHex: '4e4d01000033222220051200120011');
       final ser1 = script.serialize;
+      print("plutus hex: ${script.toHex}");
       print("plutus ser1: ${ser1.join(',')}");
       expect(script.serialize,
-          equals(parseInts('78,77,1,0,0,51,34,34,32,5,18,0,18,0,17')));
+          equals(parseInts('78,77,1,0,0,51,34,34,32,5,18,0,18,0,17')),
+          reason: '14 bytes: 4e4d01000033222220051200120011');
+      //scriptHash bytes=[1,78,77,1,0,0,51,34,34,32,5,18,0,18,0,17]
+      //java hash  bytes=[1,77,1,0,0,51,34,34,32,5,18,0,18,0,17]
+      expect(
+        script.scriptHash,
+        equals(parseInts(
+            '103,243,49,70,97,122,94,97,147,96,129,219,59,33,23,203,245,155,210,18,55,72,245,138,201,103,134,86')),
+      );
 
       print("plutus hash: ${script.scriptHash.join(',')}");
-// Bytes: 4e4d01000033222220051200120011
-// Bytes: [78,77,1,0,0,51,34,34,32,5,18,0,18,0,17]
-// Bytes from Bytestring: 4d01000033222220051200120011
-// Bytes from Bytestring: [77,1,0,0,51,34,34,32,5,18,0,18,0,17]
     });
 
     test('nativeScriptHash', () {

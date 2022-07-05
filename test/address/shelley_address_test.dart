@@ -14,6 +14,13 @@ BcScriptAtLeast getMultisigScript() => BcScriptAtLeast(amount: 2, scripts: [
           keyHash: 'beed26382ec96254a6714928c3c5bb8227abecbbb095cfeab9fb2dd1'),
     ]);
 
+class MockPlutusScript extends BcPlutusScript {
+  MockPlutusScript() : super(cborHex: '4e4d01000033222220051200120011');
+  @override
+  Uint8List get scriptHash => Bech32Coder(hrp: 'script')
+      .decode('script1cda3khwqv60360rp5m7akt50m6ttapacs8rqhn5w342z7r35m37');
+}
+
 void main() {
   group('ScriptAddresses -', () {
     const testEntropy =
@@ -47,8 +54,10 @@ void main() {
     });
 
     test('enterpriseScriptAddress', () {
-      final address =
-          ShelleyAddress.enterpriseScriptAddress(script: getMultisigScript());
+      final address = ShelleyAddress.enterpriseScriptAddress(
+        script: getMultisigScript(),
+        networkId: NetworkId.testnet,
+      );
       print(address.toBech32());
       expect(
           address.toBech32(),
@@ -57,8 +66,10 @@ void main() {
     });
 
     test('enterprisePlutusScriptAddress', () {
-      final address =
-          ShelleyAddress.enterpriseScriptAddress(script: getMultisigScript());
+      final address = ShelleyAddress.enterpriseScriptAddress(
+        script: getMultisigScript(),
+        networkId: NetworkId.testnet,
+      );
       // print(address.bytes.join(','));
       // print(address.toBech32());
       expect(
@@ -67,32 +78,6 @@ void main() {
               "addr_test1wzchaw4vxmmpws44ffh99eqzmlg6wr3swg36pqug8xn20ygxgqher"));
     });
   });
-/*
-        void getScriptEntAddress_whenNativeScript() throws CborSerializationException {
-            ScriptAtLeast scriptAtLeast = getMultisigScript();
-
-            Address address = AddressService.getInstance().getEntAddress(scriptAtLeast, Networks.testnet());
-            System.out.println(address.toBech32());
-
-            assertThat(address.toBech32()).isEqualTo("addr_test1wzchaw4vxmmpws44ffh99eqzmlg6wr3swg36pqug8xn20ygxgqher");
-        }
-
-
-        @Test
-        void getScriptEntAddress_whenPlutusScript() throws CborSerializationException {
-            PlutusScript plutusScript = PlutusScript.builder()
-                    .type("PlutusScriptV1")
-                    .cborHex("4e4d01000033222220051200120011")
-                    .build();
-
-            Address address = AddressService.getInstance().getEntAddress(plutusScript, Networks.testnet());
-            System.out.println(address.toBech32());
-
-            assertThat(address.toBech32()).isEqualTo("addr_test1wpnlxv2xv9a9ucvnvzqakwepzl9ltx7jzgm53av2e9ncv4sysemm8");
-        }
-    }
-
-*/
 
   group('shelley address test -', () {
     const addr =
@@ -107,8 +92,11 @@ void main() {
     final hdWallet = HdWallet.fromHexEntropy(testEntropy);
     final Bip32KeyPair spendPair = hdWallet.deriveAddressKeys(index: 0);
     //final Bip32KeyPair changePair = hdWallet.deriveAddress(role: changeRole, index: 0);
-    final Bip32KeyPair stakePair =
-        hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
+    final Bip32KeyPair stakePair = hdWallet.deriveAddressKeys(
+      role: stakingRoleIndex,
+      index: 0,
+    );
+    final pointer = BcPointer(slot: 2498243, txIndex: 27, certIndex: 3);
     test('network header', () {
       var a = ShelleyAddress.fromBech32(addr);
       expect(a.networkId, NetworkId.mainnet,
@@ -117,7 +105,10 @@ void main() {
       expect(a.networkId, NetworkId.testnet,
           reason: 'set testnet bit in header');
       a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
+        spend: spendPair.verifyKey!,
+        stake: stakePair.verifyKey!,
+        networkId: NetworkId.testnet,
+      );
       expect(a.networkId, NetworkId.testnet,
           reason: 'set testnet bit in header');
       expect(a.toBech32(), startsWith('addr_test1'),
@@ -145,10 +136,16 @@ void main() {
     });
     test('address type header', () {
       var a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
+        spend: spendPair.verifyKey!,
+        stake: stakePair.verifyKey!,
+        networkId: NetworkId.testnet,
+      );
       expect(a.addressType, AddressType.base,
           reason: 'toBaseAddress sets address type');
-      a = ShelleyAddress.toRewardAddress(spend: spendPair.verifyKey!);
+      a = ShelleyAddress.toRewardAddress(
+        spend: spendPair.verifyKey!,
+        networkId: NetworkId.testnet,
+      );
       expect(a.addressType, AddressType.reward,
           reason: 'toRewardAddress sets address type');
     });
@@ -159,6 +156,37 @@ void main() {
       expect(a == c, isTrue, reason: 'equals works');
       Set<ShelleyAddress> set = {a, b};
       expect(set.contains(c), isTrue, reason: 'equals works');
+    });
+
+    test('reward', () {
+      final stakePubKey = VerifyKey.decode(
+          'stake_vk1px4j0r2fk7ux5p23shz8f3y5y2qam7s954rgf3lg5merqcj6aetsft99wu',
+          coder: Bech32Coder(hrp: 'stake_vk'));
+      final address = ShelleyAddress.rewardAddress(
+          stakeKey: stakePubKey, networkId: NetworkId.mainnet);
+      expect(
+          address.toBech32(),
+          equals(
+              'stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw'));
+    });
+
+    test('pointer with verify key', () {
+      final verifyKeyBytes = Bech32Coder(hrp: 'addr_vk').decode(
+          'addr_vk1w0l2sr2zgfm26ztc6nl9xy8ghsk5sh6ldwemlpmp9xylzy4dtf7st80zhd');
+      final verifyKey = VerifyKey(verifyKeyBytes, verifyKeyBytes.length);
+      final address = ShelleyAddress.pointerAddress(
+          verifyKey: verifyKey, pointer: pointer, networkId: NetworkId.mainnet);
+      expect(
+          address.toBech32(),
+          equals(
+              'addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrzqf96k'));
+    }); //, skip: 'prefixLength not initialized in ed25519 code');
+
+    test('pointer with script', () {
+      final address = ShelleyAddress.enterpriseScriptAddress(
+          script: MockPlutusScript(), networkId: NetworkId.mainnet);
+      expect(address.toBech32(),
+          equals('addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx'));
     });
 
     test('pointer from bech32', () {
@@ -192,6 +220,30 @@ void main() {
           reason: 'TODO chek addr');
       //print(e.toBech32());
     });
+
+    test('enterpriseFromBech32VerifyKey', () {
+      final verifycKey = Bip32VerifyKey.decode(
+          'addr_xvk1r30n0pv6d40kzzl4e6xje2y7c446gw2x9sgnms3vv62tx264tf5n9lxnuxqc5xpqlg30dtlq0tf0fav4kafsge6u24x296vg85l399cx2uv4k',
+          coder: Bech32Coder(hrp: 'addr_xvk'));
+      var addr = ShelleyAddress.enterpriseAddress(
+          spend: verifycKey, networkId: NetworkId.testnet);
+      expect(
+          addr.toBech32(),
+          equals(
+              'addr_test1vp8w93j8pappvvu8tcajysvr65ph8wt5yg5u4s5u2j4e80ggxcu4e'));
+    });
+
+    /*
+    @Test
+    void getPaymentAddress_fromPaymentVerificationKey() {
+        String paymentVkey = "addr_xvk1r30n0pv6d40kzzl4e6xje2y7c446gw2x9sgnms3vv62tx264tf5n9lxnuxqc5xpqlg30dtlq0tf0fav4kafsge6u24x296vg85l399cx2uv4k";
+        byte[] paymentVKeyBytes = Bech32.decode(paymentVkey).data;
+
+        HdPublicKey hdPublicKey = HdPublicKey.fromBytes(paymentVKeyBytes);
+        Address address = AddressService.getInstance().getEntAddress(hdPublicKey, Networks.testnet());
+
+        assertThat(address.getAddress()).isEqualTo("addr_test1vp8w93j8pappvvu8tcajysvr65ph8wt5yg5u4s5u2j4e80ggxcu4e");
+    }  */
 
     // test('isPublicKeyMatch', () {
     //   var addr = ShelleyAddress.toBaseAddress(

@@ -3,6 +3,7 @@
 
 import 'package:bip32_ed25519/api.dart';
 import '../address/shelley_address.dart';
+import '../transaction/model/bc_abstract.dart';
 import '../transaction/model/bc_scripts.dart';
 import '../transaction/spec/script.dart';
 import '../crypto/shelley_key_derivation.dart';
@@ -144,7 +145,11 @@ class Account implements AbstractAccount {
       stake: publicStakeKey,
       networkId: network);
 
-  ShelleyAddress baseScriptAddress({required BcNativeScript script}) =>
+  ShelleyAddress enterpriseScriptAddress({required BcAbstractScript script}) =>
+      ShelleyAddress.enterpriseScriptAddress(
+          script: script, networkId: network);
+
+  ShelleyAddress scriptAddress({required BcAbstractScript script}) =>
       ShelleyAddress.toBaseScriptAddress(
           script: script, stake: publicStakeKey, networkId: network);
 

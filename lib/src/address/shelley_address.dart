@@ -3,6 +3,8 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:quiver/core.dart';
+import '../transaction/model/bc_abstract.dart';
+import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';
 // import '../transaction/spec/script.dart';
 import '../network/network_id.dart';
@@ -63,97 +65,129 @@ class ShelleyAddress {
   factory ShelleyAddress.toBaseAddress({
     required Bip32PublicKey spend,
     required Bip32PublicKey stake,
-    NetworkId networkId = NetworkId.testnet,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
     CredentialType paymentType = CredentialType.key,
     CredentialType stakeType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
-              (stakeType.index << 5) |
-                  (paymentType.index << 4) |
-                  (networkId.index & 0x0f)
-            ] +
-            blake2bHash224(spend.rawKey) +
-            blake2bHash224(stake.rawKey),
+          ...[
+            (stakeType.index << 5) |
+                (paymentType.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(spend.rawKey),
+          ...blake2bHash224(stake.rawKey),
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
   factory ShelleyAddress.toBaseScriptAddress({
-    required BcNativeScript script,
+    required BcAbstractScript script,
     required Bip32PublicKey stake,
-    NetworkId networkId = NetworkId.testnet,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
     CredentialType paymentType = CredentialType.key,
     CredentialType stakeType = CredentialType.script,
   }) =>
       ShelleyAddress(
         [
-              (stakeType.index << 5) |
-                  (paymentType.index << 4) |
-                  (networkId.index & 0x0f)
-            ] +
-            blake2bHash224(script.serialize) +
-            blake2bHash224(stake.rawKey),
+          ...[
+            (stakeType.index << 5) |
+                (paymentType.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(script.serialize),
+          ...blake2bHash224(stake.rawKey),
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
   factory ShelleyAddress.toRewardAddress({
     required Bip32PublicKey spend,
-    NetworkId networkId = NetworkId.testnet,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultRewardHrp,
-    CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
-        [rewardDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
-            blake2bHash224(spend.rawKey),
+        [
+          ...[
+            rewardDiscrim |
+                (CredentialType.key.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(spend.rawKey),
+        ],
+        hrp: _computeHrp(networkId, hrp),
+      );
+
+  factory ShelleyAddress.rewardAddress({
+    required VerifyKey stakeKey,
+    NetworkId networkId = NetworkId.mainnet,
+    String hrp = defaultRewardHrp,
+  }) =>
+      ShelleyAddress(
+        [
+          ...[
+            rewardDiscrim |
+                (CredentialType.key.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(stakeKey.keyBytes)
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
   factory ShelleyAddress.enterpriseScriptAddress({
-    required BcNativeScript script,
-    NetworkId networkId = NetworkId.testnet,
+    required BcAbstractScript script,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
   }) =>
       ShelleyAddress(
         [
-              enterpriseScriptDiscrim | //0b0111_0000;
-                  (CredentialType.script.index << 4) |
-                  (networkId.index & 0x0f)
-            ] +
-            script.scriptHash,
+          ...[
+            enterpriseScriptDiscrim | //0b0111_0000;
+                (CredentialType.script.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...script.scriptHash,
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
   factory ShelleyAddress.enterprisePlutusScriptAddress({
     required BcPlutusScript script,
-    NetworkId networkId = NetworkId.testnet,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
     CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
-              enterpriseScriptDiscrim | //0b0111_0000;
-                  (paymentType.index << 4) |
-                  (networkId.index & 0x0f)
-            ] +
-            blake2bHash224(script.serialize),
+          ...[
+            enterpriseScriptDiscrim | //0b0111_0000;
+                (paymentType.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(script.serialize),
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
   factory ShelleyAddress.enterpriseAddress({
     required Bip32PublicKey spend,
-    NetworkId networkId = NetworkId.testnet,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
     CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
-              enterpriseDiscrim | //0b0110_0000;
-                  (paymentType.index << 4) |
-                  (networkId.index & 0x0f) //& 0b0000_1111;
-            ] +
-            blake2bHash224(spend.rawKey),
+          ...[
+            enterpriseDiscrim | //0b0110_0000;
+                (paymentType.index << 4) |
+                (networkId.index & 0x0f) //& 0b0000_1111;
+          ],
+          ...blake2bHash224(spend.rawKey),
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
 
@@ -170,18 +204,55 @@ class ShelleyAddress {
   // }
 
   factory ShelleyAddress.pointerAddress({
-    required Bip32PublicKey spend,
-    required DelegationPointer delegationPointer,
-    NetworkId networkId = NetworkId.testnet,
+    required VerifyKey verifyKey,
+    required BcPointer pointer,
+    NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
     CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
-        [pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
-            blake2bHash224(spend.rawKey) +
-            delegationPointer.hash,
+        [
+          ...[
+            pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)
+          ],
+          ...blake2bHash224(verifyKey.keyBytes),
+          ...pointer.hash,
+        ],
         hrp: _computeHrp(networkId, hrp),
       );
+
+  factory ShelleyAddress.pointerScriptAddress({
+    required BcNativeScript script,
+    required BcPointer pointer,
+    NetworkId networkId = NetworkId.mainnet,
+    String hrp = defaultAddrHrp,
+  }) =>
+      ShelleyAddress(
+        [
+          ...[
+            pointerScriptDiscrim |
+                (CredentialType.script.index << 4) |
+                (networkId.index & 0x0f)
+          ],
+          ...script.scriptHash,
+          ...pointer.hash,
+        ],
+        hrp: _computeHrp(networkId, hrp),
+      );
+
+  //     factory ShelleyAddress.pointerAddress({
+  //   required Bip32PublicKey spend,
+  //   required BcPointer pointer,
+  //   NetworkId networkId = NetworkId.mainnet,
+  //   String hrp = defaultAddrHrp,
+  //   CredentialType paymentType = CredentialType.key,
+  // }) =>
+  //     ShelleyAddress(
+  //       [pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+  //           blake2bHash224(spend.rawKey) +
+  //           pointer.hash,
+  //       hrp: _computeHrp(networkId, hrp),
+  //     );
 
   //   public Address getPointerAddress(HdPublicKey paymentKey, Pointer delegationPointer, Network networkInfo) {
   //     if (paymentKey == null || delegationPointer == null)
@@ -301,16 +372,19 @@ const String defaultRewardHrp = 'stake';
 const String testnetHrpSuffix = '_test';
 const int baseDiscrim = 0x00; //0b0000_0000
 const int pointerDiscrim = 0x40; //0b0100_0000
+const int pointerScriptDiscrim = 0x50; //0b0101_0000
 const int enterpriseDiscrim = 0x60; // 0b0110_0000
 const int enterpriseScriptDiscrim = 0x70; //  = 0b0111_0000;
 const int rewardDiscrim = 0xe0; //0b1110_0000
 
+@Deprecated('use BcPointer')
 class DelegationPointer {
   final int slot;
   final int txIndex;
   final int certIndex;
 
-  DelegationPointer(this.slot, this.txIndex, this.certIndex);
+  DelegationPointer(
+      {required this.slot, required this.txIndex, required this.certIndex});
 
   Uint8List get hash => Uint8List.fromList(
       _natEncode(slot) + _natEncode(txIndex) + _natEncode(certIndex));
