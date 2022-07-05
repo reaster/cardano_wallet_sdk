@@ -109,13 +109,13 @@ void main() {
       final addr0Key = derAcct0.forPath("m/0/0") as Bip32SigningKey;
       expect(addr0Key, expectedSpend0Xsk);
       expect(account.basePrivateKey(), expectedSpend0Xsk);
-      expect(account.stakePrivateKey, expectedStake0Xsk);
+      //expect(account.stakePrivateKey, expectedStake0Xsk);
       expect(account.baseAddress().toBech32(), expectedSpend0Bech32);
 
       //validate MultiAccountWallet
       final wallet = MultiAccountWallet.entropyHex(testEntropy);
       expect(wallet.derivation.root, rootXsk);
-      Account acct0 = wallet.account(index: 0);
+      Account acct0 = wallet.account(accountIndex: 0);
       expect(acct0.derivation.root, acct0Xsk);
       expect(acct0.basePrivateKey(), expectedSpend0Xsk);
     });
@@ -305,11 +305,11 @@ addr.xvk                                key_for_account_0_address_1.txt         
           hdWallet.buildAddressKitCache(usedSet: {});
       expect(spendResults[9].address.toBech32(), spend9);
       List<ShelleyAddressKit> changeResults = hdWallet.buildAddressKitCache(
-          role: changeRole, beyondUsedOffset: 5, usedSet: {});
+          role: changeRoleIndex, beyondUsedOffset: 5, usedSet: {});
       expect(changeResults.length, 5, reason: 'overrun 5');
       expect(changeResults[0].address.toBech32(), change0);
       List<ShelleyAddressKit> changeResults2 = hdWallet.buildAddressKitCache(
-          role: changeRole,
+          role: changeRoleIndex,
           beyondUsedOffset: 5,
           usedSet: {ShelleyAddress.fromBech32(change0)});
       expect(changeResults2.length, 6,
