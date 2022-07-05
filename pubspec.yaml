@@ -9,7 +9,7 @@ environment:
 dependencies:
   blockfrost: ^1.0.0-dev.8
   bip32_ed25519: ^0.2.1
-  pinenacl: ^0.3.3
+  # pinenacl: ^0.3.4
   # bip39: ^1.0.6
   cbor: ^5.0.1
   dio: ^4.0.3
@@ -36,7 +36,9 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   freezed: ^2.0.3+1
   json_serializable:
-# dependency_overrides:
+dependency_overrides:
+  pinenacl:
+    path: ../pinenacl-dart 
 # bip32_ed25519:
 #   path: ../bip32-ed25519-dart
 #  blockfrost:
