@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:cbor/cbor.dart';
+import 'package:typed_data/typed_data.dart';
+import '../../util/blake2bhash.dart';
 import '../../util/codec.dart';
 import 'bc_exception.dart';
 import 'bc_abstract.dart';
@@ -31,15 +33,31 @@ class BcPlutusScript extends BcAbstractScript {
     required this.cborHex,
   });
 
-  CborList toCborList() => CborList(
-      [CborBytes(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true))]);
+  CborBytes toCborBytes() => cbor.decode(serialize) as CborBytes;
+
+  //   CborBytes toCborBytes() =>
+  // CborBytes(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true));
 
   @override
-  Uint8List get serialize => toUint8List(toCborList());
+  Uint8List get serialize =>
+      uint8ListFromHex(cborHex, utf8EncodeOnHexFailure: true);
+
+  // @override
+  // Uint8List get serialize => toUint8List(toCborBytes());
 
   @override
   String toString() {
     return 'BcPlutusScript(type: $type, description: $description, cborHex: $cborHex)';
+  }
+
+  @override
+  Uint8List get scriptHash {
+    final bytes = [
+      ...[1],
+      ...toCborBytes().bytes
+    ];
+    //print("scriptHash bytes=[${bytes.join(',')}]");
+    return Uint8List.fromList(blake2bHash224(bytes));
   }
 }
 
@@ -74,6 +92,11 @@ abstract class BcNativeScript extends BcAbstractScript {
             "unknown native script selector: $selector");
     }
   }
+
+  String get policyId => HEX.encode(blake2bHash224([
+        ...[0],
+        ...serialize
+      ]));
 
   static List<BcNativeScript> deserializeScripts(CborList scriptList) {
     return <BcNativeScript>[

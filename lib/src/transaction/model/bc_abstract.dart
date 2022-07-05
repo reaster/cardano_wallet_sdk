@@ -7,11 +7,8 @@ import '../../util/blake2bhash.dart';
 abstract class BcAbstractCbor {
   Uint8List get serialize;
 
-  Uint8List toUint8List(CborValue value) {
-    final Uint8Buffer data = Uint8Buffer()..addAll(cbor.encode(value));
-    // return data;
-    return Uint8List.view(data.buffer, 0, data.length);
-  }
+  Uint8List toUint8List(CborValue value) =>
+      Uint8List.fromList(cbor.encode(value));
 
   String toJson(CborValue value) => const CborJsonEncoder().convert(value);
 
@@ -42,11 +39,6 @@ abstract class BcAbstractCbor {
 }
 
 abstract class BcAbstractScript extends BcAbstractCbor {
-  String get policyId => HEX.encode(blake2bHash224([
-        ...[0],
-        ...serialize
-      ]));
-
   Uint8List get scriptHash => Uint8List.fromList(blake2bHash224([
         ...[0],
         ...serialize
