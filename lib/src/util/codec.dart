@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:base_x/base_x.dart';
 import 'package:hex/hex.dart';
 import 'package:typed_data/typed_data.dart'; // as typed;
 import '../address/shelley_address.dart';
@@ -10,6 +11,10 @@ import '../address/shelley_address.dart';
 ///
 /// Various encoders, decoders and type converters.
 ///
+
+/// base58 codec
+BaseXCodec base58Codec =
+    BaseXCodec('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
 
 final Codec<String, String> str2hex = utf8.fuse(HEX);
 final Codec<String, String> hex2str = str2hex.inverted;
