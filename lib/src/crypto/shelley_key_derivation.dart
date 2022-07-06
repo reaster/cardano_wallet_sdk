@@ -67,13 +67,13 @@ class ShelleyKeyDerivation {
   /// Derive key from root key and DerivationChain.
   Bip32Key fromChain(DerivationChain chain) {
     print("ShelleyKeyDerivation.fromChain: ${chain.toString()}");
-    return derivation.forPath(chain.toString());
+    return derivation.pathToKey(chain.toString());
   }
 
   /// Derive key from root key and path.
   Bip32Key fromPath(String path) {
     print("ShelleyKeyDerivation.fromPath: ${path.toString()}");
-    return derivation.forPath(path.toString());
+    return derivation.pathToKey(path.toString());
   }
 
   //static const codec = Bech32Coder(hrp: 'root_sk');

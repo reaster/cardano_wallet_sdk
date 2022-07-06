@@ -173,7 +173,7 @@ void main() {
       final account = Account(accountSigningKey: acct0Xsk);
       expect(account.accountSigningKey, expectedAccount0Xsk);
       final derAcct0 = IcarusKeyDerivation(account.accountSigningKey);
-      final addr0Key = derAcct0.forPath("m/0/0") as Bip32SigningKey;
+      final addr0Key = derAcct0.pathToKey("m/0/0") as Bip32SigningKey;
       expect(addr0Key, expectedSpend0Xsk);
       expect(account.basePrivateKey(), expectedSpend0Xsk);
       //expect(account.stakePrivateKey, expectedStake0Xsk);
@@ -197,7 +197,7 @@ void main() {
           '16,41,227,180,98,205,86,19,164,21,138,56,61,41,138,149,60,198,210,108,65,244,169,96,247,21,18,90,21,17,143,69,194,70,255,246,50,124,72,102,231,105,50,116,96,25,83,94,245,96,206,37,0,21,11,224,246,1,224,54,119,47,202,15,23,236,32,214,162,3,215,59,218,48,86,59,210,15,41,200,58,115,47,149,36,193,106,147,177,129,121,138,250,247,136,13');
 
       final icarus = IcarusKeyDerivation.entropyHex(entropyHex);
-      final acct0Xsk = icarus.forPath("m/1852'/1815'/0'") as Bip32SigningKey;
+      final acct0Xsk = icarus.pathToKey("m/1852'/1815'/0'") as Bip32SigningKey;
       final wallet = MultiAccountWallet.entropyHex(entropyHex);
       expect(wallet.derivation.root, icarus.root);
       Account acct0 = wallet.account();

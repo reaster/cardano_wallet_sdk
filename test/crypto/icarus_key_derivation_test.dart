@@ -45,20 +45,22 @@ void main() {
       final derMaster = IcarusKeyDerivation(masterKey);
       expect(derMaster.root is Bip32SigningKey, isTrue);
       expect(
-          derMaster.root.keyBytes,
+          // derMaster.root.keyBytes,
+          derMaster.root.rawKey,
           equals(excpectedXskBytes96.sublist(
               0, cip16ExtendedVerificationgKeySize)),
           reason: 'first 64 bytes are private key');
       expect(derMaster.root.chainCode,
           excpectedXskBytes96.sublist(cip16ExtendedVerificationgKeySize),
           reason: 'second 32 bytes are chain code');
-      final acctXsk = derMaster.forPath("m/1852'/1885'/0'") as Bip32SigningKey;
+      final acctXsk =
+          derMaster.pathToKey("m/1852'/1885'/0'") as Bip32SigningKey;
       expect(acctXsk, equals(acct0XskBytes));
       //print(acctXsk.encode(Bech32Coder(hrp: 'acct_xsk')));
       final acctXvk = acctXsk.publicKey;
       //print(acctXvk.encode(Bech32Coder(hrp: 'acct_xvk')));
       final addr0Key =
-          derMaster.forPath("m/1852'/1885'/0'/0/0") as Bip32SigningKey;
+          derMaster.pathToKey("m/1852'/1885'/0'/0/0") as Bip32SigningKey;
       expect(addr0Key.encode(Bech32Coder(hrp: 'addr_xsk')), equals(addr0Xsk));
       //print(addr0Key.encode(Bech32Coder(hrp: 'addr_xsk')));
       final addr0PublicKey = addr0Key.publicKey;
@@ -68,12 +70,12 @@ void main() {
     });
     test('acct_xsk', () {
       final derAcct0 = IcarusKeyDerivation.bech32Key(acct0Xsk);
-      final addr0Key = derAcct0.forPath("m/0/0") as Bip32SigningKey;
+      final addr0Key = derAcct0.pathToKey("m/0/0") as Bip32SigningKey;
       expect(addr0Key.encode(Bech32Coder(hrp: 'addr_xsk')), equals(addr0Xsk));
     });
     test('acct_xvk', () {
       final derAcct0 = IcarusKeyDerivation.bech32Key(acct0Xvk);
-      final addr0Key = derAcct0.forPath("M/0/0") as Bip32VerifyKey;
+      final addr0Key = derAcct0.pathToKey("M/0/0") as Bip32VerifyKey;
       expect(addr0Key.encode(Bech32Coder(hrp: 'addr_xvk')), equals(addr0Xvk));
     });
   });
