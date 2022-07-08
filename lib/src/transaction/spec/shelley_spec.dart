@@ -35,6 +35,7 @@ class ShelleyAsset {
 }
 
 /// Native Token multi-asset container.
+@Deprecated('use bc_tx.dart')
 class ShelleyMultiAsset {
   final String policyId;
   final List<ShelleyAsset> assets;
@@ -80,6 +81,7 @@ class ShelleyMultiAsset {
 }
 
 /// Points to an UTXO unspent change entry using a transactionId and index.
+@Deprecated('use bc_tx.dart')
 class ShelleyTransactionInput {
   final String transactionId;
   final int index;
@@ -87,7 +89,8 @@ class ShelleyTransactionInput {
   ShelleyTransactionInput({required this.transactionId, required this.index});
 
   CborValue toCborList({bool forJson = false}) {
-    return CborList([CborString(transactionId), CborSmallInt(index)]);
+    return CborList(
+        [CborBytes(uint8ListFromHex(transactionId)), CborSmallInt(index)]);
     // final listBuilder = ListBuilder.builder();
     // if (forJson) {
     //   listBuilder.writeString(transactionId);
@@ -100,12 +103,14 @@ class ShelleyTransactionInput {
 
   factory ShelleyTransactionInput.fromCbor({required CborList list}) {
     return ShelleyTransactionInput(
-        transactionId: (list[0] as CborString).toString(),
+        transactionId: HEX.encode((list[0] as CborBytes).bytes),
         index: (list[1] as CborSmallInt).toInt());
   }
 }
 
 /// Address to send to and amount to send.
+@Deprecated('use bc_tx.dart')
+@Deprecated('use bc_tx.dart')
 class ShelleyTransactionOutput {
   final String address;
   final ShelleyValue value;
@@ -159,6 +164,7 @@ class ShelleyTransactionOutput {
 }
 
 /// Can be a simple ADA amount using coin or a combination of ADA and Native Tokens and their amounts.
+@Deprecated('use bc_tx.dart')
 class ShelleyValue {
   final int coin;
   final List<ShelleyMultiAsset> multiAssets;
@@ -211,6 +217,7 @@ class ShelleyValue {
 }
 
 /// Core of the Shelley transaction that is signed.
+@Deprecated('use bc_tx.dart')
 class ShelleyTransactionBody {
   final List<ShelleyTransactionInput> inputs;
   final List<ShelleyTransactionOutput> outputs;
@@ -403,6 +410,7 @@ class ShelleyTransactionBody {
 }
 
 /// A witness is a public key and a signature (a signed hash of the body) used for on-chain validation.
+@Deprecated('use bc_tx.dart')
 class ShelleyVkeyWitness {
   final List<int> vkey;
   final List<int> signature;
@@ -642,6 +650,7 @@ enum WitnessSetType {
 }
 
 /// this can be transaction signatures or a full blown smart contract
+@Deprecated('use bc_tx.dart')
 class ShelleyTransactionWitnessSet {
   final List<ShelleyVkeyWitness> vkeyWitnesses;
   final List<NativeScript> nativeScripts;
@@ -683,6 +692,7 @@ class ShelleyTransactionWitnessSet {
 }
 
 /// outer wrapper of a Cardano blockchain transaction.
+@Deprecated('use bc_tx.dart')
 class ShelleyTransaction {
   late final ShelleyTransactionBody body;
   final ShelleyTransactionWitnessSet? witnessSet;
@@ -768,11 +778,13 @@ class ShelleyTransaction {
       //body
       body.toCborMap(),
       //witnessSet
-      if (witnessSet != null) witnessSet!.toCborMap(),
+      witnessSet != null ? witnessSet!.toCborMap() : CborMap({}),
       //isValid
       if (isValid != null) CborBool(isValid ?? true),
       //metadata
-      if (metadata != null && metadata!.cborValue != null) metadata!.cborValue!,
+      (metadata != null && metadata!.cborValue != null)
+          ? metadata!.cborValue!
+          : const CborNull(),
     ]);
   }
 
@@ -858,6 +870,7 @@ class ShelleyTransaction {
 ///
 /// Allow arbitrary metadata via raw CBOR type. Use CborValue and ListBuilder instances to compose complex nested structures.
 ///
+@Deprecated('use bc_tx.dart')
 class CBORMetadata {
   final CborValue? cborValue;
 

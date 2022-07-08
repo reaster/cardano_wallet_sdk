@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:pinenacl/tweetnacl.dart';
 import '../../../cardano_wallet_sdk.dart';
 import 'package:cbor/cbor.dart';
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cbor/cbor.dart';
 import 'dart:convert' as convertor;
 import 'package:test/test.dart';
@@ -17,6 +18,7 @@ import 'package:test/test.dart';
 ///
 /// tests and results taken from: https://github.com/bloxbean/cardano-client-lib. Thank you!
 ///
+@Deprecated('use bc_scripts_test.dart')
 void main() {
   group('NativeScripts -', () {
     test('serialize', () {
@@ -41,7 +43,7 @@ void main() {
       }
     });
   });
-
+@Deprecated('use bc_tx_test.dart')
   group('ScriptAddresses -', () {
     test('serialize', () {
       final input1 = ShelleyTransactionInput(
@@ -327,5 +329,7 @@ void main() {
     //   final uint8buffer = listBuilder.getData();
     //   print(uint8buffer.toString());
     // });
+
+    
   });
 }
