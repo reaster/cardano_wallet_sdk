@@ -3,7 +3,7 @@
 
 import 'package:bip32_ed25519/api.dart';
 import 'package:pinenacl/tweetnacl.dart';
-import '../../cardano_wallet_sdk.dart';
+import '../util/blake2bhash.dart';
 
 ///
 /// Cryptographic signature methods.
