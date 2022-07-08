@@ -84,7 +84,7 @@ abstract class AbstractAddress {
       case 15:
         return AddressType.reward;
       default:
-        throw InvalidAddressTypeError("addressType: $addrType is not defined.");
+        throw InvalidAddressError("addressType: $addrType is not defined.");
     }
   }
 }
@@ -97,11 +97,29 @@ class ByronAddress extends AbstractAddress {
 
   static const attributeNameTagDerivation = 1;
   static const attributeNameTagProtocolMagic = 2;
+  static const extendedAddrLen = 28;
 
-  ByronAddress(this.bytes, {this.derivationPath, this.protocolMagic});
+  ByronAddress(this.bytes, {this.derivationPath, this.protocolMagic}) {
+    if (addressType != AddressType.byron) {
+      throw InvalidAddressError(
+          "Invalid AddressType: ${addressType.index}, expected byron(${AddressType.byron.index}) in $toBase58");
+    }
+    if (bytes.length < extendedAddrLen) {
+      throw InvalidAddressError(
+          "Invalid byte length: ${bytes.length}, expected at least $extendedAddrLen in $toBase58");
+    }
+  }
 
-  factory ByronAddress.fromBase58(String base58) =>
-      ByronAddress(base58Codec.decode(base58));
+  factory ByronAddress.fromBase58(String base58) {
+    try {
+      return ByronAddress(base58Codec.decode(base58));
+    } on InvalidAddressError {
+      rethrow;
+    } catch (e) {
+      throw InvalidAddressError(
+          "$base58 is not a valid byron base58 address: ${e.toString()}");
+    }
+  }
 
   String get toBase58 => base58Codec.encode(bytes);
 
@@ -448,6 +466,18 @@ const int enterpriseScriptDiscrim = 0x70; //  = 0b0111_0000;
 const int byronDiscrim = 0x80; //0b1000_0000
 const int rewardDiscrim = 0xe0; //0b1110_0000
 
+///
+/// return either a ShelleyAddress or a ByronAddress
+/// throws InvalidAddressError if invalid input
+///
+AbstractAddress stringToAddress(String address) {
+  if (address.startsWith("addr") || address.startsWith("stake")) {
+    return ShelleyAddress.fromBech32(address); //Shelley address
+  } else {
+    return ByronAddress.fromBase58(address); //Try for byron address
+  }
+}
+
 // @Deprecated('use BcPointer')
 // class DelegationPointer {
 //   final int slot;
@@ -485,9 +515,9 @@ const int rewardDiscrim = 0xe0; //0b1110_0000
 // }
 // }
 
-class InvalidAddressTypeError extends Error {
+class InvalidAddressError extends Error {
   final String message;
-  InvalidAddressTypeError(this.message);
+  InvalidAddressError(this.message);
   @override
   String toString() => message;
 }

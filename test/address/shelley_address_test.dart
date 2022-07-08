@@ -22,6 +22,38 @@ class MockPlutusScript extends BcPlutusScript {
 }
 
 void main() {
+  group('ByronAddresses -', () {
+    test('Dd parse', () {
+      final addr =
+          "DdzFFzCqrhszg6cqZvDhEwUX7cZyNzdycAVpm4Uo2vjKMgTLrVqiVKi3MBt2tFAtDe7NkptK6TAhVkiYzhavmKV5hE79CWwJnPCJTREK";
+      final byronAddr = stringToAddress(addr);
+      expect(byronAddr, isInstanceOf<ByronAddress>());
+      expect((byronAddr as ByronAddress).toBase58, equals(addr));
+    });
+    test('Ae parse', () {
+      final addr =
+          "Ae2tdPwUPEZ3MHKkpT5Bpj549vrRH7nBqYjNXnCV8G2Bc2YxNcGHEa8ykDp";
+      final byronAddr = stringToAddress(addr);
+      expect(byronAddr, isInstanceOf<ByronAddress>());
+      expect((byronAddr as ByronAddress).toBase58, equals(addr));
+    });
+    test('issue13', () {
+      final addr =
+          'DdzFFzCqrht64pcFbyLyDbVd87ApfbPKumaXiNjPf1kn9LUtGraWdkmWYMNbEG8e7MoA5Y8GASDFG34F13BBeJjvF8tt9oLCkYcicWse';
+      final byronAddr = stringToAddress(addr);
+      expect(byronAddr, isInstanceOf<ByronAddress>());
+      expect((byronAddr as ByronAddress).toBase58, equals(addr));
+    });
+    test('InvalidAddressError', () {
+      expect(() => stringToAddress('junk'),
+          throwsA(TypeMatcher<InvalidAddressError>()));
+      expect(
+          () => stringToAddress(
+              'Ae2t#PwUPEZ3MHKkpT5Bpj549vrRH7nBqYjNXnCV8G2Bc2YxNcGHEa8ykDp'),
+          throwsA(TypeMatcher<InvalidAddressError>()));
+    });
+  });
+
   group('ScriptAddresses -', () {
     const testEntropy =
         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
