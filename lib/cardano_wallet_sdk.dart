@@ -59,7 +59,7 @@ export './src/wallet/impl/wallet_impl.dart';
 export './src/wallet/impl/wallet_update.dart';
 export './src/wallet/read_only_wallet.dart';
 export './src/wallet/account.dart';
-export './src/wallet/multi_account_wallet.dart';
+// export './src/wallet/multi_account_wallet.dart';
 export './src/wallet/wallet_builder.dart';
 export './src/wallet/wallet_cache.dart';
 export './src/wallet/wallet.dart';
