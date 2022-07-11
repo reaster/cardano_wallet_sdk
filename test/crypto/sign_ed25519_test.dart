@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'package:hex/hex.dart';
 import 'dart:typed_data';
 
+/// Standalone signing functions.
+/// TODO currently the code still calls Bip32VerifyKey.sign. Use it or lose it!
 void main() {
   group('Ed25519 - ', () {
     test('signEd25519Extended', () {

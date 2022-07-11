@@ -431,8 +431,9 @@ class BcTransaction extends BcAbstractCbor {
           outputs: body.outputs,
           fee: body.fee,
           ttl: body.ttl,
-          metadataHash:
-              metadata?.hash, //optionally add hash if metadata present
+          metadataHash: metadata != null && !metadata.isEmpty
+              ? metadata.hash
+              : null, //optionally add hash if metadata present
           validityStartInterval: body.validityStartInterval,
           mint: body.mint,
         );

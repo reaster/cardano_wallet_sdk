@@ -25,10 +25,8 @@ void main() {
     final entropyHex = mnemonicToEntropyHex(
         mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
     final derivation = IcarusKeyDerivation.entropyHex(entropyHex);
-    final tw =
-        MultiAccountWallet.mnemonic(mnemonic, network: NetworkId.testnet);
-    final mw =
-        MultiAccountWallet.mnemonic(mnemonic, network: NetworkId.mainnet);
+    final tw = HdMaster.mnemonic(mnemonic, network: NetworkId.testnet);
+    final mw = HdMaster.mnemonic(mnemonic, network: NetworkId.mainnet);
 
     test('enterpriseScriptAddressTestnet0', () {
       final a0 = mw.account();
@@ -45,6 +43,18 @@ void main() {
             assertThat(address.toBech32()).isEqualTo("addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx");
         }
 */
+
+    test('audit', () {
+      const testEntropy =
+          '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      final master = HdMaster.entropyHex(testEntropy);
+      final acct0 = master.account();
+      final audit0 = master.audit();
+      expect(audit0.baseAddress().toBech32(),
+          equals(acct0.baseAddress().toBech32()));
+      expect(audit0.changeAddress().toBech32(),
+          equals(acct0.changeAddress().toBech32()));
+    });
 
     test('enterpriseKeyAddressMainnet', () {
       //mainnet
@@ -73,8 +83,7 @@ void main() {
           'alpha desert more credit sad balance receive sand someone correct used castle present bar shop borrow inmate estate year flip theory recycle measure silk'
               .split(' ');
       final account =
-          MultiAccountWallet.mnemonic(mnemonic, network: NetworkId.testnet)
-              .account();
+          HdMaster.mnemonic(mnemonic, network: NetworkId.testnet).account();
       const acct0xvk =
           'acct_xvk1xfehjaqtvn0vdjqrrfwlgvfk8qedv4fus04thny96lj6rhc2tphsx0wlcdaehpjzjfyj7uref4uqlacrtft55u9ll6eal4h4ac75yzqdnqwtf';
       final acctVerifyKey =
@@ -107,8 +116,7 @@ void main() {
       const addrChange1 =
           'addr_test1qpcdsfzewqkl3w5kxk553hts5lvw9tdjda9nzt069gqmyud24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9s89kyst';
       final account =
-          MultiAccountWallet.mnemonic(mnemonic, network: NetworkId.testnet)
-              .account();
+          HdMaster.mnemonic(mnemonic, network: NetworkId.testnet).account();
       final _addr0 = account.baseAddress(index: 0).toBech32();
       expect(_addr0, equals(addr0), reason: 'acct 0, address 0');
       final _addr1 = account.baseAddress(index: 1).toBech32();
@@ -142,12 +150,12 @@ void main() {
         'acct_xsk1grmww8c9yftkd6nlmuh7wypx46duh8az7sxyg88fr4k3qpc33azk8gc5ntllturxzee5gj2zd5dy48f0ehp6lqudkwvacxjznz8j0mzd2ad0t2fmmaystgms97k7maz3afvy0ywjxwk7jzt96cyt43tnqsr5dmk0',
         coder: acctXskCoder);
 
-    test('MultiAccountWallet constructors', () {
-      final w1 = MultiAccountWallet.entropyHex(seedHex);
+    test('Master constructors', () {
+      final w1 = HdMaster.entropyHex(seedHex);
       expect(w1.derivation.root is Bip32SigningKey, isTrue);
       final Bip32SigningKey key1 = icarusGenerateMasterKey(seed);
       expect(w1.derivation.root, equals(key1));
-      final w2 = MultiAccountWallet.mnemonic(mnemonic,
+      final w2 = HdMaster.mnemonic(mnemonic,
           loadWordsFunction: loadEnglishMnemonicWords);
       final entropy = mnemonicToEntropy(
           mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
@@ -170,7 +178,7 @@ void main() {
       // const expectedTestnetSpend0Bech32 =
       //     'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
 
-      final account = Account(accountSigningKey: acct0Xsk);
+      final account = HdAccount(accountSigningKey: acct0Xsk);
       expect(account.accountSigningKey, expectedAccount0Xsk);
       final derAcct0 = IcarusKeyDerivation(account.accountSigningKey);
       final addr0Key = derAcct0.pathToKey("m/0/0") as Bip32SigningKey;
@@ -186,11 +194,11 @@ void main() {
       const expectedSpend0 =
           'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
       final account =
-          Account(accountSigningKey: xsk, network: NetworkId.testnet);
+          HdAccount(accountSigningKey: xsk, network: NetworkId.testnet);
       expect(account.baseAddress().toBech32(), expectedSpend0);
     });
 
-    test('validate MultiAccountWallet', () {
+    test('validate Master', () {
       final entropyHex =
           '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
       final expectedSpend0Xsk = tolist(
@@ -198,9 +206,9 @@ void main() {
 
       final icarus = IcarusKeyDerivation.entropyHex(entropyHex);
       final acct0Xsk = icarus.pathToKey("m/1852'/1815'/0'") as Bip32SigningKey;
-      final wallet = MultiAccountWallet.entropyHex(entropyHex);
+      final wallet = HdMaster.entropyHex(entropyHex);
       expect(wallet.derivation.root, icarus.root);
-      Account acct0 = wallet.account();
+      HdAccount acct0 = wallet.account();
       expect(acct0.derivation.root, acct0Xsk);
       expect(acct0.basePrivateKey(), expectedSpend0Xsk);
     });
@@ -222,8 +230,8 @@ void main() {
       final Bip32SigningKey _root = icarusGenerateMasterKey(_master);
       expect(_root, equals(expectedMasterKey));
 
-      // MultiAccountWallet / Account derivation
-      final wallet = MultiAccountWallet.mnemonic(mnemonicBob,
+      // Master / Account derivation
+      final wallet = HdMaster.mnemonic(mnemonicBob,
           loadWordsFunction: loadEnglishMnemonicWords,
           network: NetworkId.testnet);
       // print(rootXskCoder.encode(hdWallet.rootSigningKey));
@@ -231,7 +239,7 @@ void main() {
       expect(wallet.derivation.root, equals(expectedMasterKey));
       // print(rootXskCoder.encode(wallet.derivation.root));
 
-      Account account = wallet.account();
+      HdAccount account = wallet.account();
       final expectedAcct0PvtKey =
           ShelleyKeyDerivation(expectedMasterKey).fromPath("m/1852'/1815'/0'");
       expect(account.accountSigningKey, equals(expectedAcct0PvtKey));

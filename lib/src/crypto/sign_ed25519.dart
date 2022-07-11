@@ -7,6 +7,7 @@ import '../util/blake2bhash.dart';
 
 ///
 /// Cryptographic signature methods.
+/// TODO currently the code still calls Bip32VerifyKey.sign. Use it or lose it!
 ///
 
 ///Sign a message with a ed25519 private key and return signature

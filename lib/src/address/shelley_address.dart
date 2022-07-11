@@ -8,7 +8,6 @@ import 'package:quiver/core.dart';
 import '../transaction/model/bc_abstract.dart';
 import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';
-// import '../transaction/spec/script.dart';
 import '../network/network_id.dart';
 import '../util/blake2bhash.dart';
 import '../util/codec.dart';
@@ -20,7 +19,7 @@ import '../util/codec.dart';
 /// TODO: Subclass ShelleyAddress into BaseAddress, EnterpriseAddress, PointerAddress and RewardsAddress to support
 /// different behaviors.
 ///
-/// [reference](https://cips.cardano.org/cips/cip19/)
+/// [reference](https://cips.cardano.org/cips/cip19/) - Cardano Addresses
 /// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
 ///
 /// https://docs.rs/cardano-sdk/0.1.0/src/cardano_sdk/wallet/address.rs.html
@@ -53,9 +52,13 @@ import '../util/codec.dart';
 /// 0110: enterprise address: keyhash28
 /// 0111: enterprise address: scripthash28
 /// 1000: byron address
+/// 1001: <future use>
+/// 1010: <future use>
+/// 1011: <future use>
+/// 1100: <future use>
+/// 1101: <future use>
 /// 1110: reward account: keyhash28
 /// 1111: reward account: scripthash28
-/// 1001 - 1101: future formats 1001,1010,1011,1100,1101
 ///
 abstract class AbstractAddress {
   Uint8List get bytes;
@@ -148,14 +151,14 @@ class ShelleyAddress extends AbstractAddress {
     required Bip32PublicKey stake,
     NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.key,
-    CredentialType stakeType = CredentialType.key,
+    // CredentialType paymentType = CredentialType.key,
+    // CredentialType stakeType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
           ...[
-            (stakeType.index << 5) |
-                (paymentType.index << 4) |
+            (CredentialType.key.index << 5) |
+                (CredentialType.key.index << 4) |
                 (networkId.index & 0x0f)
           ],
           ...blake2bHash224(spend.rawKey),
@@ -169,14 +172,14 @@ class ShelleyAddress extends AbstractAddress {
     required Bip32PublicKey stake,
     NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.key,
-    CredentialType stakeType = CredentialType.script,
+    // CredentialType paymentType = CredentialType.key,
+    // CredentialType stakeType = CredentialType.script,
   }) =>
       ShelleyAddress(
         [
           ...[
-            (stakeType.index << 5) |
-                (paymentType.index << 4) |
+            (CredentialType.script.index << 5) |
+                (CredentialType.key.index << 4) |
                 (networkId.index & 0x0f)
           ],
           ...blake2bHash224(script.serialize),
@@ -289,12 +292,14 @@ class ShelleyAddress extends AbstractAddress {
     required BcPointer pointer,
     NetworkId networkId = NetworkId.mainnet,
     String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.key,
+    // CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
           ...[
-            pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)
+            pointerDiscrim |
+                (CredentialType.key.index << 4) |
+                (networkId.index & 0x0f)
           ],
           ...blake2bHash224(verifyKey),
           ...pointer.hash,
