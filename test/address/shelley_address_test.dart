@@ -23,14 +23,16 @@ class MockPlutusScript extends BcPlutusScript {
 
 void main() {
   group('ByronAddresses -', () {
-    test('Dd parse', () {
+    test('Daedalus-style - DdzFF', () {
+      //Daedalus-style: Starting with  DdzFF
       final addr =
           "DdzFFzCqrhszg6cqZvDhEwUX7cZyNzdycAVpm4Uo2vjKMgTLrVqiVKi3MBt2tFAtDe7NkptK6TAhVkiYzhavmKV5hE79CWwJnPCJTREK";
       final byronAddr = stringToAddress(addr);
       expect(byronAddr, isInstanceOf<ByronAddress>());
       expect((byronAddr as ByronAddress).toBase58, equals(addr));
     });
-    test('Ae parse', () {
+    test('Icarus-style - Ae2', () {
+      //Icarus-style: Starting with Ae2
       final addr =
           "Ae2tdPwUPEZ3MHKkpT5Bpj549vrRH7nBqYjNXnCV8G2Bc2YxNcGHEa8ykDp";
       final byronAddr = stringToAddress(addr);
