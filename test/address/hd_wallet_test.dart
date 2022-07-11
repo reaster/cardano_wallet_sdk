@@ -57,17 +57,17 @@ void main() {
       expect(rawMaster[31], 101, reason: 'byte 31 before normalization');
       //print(rawMaster.join(','));
       final Bip32SigningKey rootXsk = Bip32SigningKey.normalizeBytes(rawMaster);
-      expect(rootXsk.keyBytes[0], 152, reason: 'byte 0 after normalization');
-      expect(rootXsk.keyBytes[31], 69, reason: 'byte 31 after normalization');
-      //print(xpvtKey.keyBytes.join(','));
-      expect(rootXsk.keyBytes,
+      expect(rootXsk.rawKey[0], 152, reason: 'byte 0 after normalization');
+      expect(rootXsk.rawKey[31], 69, reason: 'byte 31 after normalization');
+      //print(xpvtKey.rawKey.join(','));
+      expect(rootXsk.rawKey,
           excpectedXskBip32Bytes.sublist(0, cip16ExtendedVerificationgKeySize),
           reason: 'first 64 bytes are private key');
       expect(rootXsk.chainCode,
           excpectedXskBip32Bytes.sublist(cip16ExtendedVerificationgKeySize),
           reason: 'second 32 bytes are chain code');
       Bip32VerifyKey rootXvk = rootXsk.verifyKey; //get public key
-      expect(rootXvk.keyBytes, expectedXvkBip32Bytes.sublist(0, publicKeySize),
+      expect(rootXvk.rawKey, expectedXvkBip32Bytes.sublist(0, publicKeySize),
           reason: 'first 32 bytes are public key');
       expect(rootXvk.chainCode, expectedXvkBip32Bytes.sublist(publicKeySize),
           reason: 'second 32 bytes are chain code');
@@ -92,30 +92,30 @@ void main() {
       //validate IcarusKeyDerivation
       final icarus = IcarusKeyDerivation.entropy(entropy);
       expect(icarus.root, rootXsk);
-      final purposeXsk = icarus.forPath("m/1852'") as Bip32SigningKey;
+      final purposeXsk = icarus.pathToKey("m/1852'") as Bip32SigningKey;
       expect(purposeXsk, expectedPurposeXsk);
-      final acct0Xsk = icarus.forPath("m/1852'/1815'/0'") as Bip32SigningKey;
+      final acct0Xsk = icarus.pathToKey("m/1852'/1815'/0'") as Bip32SigningKey;
       expect(acct0Xsk, expectedAccount0Xsk);
-      final roleXsk = icarus.forPath("m/1852'/1815'/0'/0") as Bip32SigningKey;
+      final roleXsk = icarus.pathToKey("m/1852'/1815'/0'/0") as Bip32SigningKey;
       expect(roleXsk, expectedChange0Xsk);
       final spend0Xsk =
-          icarus.forPath("m/1852'/1815'/0'/0/0") as Bip32SigningKey;
+          icarus.pathToKey("m/1852'/1815'/0'/0/0") as Bip32SigningKey;
       expect(spend0Xsk, expectedSpend0Xsk);
 
       //validate Account
-      final account = Account(accountSigningKey: acct0Xsk);
+      final account = HdAccount(accountSigningKey: acct0Xsk);
       expect(account.accountSigningKey, expectedAccount0Xsk);
       final derAcct0 = IcarusKeyDerivation(account.accountSigningKey);
-      final addr0Key = derAcct0.forPath("m/0/0") as Bip32SigningKey;
+      final addr0Key = derAcct0.pathToKey("m/0/0") as Bip32SigningKey;
       expect(addr0Key, expectedSpend0Xsk);
       expect(account.basePrivateKey(), expectedSpend0Xsk);
       //expect(account.stakePrivateKey, expectedStake0Xsk);
       expect(account.baseAddress().toBech32(), expectedSpend0Bech32);
 
-      //validate MultiAccountWallet
-      final wallet = MultiAccountWallet.entropyHex(testEntropy);
+      //validate Master
+      final wallet = HdMaster.entropyHex(testEntropy);
       expect(wallet.derivation.root, rootXsk);
-      Account acct0 = wallet.account(accountIndex: 0);
+      HdAccount acct0 = wallet.account(accountIndex: 0);
       expect(acct0.derivation.root, acct0Xsk);
       expect(acct0.basePrivateKey(), expectedSpend0Xsk);
     });
@@ -327,36 +327,37 @@ addr.xvk                                key_for_account_0_address_1.txt         
           equals(rewardAddressPath));
     });
   });
-  group('convergence -', () {
-    const testEntropy =
-        '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-    final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-    final Bip32KeyPair stakeAddress0Pair =
-        hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
-    setUp(() {});
-    test('validate', () {
-      final Bip32KeyPair keys0 = hdWallet.deriveAddressKeys(index: 0);
-      final addr0 = hdWallet.toBaseAddress(
-          networkId: NetworkId.mainnet,
-          spend: keys0.verifyKey!,
-          stake: stakeAddress0Pair.verifyKey!);
-      print('   addr[0]: ${addr0.toBech32()}');
-      final Bip32KeyPair keys1 = hdWallet.deriveAddressKeys(index: 1);
-      final addr1 = hdWallet.toBaseAddress(
-          networkId: NetworkId.mainnet,
-          spend: keys1.verifyKey!,
-          stake: stakeAddress0Pair.verifyKey!);
-      print('   addr[1]: ${addr1.toBech32()}');
-      //public to public key
-      final Bip32KeyPair keys1Pub = hdWallet.derive(
-          keys: Bip32KeyPair(signingKey: null, verifyKey: keys0.verifyKey),
-          index: 1);
-      final addr1Pub = hdWallet.toBaseAddress(
-          networkId: NetworkId.mainnet,
-          spend: keys1Pub.verifyKey!,
-          stake: stakeAddress0Pair.verifyKey!);
-      print('addrPub[1]: ${addr1Pub.toBech32()}');
-      expect(addr1Pub.toBech32(), equals(addr1.toBech32()));
-    }, skip: 'path generation misunderstanding?');
-  });
+
+  // group('convergence -', () {
+  //   const testEntropy =
+  //       '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+  //   final hdWallet = HdWallet.fromHexEntropy(testEntropy);
+  //   final Bip32KeyPair stakeAddress0Pair =
+  //       hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
+  //   setUp(() {});
+  //   test('validate', () {
+  //     final Bip32KeyPair keys0 = hdWallet.deriveAddressKeys(index: 0);
+  //     final addr0 = hdWallet.toBaseAddress(
+  //         networkId: NetworkId.mainnet,
+  //         spend: keys0.verifyKey!,
+  //         stake: stakeAddress0Pair.verifyKey!);
+  //     print('   addr[0]: ${addr0.toBech32()}');
+  //     final Bip32KeyPair keys1 = hdWallet.deriveAddressKeys(index: 1);
+  //     final addr1 = hdWallet.toBaseAddress(
+  //         networkId: NetworkId.mainnet,
+  //         spend: keys1.verifyKey!,
+  //         stake: stakeAddress0Pair.verifyKey!);
+  //     print('   addr[1]: ${addr1.toBech32()}');
+  //     //public to public key
+  //     final Bip32KeyPair keys1Pub = hdWallet.derive(
+  //         keys: Bip32KeyPair(signingKey: null, verifyKey: keys0.verifyKey),
+  //         index: 1);
+  //     final addr1Pub = hdWallet.toBaseAddress(
+  //         networkId: NetworkId.mainnet,
+  //         spend: keys1Pub.verifyKey!,
+  //         stake: stakeAddress0Pair.verifyKey!);
+  //     print('addrPub[1]: ${addr1Pub.toBech32()}');
+  //     expect(addr1Pub.toBech32(), equals(addr1.toBech32()));
+  //   }, skip: 'path generation misunderstanding?');
+  // });
 }
