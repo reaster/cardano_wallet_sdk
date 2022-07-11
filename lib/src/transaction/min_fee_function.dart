@@ -6,13 +6,32 @@ import '../util/ada_types.dart';
 import './spec/shelley_spec.dart';
 import 'package:cbor/cbor.dart';
 
-typedef MinFeeFunction = Coin Function(
+import 'model/bc_tx.dart';
+
+@Deprecated('use MinFeeFunction')
+typedef MinFeeFunctionOld = Coin Function(
     {required ShelleyTransaction transaction, LinearFee linearFee});
+
+typedef MinFeeFunction = Coin Function(
+    {required BcTransaction transaction, LinearFee linearFee});
 
 ///
 /// calculate transaction fee based on transaction lnegth and minimum constant
 ///
 Coin simpleMinFee(
+    {required BcTransaction transaction,
+    LinearFee linearFee = defaultLinearFee}) {
+  final logger = Logger();
+  final len = cbor.encode(transaction.toCborList()).length;
+  final result =
+      (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
+  logger.i(
+      "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
+  return result;
+}
+
+@Deprecated('use simpleMinFee')
+Coin simpleMinFeeOld(
     {required ShelleyTransaction transaction,
     LinearFee linearFee = defaultLinearFee}) {
   final logger = Logger();
