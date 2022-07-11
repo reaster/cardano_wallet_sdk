@@ -36,11 +36,17 @@ enum HdUseCase {
 }
 
 ///
-/// Base Account class specifies a Network and at least one received address (Shelley or Byron).
+/// Base Account class specifies a use-case and Network.
 ///
 abstract class HdAbstract {
   HdUseCase get useCase;
   NetworkId get network;
+}
+
+///
+/// Interface allowing funds to be sent to Shelley or Byron addresses.
+///
+abstract class HdLegacyReceiver {
   AbstractAddress receiveAddress({int index = 0});
   //int get firstUnusedReceiveIndex => 0;
 }
@@ -49,7 +55,7 @@ abstract class HdAbstract {
 /// AddressReceiver is the simplest possible Account, containing a collection
 /// of addresses (Shelley or Byron) that can receive Cardano assets.
 ///
-class HdAddressReceiver extends HdAbstract {
+class HdAddressReceiver extends HdAbstract implements HdLegacyReceiver {
   @override
   final HdUseCase useCase = HdUseCase.unsecureMoneyReceiver;
   @override
@@ -80,15 +86,18 @@ class HdAddressReceiver extends HdAbstract {
 }
 
 ///
-/// Chain
-abstract class HdAbstractAccount extends HdAbstract {
+/// Utilized BIP32 tree to generate new keys and addresses.
+///
+abstract class HdTree extends HdAbstract {
   ShelleyKeyDerivation get derivation;
   DerivationChain get chain;
   String get chainLabel;
 }
 
-/// Read-only Audit Account
-class HdAudit extends HdAbstractAccount {
+///
+/// Read-only Audit Account using public keys.
+///
+class HdAudit extends HdTree implements HdLegacyReceiver {
   @override
   final HdUseCase useCase = HdUseCase.audits;
   @override
@@ -130,14 +139,14 @@ class HdAudit extends HdAbstractAccount {
       networkId: network);
 
   @override
-  AbstractAddress receiveAddress({int index = 0}) => spendAddress(index: index);
+  AbstractAddress receiveAddress({int index = 0}) => baseAddress(index: index);
 
   @override
   String get chainLabel => "M/$accountIndex'";
 }
 
 /// Office Account
-class HdAccount implements HdAbstractAccount {
+class HdAccount extends HdTree implements HdLegacyReceiver {
   @override
   final HdUseCase useCase = HdUseCase.perOfficeBalances;
   // @override
@@ -229,21 +238,27 @@ class HdAccount implements HdAbstractAccount {
 ///
 /// The HD master contains the master private key allowing it create any type of Account.
 ///
-/// However, 99% of the time you'll just create a master using a mnemonic and get the
+/// 99% of the time you'll just create a master using a mnemonic and get the
 /// default account:
 ///
 ///   Account account = HdMaster.mnemonic(['head', 'guard',...]).account();
 ///
 /// Unless specified, the default network is mainnet.
 ///
-class HdMaster {
+class HdMaster extends HdTree {
+  @override
   final HdUseCase useCase = HdUseCase.fullWalletSharing;
+  @override
+  final NetworkId network;
+  @override
   final DerivationChain chain = const DerivationChain(key: 'm', segments: [
     cip1852,
     cip1815,
   ]);
+  @override
   final ShelleyKeyDerivation derivation;
-  final NetworkId network;
+  @override
+  String get chainLabel => 'm';
 
   HdMaster({
     required this.derivation,
@@ -316,8 +331,6 @@ class HdMaster {
 
   // static const _defaultAcctPath = "m/1852'/1815'/0'";
   String _acctPathTemplate(int accountIndex) => "m/1852'/1815'/$accountIndex'";
-
-  String get chainLabel => 'm';
 }
 
 class InvalidAccountError extends Error {
