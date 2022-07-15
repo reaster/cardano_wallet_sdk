@@ -5,7 +5,6 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:quiver/core.dart';
-import '../transaction/model/bc_abstract.dart';
 import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';
 import '../network/network_id.dart';
@@ -13,60 +12,71 @@ import '../util/blake2bhash.dart';
 import '../util/codec.dart';
 
 ///
-/// Encapsulates Shelley address types. Handles proper bech32 encoding and decoding mainnet and testnet addresses.
+/// Encapsulates Shelley and Byron address types. Handles proper bech32 encoding and decoding mainnet and testnet addresses.
 ///
-/// Note: Currently only supports Base addresses and Key credentials.
-/// TODO: Subclass ShelleyAddress into BaseAddress, EnterpriseAddress, PointerAddress and RewardsAddress to support
-/// different behaviors.
+/// Address format: [ 8 bit header | payload ];
 ///
-/// [reference](https://cips.cardano.org/cips/cip19/) - Cardano Addresses
-/// [reference](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
-///
-/// https://docs.rs/cardano-sdk/0.1.0/src/cardano_sdk/wallet/address.rs.html
-/// As defined in the CDDL:
-///
-/// address format:
-/// [ 8 bit header | payload ];
-///
-/// shelley payment addresses:
-/// bit 7: 0
-/// bit 6: base/other
-/// bit 5: pointer/enterprise [for base: stake cred is keyhash/scripthash]
-/// bit 4: payment cred is keyhash/scripthash
-/// bits 3-0: network id
-///
-/// reward addresses:
-/// bits 7-5: 111
-/// bit 4: credential is keyhash/scripthash
-/// bits 3-0: network id
-///
-/// byron addresses:
-/// bits 7-4: 1000
-///
-/// 0000: base address: keyhash28,keyhash28
-/// 0001: base address: scripthash28,keyhash28
-/// 0010: base address: keyhash28,scripthash28
-/// 0011: base address: scripthash28,scripthash28
-/// 0100: pointer address: keyhash28, 3 variable length uint
-/// 0101: pointer address: scripthash28, 3 variable length uint
-/// 0110: enterprise address: keyhash28
-/// 0111: enterprise address: scripthash28
-/// 1000: byron address
-/// 1001: <future use>
-/// 1010: <future use>
-/// 1011: <future use>
-/// 1100: <future use>
-/// 1101: <future use>
-/// 1110: reward account: keyhash28
-/// 1111: reward account: scripthash28
+/// references:
+/// [Cardano Addresses](https://cips.cardano.org/cips/cip19/)
+/// [Delegation Design Spec](https://hydra.iohk.io/build/6141104/download/1/delegation_design_spec.pdf)
+/// [Rust implementation](https://docs.rs/cardano-sdk/0.1.0/src/cardano_sdk/wallet/address.rs.html)
 ///
 abstract class AbstractAddress {
+  ///
+  /// Raw bytes of address.
+  /// Format [ 8 bit header | payload ]
+  ///
   Uint8List get bytes;
+
+  ///
+  /// Returns high-level grouping of address type: base, pointer, enterprise, byron or reward.
+  ///
   AddressType get addressType => addressTypeFromHeader(bytes[0]);
-  NetworkId get networkId;
+
+  ///
+  /// Returns Network (mainnet or testnet) that this address is bound to.
+  ///
+  Networks get network;
+
+  ///
+  /// returns the 8 bit header of the address.
+  ///
+  /// shelley payment addresses:
+  /// bit 7: 0
+  /// bit 6: base/other
+  /// bit 5: pointer/enterprise [for base: stake cred is keyhash/scripthash]
+  /// bit 4: payment cred is keyhash/scripthash
+  /// bits 3-0: network id
+  ///
+  /// reward addresses:
+  /// bits 7-5: 111
+  /// bit 4: credential is keyhash/scripthash
+  /// bits 3-0: network id
+  ///
+  /// byron addresses:
+  /// bits 7-4: 1000
+  ///
+  /// 0000: base address: keyhash28,keyhash28
+  /// 0001: base address: scripthash28,keyhash28
+  /// 0010: base address: keyhash28,scripthash28
+  /// 0011: base address: scripthash28,scripthash28
+  /// 0100: pointer address: keyhash28, 3 variable length uint
+  /// 0101: pointer address: scripthash28, 3 variable length uint
+  /// 0110: enterprise address: keyhash28
+  /// 0111: enterprise address: scripthash28
+  /// 1000: byron address
+  /// 1001: <future use>
+  /// 1010: <future use>
+  /// 1011: <future use>
+  /// 1100: <future use>
+  /// 1101: <future use>
+  /// 1110: reward account: keyhash28
+  /// 1111: reward account: scripthash28
+  ///
+  int get header => bytes[0];
 
   static AddressType addressTypeFromHeader(int header) {
-    final addrType = (header & 0xf0) >> 4;
+    final addrType = (header & 0xf0) >> 4; //just look at 7-4 bits, ignore 3-0
     switch (addrType) {
       // Base Address
       case 0:
@@ -92,6 +102,11 @@ abstract class AbstractAddress {
   }
 }
 
+///
+/// ByronAddress allows Byron or bootstrap addresses to be writen and read as base58
+/// strings (but not currently parsed) in a way that allows them to co-exist with
+/// ShelleyAddresses.
+///
 class ByronAddress extends AbstractAddress {
   @override
   final Uint8List bytes;
@@ -127,15 +142,18 @@ class ByronAddress extends AbstractAddress {
   String get toBase58 => base58Codec.encode(bytes);
 
   @override
-  NetworkId get networkId =>
-      protocolMagic == null || protocolMagic == NetworkId.mainnet.protocolMagic
-          ? NetworkId.mainnet
-          : NetworkId.testnet;
+  Networks get network =>
+      protocolMagic == null || protocolMagic == Networks.mainnet.protocolMagic
+          ? Networks.mainnet
+          : Networks.testnet;
 
   @override
   String toString() => toBase58;
 }
 
+///
+/// ShelleyAddress supports base, pointer, enterprise and rewards address types documented in CIP19.
+///
 class ShelleyAddress extends AbstractAddress {
   @override
   final Uint8List bytes;
@@ -146,133 +164,227 @@ class ShelleyAddress extends AbstractAddress {
       : bytes = Uint8List.fromList(bytes);
   //  {  assert(addressType == AddressType.Base || !isChange); } //change addresses must be base addresses
 
-  factory ShelleyAddress.toBaseAddress({
-    required Bip32PublicKey spend,
-    required Bip32PublicKey stake,
-    NetworkId networkId = NetworkId.mainnet,
+  factory ShelleyAddress.baseAddress({
+    required VerifyKey spend,
+    required VerifyKey stake,
+    Networks network = Networks.mainnet,
     String hrp = defaultAddrHrp,
-    // CredentialType paymentType = CredentialType.key,
-    // CredentialType stakeType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
           ...[
-            (CredentialType.key.index << 5) |
-                (CredentialType.key.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.base.header |
+                CredentialType.key.header1 |
+                CredentialType.key.header2 |
+                network.networkId
           ],
-          ...blake2bHash224(spend.rawKey),
-          ...blake2bHash224(stake.rawKey),
+          ...blake2bHash224(_stripChain(spend)),
+          ...blake2bHash224(_stripChain(stake)),
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
-  factory ShelleyAddress.toBaseScriptAddress({
+  factory ShelleyAddress.baseScriptStakeAddress({
     required BcAbstractScript script,
-    required Bip32PublicKey stake,
-    NetworkId networkId = NetworkId.mainnet,
+    required VerifyKey stake,
+    Networks network = Networks.mainnet,
+    String hrp = defaultAddrHrp,
+  }) =>
+      ShelleyAddress(
+        [
+          ...[
+            AddressType.base.header |
+                CredentialType.script.header1 |
+                CredentialType.key.header2 |
+                network.networkId
+          ],
+          ...script.scriptHash,
+          ...blake2bHash224(_stripChain(stake)),
+        ],
+        hrp: _computeHrp(network, hrp),
+      );
+
+  factory ShelleyAddress.baseKeyScriptAddress({
+    required VerifyKey spend,
+    required BcAbstractScript script,
+    Networks network = Networks.mainnet,
+    String hrp = defaultAddrHrp,
+  }) =>
+      ShelleyAddress(
+        [
+          ...[
+            AddressType.base.header |
+                CredentialType.key.header1 |
+                CredentialType.script.header2 |
+                network.networkId
+          ],
+          ...blake2bHash224(_stripChain(spend)),
+          ...script.scriptHash,
+        ],
+        hrp: _computeHrp(network, hrp),
+      );
+
+  factory ShelleyAddress.baseScriptScriptAddress({
+    required BcAbstractScript script1,
+    required BcAbstractScript script2,
+    Networks network = Networks.mainnet,
+    String hrp = defaultAddrHrp,
+  }) =>
+      ShelleyAddress(
+        [
+          ...[
+            AddressType.base.header |
+                CredentialType.script.header1 |
+                CredentialType.script.header2 |
+                network.networkId
+          ],
+          ...script1.scriptHash,
+          ...script2.scriptHash,
+        ],
+        hrp: _computeHrp(network, hrp),
+      );
+
+  factory ShelleyAddress.pointerAddress({
+    required VerifyKey verifyKey,
+    required BcPointer pointer,
+    Networks network = Networks.mainnet,
     String hrp = defaultAddrHrp,
     // CredentialType paymentType = CredentialType.key,
-    // CredentialType stakeType = CredentialType.script,
   }) =>
       ShelleyAddress(
         [
           ...[
-            (CredentialType.script.index << 5) |
-                (CredentialType.key.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.pointer.header |
+                CredentialType.key.header1 |
+                network.networkId
           ],
-          ...blake2bHash224(script.serialize),
-          ...blake2bHash224(stake.rawKey),
+          ...blake2bHash224(_stripChain(verifyKey)),
+          ...pointer.hash,
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
-  factory ShelleyAddress.toRewardAddress({
-    required Bip32PublicKey spend,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultRewardHrp,
+  factory ShelleyAddress.pointerScriptAddress({
+    required BcAbstractScript script,
+    required BcPointer pointer,
+    Networks network = Networks.mainnet,
+    String hrp = defaultAddrHrp,
   }) =>
       ShelleyAddress(
         [
           ...[
-            rewardDiscrim |
-                (CredentialType.key.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.pointer.header |
+                CredentialType.script.header1 |
+                network.networkId
           ],
-          ...blake2bHash224(spend.rawKey),
+          ...script.scriptHash,
+          ...pointer.hash,
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
-  factory ShelleyAddress.rewardAddress({
-    required VerifyKey stakeKey,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultRewardHrp,
+  factory ShelleyAddress.enterpriseAddress({
+    required VerifyKey spend,
+    Networks network = Networks.mainnet,
+    String hrp = defaultAddrHrp,
+    CredentialType paymentType = CredentialType.key,
   }) =>
       ShelleyAddress(
         [
           ...[
-            rewardDiscrim |
-                (CredentialType.key.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.enterprise.header |
+                CredentialType.key.header1 |
+                network.networkId
           ],
-          ...blake2bHash224(stakeKey)
+          ...blake2bHash224(_stripChain(spend)),
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
   factory ShelleyAddress.enterpriseScriptAddress({
     required BcAbstractScript script,
-    NetworkId networkId = NetworkId.mainnet,
+    Networks network = Networks.mainnet,
     String hrp = defaultAddrHrp,
   }) =>
       ShelleyAddress(
         [
           ...[
-            enterpriseScriptDiscrim | //0b0111_0000;
-                (CredentialType.script.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.enterprise.header |
+                CredentialType.script.header1 |
+                network.networkId
           ],
           ...script.scriptHash,
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
-  factory ShelleyAddress.enterprisePlutusScriptAddress({
-    required BcPlutusScript script,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.key,
+  // factory ShelleyAddress.enterprisePlutusScriptAddress({
+  //   required BcPlutusScript script,
+  //   Networks network = Networks.mainnet,
+  //   String hrp = defaultAddrHrp,
+  // }) =>
+  //     ShelleyAddress(
+  //       [
+  //         ...[
+  //           AddressType.enterprise.header |
+  //               CredentialType.script.header1 |
+  //               network.networkId
+  //         ],
+  //         ...script.scriptHash,
+  //       ],
+  //       hrp: _computeHrp(network, hrp),
+  //     );
+
+  // factory ShelleyAddress.toRewardAddress({
+  //   required Bip32PublicKey spend,
+  //   Networks network = Networks.mainnet,
+  //   String hrp = defaultRewardHrp,
+  // }) =>
+  //     ShelleyAddress(
+  //       [
+  //         ...[
+  //           AddressType.reward.header |
+  //               CredentialType.key.header1 |
+  //               network.networkId
+  //         ],
+  //         ...blake2bHash224(spend.rawKey),
+  //       ],
+  //       hrp: _computeHrp(network, hrp),
+  //     );
+
+  factory ShelleyAddress.rewardAddress({
+    required VerifyKey stakeKey,
+    Networks network = Networks.mainnet,
+    String hrp = defaultRewardHrp,
   }) =>
       ShelleyAddress(
         [
           ...[
-            enterpriseScriptDiscrim | //0b0111_0000;
-                (paymentType.index << 4) |
-                (networkId.index & 0x0f)
+            AddressType.reward.header |
+                CredentialType.key.header1 |
+                network.networkId
           ],
-          ...blake2bHash224(script.serialize),
+          ...blake2bHash224(_stripChain(stakeKey))
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
-  factory ShelleyAddress.enterpriseAddress({
-    required Bip32PublicKey spend,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultAddrHrp,
-    CredentialType paymentType = CredentialType.key,
+  factory ShelleyAddress.rewardScriptAddress({
+    // required Bip32PublicKey spend,
+    required BcAbstractScript script,
+    Networks network = Networks.mainnet,
+    String hrp = defaultRewardHrp,
   }) =>
       ShelleyAddress(
         [
           ...[
-            enterpriseDiscrim | //0b0110_0000;
-                (paymentType.index << 4) |
-                (networkId.index & 0x0f) //& 0b0000_1111;
+            AddressType.reward.header |
+                CredentialType.script.header1 |
+                network.networkId
           ],
-          ...blake2bHash224(spend.rawKey),
+          ...script.scriptHash,
         ],
-        hrp: _computeHrp(networkId, hrp),
+        hrp: _computeHrp(network, hrp),
       );
 
   // //header: 0110....
@@ -287,57 +399,18 @@ class ShelleyAddress extends AbstractAddress {
   //     return getAddress(paymentKeyHash, null, headerType, networkInfo, AddressType.Enterprise);
   // }
 
-  factory ShelleyAddress.pointerAddress({
-    required VerifyKey verifyKey,
-    required BcPointer pointer,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultAddrHrp,
-    // CredentialType paymentType = CredentialType.key,
-  }) =>
-      ShelleyAddress(
-        [
-          ...[
-            pointerDiscrim |
-                (CredentialType.key.index << 4) |
-                (networkId.index & 0x0f)
-          ],
-          ...blake2bHash224(verifyKey),
-          ...pointer.hash,
-        ],
-        hrp: _computeHrp(networkId, hrp),
-      );
-
-  factory ShelleyAddress.pointerScriptAddress({
-    required BcNativeScript script,
-    required BcPointer pointer,
-    NetworkId networkId = NetworkId.mainnet,
-    String hrp = defaultAddrHrp,
-  }) =>
-      ShelleyAddress(
-        [
-          ...[
-            pointerScriptDiscrim |
-                (CredentialType.script.index << 4) |
-                (networkId.index & 0x0f)
-          ],
-          ...script.scriptHash,
-          ...pointer.hash,
-        ],
-        hrp: _computeHrp(networkId, hrp),
-      );
-
   // factory ShelleyAddress.pointerAddress({
   //   required Bip32PublicKey spend,
   //   required BcPointer pointer,
-  //   NetworkId networkId = NetworkId.mainnet,
+  //   NetworkId network = NetworkId.mainnet,
   //   String hrp = defaultAddrHrp,
   //   CredentialType paymentType = CredentialType.key,
   // }) =>
   //     ShelleyAddress(
-  //       [pointerDiscrim | (paymentType.index << 4) | (networkId.index & 0x0f)] +
+  //       [pointerDiscrim | (paymentType.index << 4) | (network.index & 0x0f)] +
   //           blake2bHash224(spend.rawKey) +
   //           pointer.hash,
-  //       hrp: _computeHrp(networkId, hrp),
+  //       hrp: _computeHrp(network, hrp),
   //     );
 
   //   public Address getPointerAddress(HdPublicKey paymentKey, Pointer delegationPointer, Network networkInfo) {
@@ -360,7 +433,7 @@ class ShelleyAddress extends AbstractAddress {
   }
 
   String toBech32({String? prefix}) {
-    prefix ??= _computeHrp(networkId, hrp);
+    prefix ??= _computeHrp(network, hrp);
     switch (prefix) {
       case defaultAddrHrp:
         return mainNetEncoder.encode(bytes);
@@ -375,9 +448,9 @@ class ShelleyAddress extends AbstractAddress {
   }
 
   @override
-  NetworkId get networkId => NetworkId.testnet.networkId == bytes[0] & 0x0f
-      ? NetworkId.testnet
-      : NetworkId.mainnet;
+  Networks get network => Networks.testnet.networkId == bytes[0] & 0x0f
+      ? Networks.testnet
+      : Networks.mainnet;
 
   // @override
   // AddressType get addressType {
@@ -412,7 +485,6 @@ class ShelleyAddress extends AbstractAddress {
 
   @override
   String toString() => toBech32();
-  // "${_enumSuffix(addressType.toString())} ${_enumSuffix(networkId.toString())} ${_enumSuffix(paymentCredentialType.toString())} ${toBech32()}";
 
   String bytesToString() => "[${bytes.join(',')}]";
 
@@ -432,20 +504,13 @@ class ShelleyAddress extends AbstractAddress {
     return true;
   }
 
-  static String _computeHrp(NetworkId id, String prefix) => id ==
-          NetworkId.testnet
+  static String _computeHrp(Networks id, String prefix) => id ==
+          Networks.testnet
       ? (prefix.endsWith(testnetHrpSuffix) ? prefix : prefix + testnetHrpSuffix)
       : prefix;
 
-  static final List<int> _addressTypeValues = [
-    baseDiscrim,
-    pointerDiscrim,
-    enterpriseDiscrim,
-    rewardDiscrim
-  ];
-
-  static int addressTypeValue(AddressType addressType) =>
-      _addressTypeValues[addressType.index];
+  static VerifyKey _stripChain(VerifyKey vk) =>
+      vk is Bip32VerifyKey ? VerifyKey(Uint8List.fromList(vk.prefix)) : vk;
 
   static const Bech32Coder mainNetEncoder = Bech32Coder(hrp: defaultAddrHrp);
   static const Bech32Coder testNetEncoder =
@@ -456,20 +521,50 @@ class ShelleyAddress extends AbstractAddress {
       Bech32Coder(hrp: defaultRewardHrp + testnetHrpSuffix);
 }
 
-enum AddressType { base, pointer, enterprise, reward, byron }
+//enum AddressType { base, pointer, enterprise, reward, byron }
+/// byron addresses:
+/// bits 7-4: 1000
+///
+/// 0000: base address: keyhash28,keyhash28
+/// 0001: base address: scripthash28,keyhash28
+/// 0010: base address: keyhash28,scripthash28
+/// 0011: base address: scripthash28,scripthash28
+/// 0100: pointer address: keyhash28, 3 variable length uint
+/// 0101: pointer address: scripthash28, 3 variable length uint
+/// 0110: enterprise address: keyhash28
+/// 0111: enterprise address: scripthash28
+/// 1000: byron address
+/// 1001: <future use>
+/// 1010: <future use>
+/// 1011: <future use>
+/// 1100: <future use>
+/// 1101: <future use>
+/// 1110: reward account: keyhash28
+/// 1111: reward account: scripthash28
+///
+enum AddressType {
+  base(0 << 7), // 0b0000_0000
+  pointer(1 << 6), // 0b0100_0000
+  enterprise(1 << 6 | 1 << 5), // 0b0110_0000
+  byron(1 << 7), // 0b1000_0000
+  reward(1 << 7 | 1 << 6 | 1 << 5); // 0b1110_0000
 
-enum CredentialType { key, script }
+  final int header;
+  const AddressType(this.header);
+}
+
+enum CredentialType {
+  key(0 << 4, 0 << 5), // 0b0000_0000, 0b0000_0000
+  script(1 << 4, 1 << 5); // 0b0001_0000, 0b0010_0000
+
+  final int header1;
+  final int header2;
+  const CredentialType(this.header1, this.header2);
+}
 
 const String defaultAddrHrp = 'addr';
 const String defaultRewardHrp = 'stake';
 const String testnetHrpSuffix = '_test';
-const int baseDiscrim = 0x00; //0b0000_0000
-const int pointerDiscrim = 0x40; //0b0100_0000
-const int pointerScriptDiscrim = 0x50; //0b0101_0000
-const int enterpriseDiscrim = 0x60; // 0b0110_0000
-const int enterpriseScriptDiscrim = 0x70; //  = 0b0111_0000;
-const int byronDiscrim = 0x80; //0b1000_0000
-const int rewardDiscrim = 0xe0; //0b1110_0000
 
 ///
 /// return either a ShelleyAddress or a ByronAddress

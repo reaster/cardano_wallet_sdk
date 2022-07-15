@@ -15,13 +15,240 @@ BcScriptAtLeast getMultisigScript() => BcScriptAtLeast(amount: 2, scripts: [
     ]);
 
 class MockPlutusScript extends BcPlutusScript {
-  MockPlutusScript() : super(cborHex: '4e4d01000033222220051200120011');
+  final String scriptBip32Hash;
+  MockPlutusScript(this.scriptBip32Hash)
+      : super(cborHex: '4e4d01000033222220051200120011');
   @override
-  Uint8List get scriptHash => Bech32Coder(hrp: 'script')
-      .decode('script1cda3khwqv60360rp5m7akt50m6ttapacs8rqhn5w342z7r35m37');
+  Uint8List get scriptHash => scriptCoder.decode(scriptBip32Hash);
 }
 
 void main() {
+  group('CIP19 Test Vectors -', () {
+    final dummyChainCode = csvToUint8List(
+        '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0');
+    final addrXvk = Bip32VerifyKey.fromKeyBytes(
+        addrVkCoder.decode(
+            'addr_vk1w0l2sr2zgfm26ztc6nl9xy8ghsk5sh6ldwemlpmp9xylzy4dtf7st80zhd'),
+        dummyChainCode);
+    final addrVk = VerifyKey(Uint8List.fromList(addrXvk.prefix));
+    final stakeXvk = Bip32VerifyKey.fromKeyBytes(
+        stakeVkCoder.decode(
+            'stake_vk1px4j0r2fk7ux5p23shz8f3y5y2qam7s954rgf3lg5merqcj6aetsft99wu'),
+        dummyChainCode);
+    final stakeVk = VerifyKey(Uint8List.fromList(stakeXvk.prefix));
+    final script = MockPlutusScript(
+        'script1cda3khwqv60360rp5m7akt50m6ttapacs8rqhn5w342z7r35m37');
+    final pointer = BcPointer(slot: 2498243, txIndex: 27, certIndex: 3);
+    test('mainnet - type-00', () {
+      expect(
+          ShelleyAddress.baseAddress(spend: addrXvk, stake: stakeXvk)
+              .toBech32(),
+          equals(
+              'addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x'));
+      expect(
+          ShelleyAddress.baseAddress(spend: addrVk, stake: stakeVk).toBech32(),
+          equals(
+              'addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x'));
+    });
+    test('mainnet - type-01', () {
+      expect(
+          ShelleyAddress.baseScriptStakeAddress(script: script, stake: stakeXvk)
+              .toBech32(),
+          equals(
+              'addr1z8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs9yc0hh'));
+      expect(
+          ShelleyAddress.baseScriptStakeAddress(script: script, stake: stakeVk)
+              .toBech32(),
+          equals(
+              'addr1z8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs9yc0hh'));
+    });
+    test('mainnet - type-02', () {
+      expect(
+          ShelleyAddress.baseKeyScriptAddress(spend: addrXvk, script: script)
+              .toBech32(),
+          equals(
+              'addr1yx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerkr0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shs2z78ve'));
+      expect(
+          ShelleyAddress.baseKeyScriptAddress(spend: addrVk, script: script)
+              .toBech32(),
+          equals(
+              'addr1yx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerkr0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shs2z78ve'));
+    });
+    test('mainnet - type-03', () {
+      expect(
+          ShelleyAddress.baseScriptScriptAddress(
+                  script1: script, script2: script)
+              .toBech32(),
+          equals(
+              'addr1x8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gt7r0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shskhj42g'));
+    });
+    test('mainnet - type-04', () {
+      expect(
+          ShelleyAddress.pointerAddress(verifyKey: addrVk, pointer: pointer)
+              .toBech32(),
+          equals(
+              'addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrzqf96k'));
+      expect(
+          ShelleyAddress.pointerAddress(verifyKey: addrXvk, pointer: pointer)
+              .toBech32(),
+          equals(
+              'addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrzqf96k'));
+    });
+    test('mainnet - type-05', () {
+      expect(
+          ShelleyAddress.pointerScriptAddress(script: script, pointer: pointer)
+              .toBech32(),
+          equals(
+              'addr128phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtupnz75xxcrtw79hu'));
+    });
+    test('mainnet - type-06', () {
+      expect(ShelleyAddress.enterpriseAddress(spend: addrXvk).toBech32(),
+          equals('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8'));
+      expect(ShelleyAddress.enterpriseAddress(spend: addrVk).toBech32(),
+          equals('addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8'));
+    });
+    test('mainnet - type-07', () {
+      expect(ShelleyAddress.enterpriseScriptAddress(script: script).toBech32(),
+          equals('addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx'));
+    });
+    test('mainnet - type-14', () {
+      expect(
+          ShelleyAddress.rewardAddress(stakeKey: stakeVk).toBech32(),
+          equals(
+              'stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw'));
+      expect(
+          ShelleyAddress.rewardAddress(stakeKey: stakeXvk).toBech32(),
+          equals(
+              'stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw'));
+    });
+    test('mainnet - type-15', () {
+      expect(
+          ShelleyAddress.rewardScriptAddress(script: script).toBech32(),
+          equals(
+              'stake178phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcccycj5'));
+    });
+    test('testnet - type-00', () {
+      expect(
+          ShelleyAddress.baseAddress(
+                  spend: addrXvk, stake: stakeXvk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs68faae'));
+      expect(
+          ShelleyAddress.baseAddress(
+                  spend: addrVk, stake: stakeVk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs68faae'));
+    });
+    test('testnet - type-01', () {
+      expect(
+          ShelleyAddress.baseScriptStakeAddress(
+                  script: script, stake: stakeXvk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg'));
+      expect(
+          ShelleyAddress.baseScriptStakeAddress(
+                  script: script, stake: stakeVk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1zrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gten0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgsxj90mg'));
+    });
+    test('testnet - type-02', () {
+      expect(
+          ShelleyAddress.baseKeyScriptAddress(
+                  spend: addrXvk, script: script, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1yz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerkr0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shsf5r8qx'));
+      expect(
+          ShelleyAddress.baseKeyScriptAddress(
+                  spend: addrVk, script: script, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1yz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerkr0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shsf5r8qx'));
+    });
+    test('testnet - type-03', () {
+      expect(
+          ShelleyAddress.baseScriptScriptAddress(
+                  script1: script, script2: script, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1xrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gt7r0vd4msrxnuwnccdxlhdjar77j6lg0wypcc9uar5d2shs4p04xh'));
+    });
+    test('testnet - type-04', () {
+      expect(
+          ShelleyAddress.pointerAddress(
+                  verifyKey: addrVk,
+                  pointer: pointer,
+                  network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1gz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrdw5vky'));
+      expect(
+          ShelleyAddress.pointerAddress(
+                  verifyKey: addrXvk,
+                  pointer: pointer,
+                  network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1gz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrdw5vky'));
+    });
+    test('testnet - type-05', () {
+      expect(
+          ShelleyAddress.pointerScriptAddress(
+                  script: script, pointer: pointer, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test12rphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtupnz75xxcryqrvmw'));
+    });
+    test('testnet - type-06', () {
+      expect(
+          ShelleyAddress.enterpriseAddress(
+                  spend: addrXvk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz'));
+      expect(
+          ShelleyAddress.enterpriseAddress(
+                  spend: addrVk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz'));
+    });
+    test('testnet - type-07', () {
+      expect(
+          ShelleyAddress.enterpriseScriptAddress(
+                  script: script, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'addr_test1wrphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcl6szpr'));
+    });
+    test('testnet - type-14', () {
+      expect(
+          ShelleyAddress.rewardAddress(
+                  stakeKey: stakeVk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn'));
+      expect(
+          ShelleyAddress.rewardAddress(
+                  stakeKey: stakeXvk, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn'));
+    });
+    test('testnet - type-15', () {
+      expect(
+          ShelleyAddress.rewardScriptAddress(
+                  script: script, network: Networks.testnet)
+              .toBech32(),
+          equals(
+              'stake_test17rphkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcljw6kf'));
+    });
+  });
+
   group('ByronAddresses -', () {
     test('Daedalus-style - DdzFF', () {
       //Daedalus-style: Starting with  DdzFF
@@ -57,14 +284,6 @@ void main() {
   });
 
   group('ScriptAddresses -', () {
-    const testEntropy =
-        '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-    final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-    final Bip32KeyPair spendPair = hdWallet.deriveAddressKeys(index: 0);
-    //final Bip32KeyPair changePair = hdWallet.deriveAddress(role: changeRole, index: 0);
-    final Bip32KeyPair stakePair =
-        hdWallet.deriveAddressKeys(role: stakingRoleIndex, index: 0);
-
     List<int> parseInts(String s) =>
         s.split(',').map((i) => int.parse(i)).toList();
 
@@ -90,7 +309,7 @@ void main() {
     test('enterpriseScriptAddress', () {
       final address = ShelleyAddress.enterpriseScriptAddress(
         script: getMultisigScript(),
-        networkId: NetworkId.testnet,
+        network: Networks.testnet,
       );
       print(address.toBech32());
       expect(
@@ -102,7 +321,7 @@ void main() {
     test('enterprisePlutusScriptAddress', () {
       final address = ShelleyAddress.enterpriseScriptAddress(
         script: getMultisigScript(),
-        networkId: NetworkId.testnet,
+        network: Networks.testnet,
       );
       // print(address.bytes.join(','));
       // print(address.toBech32());
@@ -123,62 +342,52 @@ void main() {
 
     const testEntropy =
         '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-    final hdWallet = HdWallet.fromHexEntropy(testEntropy);
-    final Bip32KeyPair spendPair = hdWallet.deriveAddressKeys(index: 0);
-    //final Bip32KeyPair changePair = hdWallet.deriveAddress(role: changeRole, index: 0);
-    final Bip32KeyPair stakePair = hdWallet.deriveAddressKeys(
-      role: stakingRoleIndex,
-      index: 0,
-    );
+    final account0 = HdMaster.entropyHex(testEntropy).account();
+    final spendKey = account0.basePrivateKey().publicKey;
+    final stakeKey = account0.stakePrivateKey.publicKey;
     final pointer = BcPointer(slot: 2498243, txIndex: 27, certIndex: 3);
     test('network header', () {
       var a = ShelleyAddress.fromBech32(addr);
-      expect(a.networkId, NetworkId.mainnet,
-          reason: 'set mainnet bit in header');
+      expect(a.network, Networks.mainnet, reason: 'set mainnet bit in header');
+      expect(a.addressType, AddressType.base);
       a = ShelleyAddress.fromBech32(addrTest);
-      expect(a.networkId, NetworkId.testnet,
-          reason: 'set testnet bit in header');
-      a = ShelleyAddress.toBaseAddress(
-        spend: spendPair.verifyKey!,
-        stake: stakePair.verifyKey!,
-        networkId: NetworkId.testnet,
+      expect(a.network, Networks.testnet, reason: 'set testnet bit in header');
+      expect(a.addressType, AddressType.base);
+      expect(a.header & 0x30, isZero); //0b0011_0000 & header == 0
+      a = ShelleyAddress.baseAddress(
+        spend: spendKey,
+        stake: stakeKey,
+        network: Networks.testnet,
       );
-      expect(a.networkId, NetworkId.testnet,
-          reason: 'set testnet bit in header');
+      expect(a.network, Networks.testnet, reason: 'set testnet bit in header');
       expect(a.toBech32(), startsWith('addr_test1'),
           reason: 'set testnet bit in header');
-      a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.verifyKey!,
-          stake: stakePair.verifyKey!,
-          networkId: NetworkId.mainnet);
-      expect(a.networkId, NetworkId.mainnet,
-          reason: 'set mainnet bit in header');
+      a = ShelleyAddress.baseAddress(
+          spend: spendKey, stake: stakeKey, network: Networks.mainnet);
+      expect(a.network, Networks.mainnet, reason: 'set mainnet bit in header');
       expect(a.toBech32(), startsWith('addr1'),
           reason: 'set mainnet bit in header');
     });
     test('credential type header', () {
-      var a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
+      var a = ShelleyAddress.baseAddress(spend: spendKey, stake: stakeKey);
       expect(a.paymentCredentialType, CredentialType.key,
           reason: 'key is default credential type');
-      a = ShelleyAddress.toBaseAddress(
-          spend: spendPair.verifyKey!,
-          stake: stakePair.verifyKey!,
-          paymentType: CredentialType.script);
+      a = ShelleyAddress.baseScriptStakeAddress(
+          script: getMultisigScript(), stake: stakeKey);
       expect(a.paymentCredentialType, CredentialType.script,
           reason: 'override credential type');
     });
     test('address type header', () {
-      var a = ShelleyAddress.toBaseAddress(
-        spend: spendPair.verifyKey!,
-        stake: stakePair.verifyKey!,
-        networkId: NetworkId.testnet,
+      var a = ShelleyAddress.baseAddress(
+        spend: spendKey,
+        stake: stakeKey,
+        network: Networks.testnet,
       );
       expect(a.addressType, AddressType.base,
           reason: 'toBaseAddress sets address type');
-      a = ShelleyAddress.toRewardAddress(
-        spend: spendPair.verifyKey!,
-        networkId: NetworkId.testnet,
+      a = ShelleyAddress.rewardScriptAddress(
+        script: getMultisigScript(),
+        network: Networks.testnet,
       );
       expect(a.addressType, AddressType.reward,
           reason: 'toRewardAddress sets address type');
@@ -192,60 +401,28 @@ void main() {
       expect(set.contains(c), isTrue, reason: 'equals works');
     });
 
-    test('reward', () {
-      final stakePubKey = VerifyKey.decode(
-          'stake_vk1px4j0r2fk7ux5p23shz8f3y5y2qam7s954rgf3lg5merqcj6aetsft99wu',
-          coder: Bech32Coder(hrp: 'stake_vk'));
-      final address = ShelleyAddress.rewardAddress(
-          stakeKey: stakePubKey, networkId: NetworkId.mainnet);
-      expect(
-          address.toBech32(),
-          equals(
-              'stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw'));
-    });
-
-    test('pointer with verify key', () {
-      final verifyKeyBytes = Bech32Coder(hrp: 'addr_vk').decode(
-          'addr_vk1w0l2sr2zgfm26ztc6nl9xy8ghsk5sh6ldwemlpmp9xylzy4dtf7st80zhd');
-      final verifyKey = VerifyKey(verifyKeyBytes, verifyKeyBytes.length);
-      final address = ShelleyAddress.pointerAddress(
-          verifyKey: verifyKey, pointer: pointer, networkId: NetworkId.mainnet);
-      expect(
-          address.toBech32(),
-          equals(
-              'addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrzqf96k'));
-    }); //, skip: 'prefixLength not initialized in ed25519 code');
-
-    test('pointer with script', () {
-      final address = ShelleyAddress.enterpriseScriptAddress(
-          script: MockPlutusScript(), networkId: NetworkId.mainnet);
-      expect(address.toBech32(),
-          equals('addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx'));
-    });
-
     test('pointer from bech32', () {
       var ent =
           'addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5ph3wczvf2w8lunk';
       var e = ShelleyAddress.fromBech32(ent);
-      expect(e.networkId, equals(NetworkId.mainnet));
+      expect(e.network, equals(Networks.mainnet));
       expect(e.paymentCredentialType, equals(CredentialType.key));
       expect(e.addressType, equals(AddressType.pointer));
       expect(e.hrp, equals('addr'));
       ent =
           'addr_test1gz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspqgpsqe70et';
       e = ShelleyAddress.fromBech32(ent);
-      expect(e.networkId, equals(NetworkId.testnet));
+      expect(e.network, equals(Networks.testnet));
       expect(e.paymentCredentialType, equals(CredentialType.key));
       expect(e.addressType, equals(AddressType.pointer));
       expect(e.hrp, equals('addr_test'));
     });
 
     test('enterprise', () {
-      final publicKey = spendPair.verifyKey!;
       var e = ShelleyAddress.enterpriseAddress(
-          spend: publicKey as Bip32PublicKey, networkId: NetworkId.testnet);
+          spend: spendKey, network: Networks.testnet);
       expect(e.addressType, equals(AddressType.enterprise));
-      expect(e.networkId, equals(NetworkId.testnet));
+      expect(e.network, equals(Networks.testnet));
       expect(e.paymentCredentialType, equals(CredentialType.key));
       expect(
           e.toBech32(),
@@ -260,38 +437,11 @@ void main() {
           'addr_xvk1r30n0pv6d40kzzl4e6xje2y7c446gw2x9sgnms3vv62tx264tf5n9lxnuxqc5xpqlg30dtlq0tf0fav4kafsge6u24x296vg85l399cx2uv4k',
           coder: Bech32Coder(hrp: 'addr_xvk'));
       var addr = ShelleyAddress.enterpriseAddress(
-          spend: verifycKey, networkId: NetworkId.testnet);
+          spend: verifycKey, network: Networks.testnet);
       expect(
           addr.toBech32(),
           equals(
               'addr_test1vp8w93j8pappvvu8tcajysvr65ph8wt5yg5u4s5u2j4e80ggxcu4e'));
     });
-
-    /*
-    @Test
-    void getPaymentAddress_fromPaymentVerificationKey() {
-        String paymentVkey = "addr_xvk1r30n0pv6d40kzzl4e6xje2y7c446gw2x9sgnms3vv62tx264tf5n9lxnuxqc5xpqlg30dtlq0tf0fav4kafsge6u24x296vg85l399cx2uv4k";
-        byte[] paymentVKeyBytes = Bech32.decode(paymentVkey).data;
-
-        HdPublicKey hdPublicKey = HdPublicKey.fromBytes(paymentVKeyBytes);
-        Address address = AddressService.getInstance().getEntAddress(hdPublicKey, Networks.testnet());
-
-        assertThat(address.getAddress()).isEqualTo("addr_test1vp8w93j8pappvvu8tcajysvr65ph8wt5yg5u4s5u2j4e80ggxcu4e");
-    }  */
-
-    // test('isPublicKeyMatch', () {
-    //   var addr = ShelleyAddress.toBaseAddress(
-    //       spend: spendPair.verifyKey!, stake: stakePair.verifyKey!);
-    //   expect(addr.isPublicKeyMatch(spendPair.verifyKey!), isTrue,
-    //       reason: 'matching verify key');
-    // });
-
-    // test('bech32', () {
-    //   final decoded = bech32.decode(addr, 108);
-    //   final hrp = decoded.hrp;
-    //   expect('addr', hrp);
-    //   final addr2 = Bech32Coder(hrp: hrp).encode(decoded.data);
-    //   expect(addr2, addr);
-    // });
   });
 }
