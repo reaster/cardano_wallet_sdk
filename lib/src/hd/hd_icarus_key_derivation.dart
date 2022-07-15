@@ -5,7 +5,7 @@
 import 'package:bip32_ed25519/api.dart';
 import 'package:hex/hex.dart';
 import '../util/codec.dart';
-import 'master_key_generation.dart';
+import 'hd_master_key_generation.dart';
 
 // Bip32SigningKey icarusGenerateMasterKey(Uint8List entropy) {
 //   final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), entropy, 4096, 96);

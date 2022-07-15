@@ -43,7 +43,7 @@ void main() {
       final master = HdMaster.entropyHex(testEntropy);
 
       //iterate threw a few account depths:
-      for (int accountIndex in [0, 13, Segment.maxDepth]) {
+      for (int accountIndex in [0, 13, HdSegment.maxDepth]) {
         final acctN = master.account(accountIndex: accountIndex);
         final auditA = acctN.audit;
         final auditB = master.audit(accountIndex: accountIndex);
@@ -54,7 +54,7 @@ void main() {
         expect(auditB.stakeAddress.toBech32(),
             equals(acctN.stakeAddress.toBech32()));
         //try a few different tree depths:
-        for (int i in [0, 99, Segment.maxDepth]) {
+        for (int i in [0, 99, HdSegment.maxDepth]) {
           expect(auditA.baseAddress(index: i).toBech32(),
               equals(acctN.baseAddress(index: i).toBech32()));
           expect(auditA.changeAddress(index: i).toBech32(),
@@ -261,9 +261,9 @@ void main() {
 
       HdAccount account = master.account();
       final expectedAcct0PvtKey =
-          ShelleyKeyDerivation(expectedMasterKey).fromPath("m/1852'/1815'/0'");
+          HdKeyDerivation(expectedMasterKey).fromPath("m/1852'/1815'/0'");
       expect(account.accountSigningKey, equals(expectedAcct0PvtKey));
-      final md = ShelleyKeyDerivation(expectedAcct0PvtKey);
+      final md = HdKeyDerivation(expectedAcct0PvtKey);
       final _key9 = md.fromPath("m/0/9") as Bip32SigningKey;
       //expect(_key9, equals(spend9.signingKey!));
       final _spendPvtKey = account.basePrivateKey(index: 9);

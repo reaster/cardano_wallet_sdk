@@ -6,12 +6,12 @@ import '../address/shelley_address.dart';
 import '../crypto/mnemonic.dart';
 import '../crypto/mnemonic_english.dart';
 // import '../transaction/model/bc_abstract.dart';
-import '../crypto/shelley_key_derivation.dart';
 import '../network/network_id.dart';
 import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';
 import '../util/codec.dart';
-import './derivation_chain.dart';
+import './hd_derivation_chain.dart';
+import './hd_shelley_key_derivation.dart';
 
 ///
 /// These classes implement the Cardano version of HD (Hierarchical Deterministic)
@@ -108,7 +108,7 @@ abstract class HdAddressGenerator extends HdAbstract {
   ShelleyAddress enterpriseAddress({int index = 0});
   ShelleyAddress get stakeAddress;
   List<ShelleyReceiveKit> unusedReceiveAddresses({
-    Segment role = spendRole,
+    HdSegment role = spendRole,
     int startIndex = 0,
     int beyondUsedOffset = defaultBeyondUsedOffset,
     UsedAddressFunction usedCallback = alwaysUsed,
@@ -124,9 +124,9 @@ class HdAudit implements HdAddressGenerator, HdLegacyReceiver {
   final HdUseCase useCase = HdUseCase.audits;
   @override
   final Networks network;
-  final ShelleyKeyDerivation derivation;
-  final ShelleyKeyDerivation derivationInternal;
-  final DerivationChain chain;
+  final HdKeyDerivation derivation;
+  final HdKeyDerivation derivationInternal;
+  final HdDerivationChain chain;
   late final Bip32VerifyKey publicStakeKey;
   final int accountIndex;
 
@@ -136,16 +136,16 @@ class HdAudit implements HdAddressGenerator, HdLegacyReceiver {
     required this.publicStakeKey,
     this.network = Networks.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain.M(segments: []),
-        derivation = ShelleyKeyDerivation(publicExternalKey),
-        derivationInternal = ShelleyKeyDerivation(publicInternalKey);
+  })  : chain = const HdDerivationChain.M(segments: []),
+        derivation = HdKeyDerivation(publicExternalKey),
+        derivationInternal = HdKeyDerivation(publicInternalKey);
 
   Bip32VerifyKey externalAddrPublicKey({int index = 0}) =>
-      derivation.fromChain(chain.append(Segment(depth: index)))
+      derivation.fromChain(chain.append(HdSegment(depth: index)))
           as Bip32VerifyKey;
 
   Bip32VerifyKey internalAddrPublicKey({int index = 0}) =>
-      derivationInternal.fromChain(chain.append(Segment(depth: index)))
+      derivationInternal.fromChain(chain.append(HdSegment(depth: index)))
           as Bip32VerifyKey;
 
   @override
@@ -190,7 +190,7 @@ class HdAudit implements HdAddressGenerator, HdLegacyReceiver {
 
   @override
   List<ShelleyReceiveKit> unusedReceiveAddresses({
-    Segment role = spendRole,
+    HdSegment role = spendRole,
     int startIndex = 0,
     int beyondUsedOffset = defaultBeyondUsedOffset,
     UsedAddressFunction usedCallback = alwaysUsed,
@@ -236,26 +236,26 @@ abstract class HdAddressSigner extends HdAddressGenerator {
 class HdAccount implements HdAddressSigner, HdLegacyReceiver {
   @override
   final HdUseCase useCase = HdUseCase.perOfficeBalances;
-  final ShelleyKeyDerivation derivation;
+  final HdKeyDerivation derivation;
   @override
   final Networks network;
   final int accountIndex;
   final Bip32SigningKey
       accountSigningKey; //Pvt key at account level m/1852'/1815'/x'
-  final DerivationChain chain;
+  final HdDerivationChain chain;
   late final Bip32VerifyKey publicStakeKey;
 
   HdAccount({
     required this.accountSigningKey,
     this.network = Networks.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain.m(segments: []),
+  })  : chain = const HdDerivationChain.m(segments: []),
         // chainKey = DerivationChain(key: 'm', segments: [
         //   cip1852,
         //   cip1815,
         //   Segment(index: accountIndex, harden: true)
         // ]),
-        derivation = ShelleyKeyDerivation(accountSigningKey) {
+        derivation = HdKeyDerivation(accountSigningKey) {
     publicStakeKey = derivation
         .fromChain(chain.append2(stakeRole, zeroSoft))
         .publicKey as Bip32VerifyKey;
@@ -275,12 +275,12 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
 
   @override
   Bip32SigningKey basePrivateKey({int index = 0}) =>
-      derivation.fromChain(chain.append2(spendRole, Segment(depth: index)))
+      derivation.fromChain(chain.append2(spendRole, HdSegment(depth: index)))
           as Bip32SigningKey;
 
   @override
   Bip32SigningKey changePrivateKey({int index = 0}) =>
-      derivation.fromChain(chain.append2(changeRole, Segment(depth: index)))
+      derivation.fromChain(chain.append2(changeRole, HdSegment(depth: index)))
           as Bip32SigningKey;
 
   @override
@@ -334,7 +334,7 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
 
   @override
   List<ShelleyReceiveKit> unusedReceiveAddresses({
-    Segment role = spendRole,
+    HdSegment role = spendRole,
     int startIndex = 0,
     int beyondUsedOffset = defaultBeyondUsedOffset,
     UsedAddressFunction usedCallback = alwaysUsed,
@@ -385,11 +385,11 @@ class HdMaster implements HdAbstract {
   final HdUseCase useCase = HdUseCase.fullWalletSharing;
   @override
   final Networks network;
-  final DerivationChain chain = const DerivationChain.m(segments: [
+  final HdDerivationChain chain = const HdDerivationChain.m(segments: [
     cip1852,
     cip1815,
   ]);
-  final ShelleyKeyDerivation derivation;
+  final HdKeyDerivation derivation;
   String get chainLabel => 'm';
 
   HdMaster({
@@ -398,18 +398,16 @@ class HdMaster implements HdAbstract {
   });
 
   HdMaster.entropy(Uint8List entropy, {Networks network = Networks.mainnet})
-      : this(
-            network: network,
-            derivation: ShelleyKeyDerivation.entropy(entropy));
+      : this(network: network, derivation: HdKeyDerivation.entropy(entropy));
 
   HdMaster.entropyHex(String entropyHex, {Networks network = Networks.mainnet})
       : this(
             network: network,
-            derivation: ShelleyKeyDerivation.entropyHex(entropyHex));
+            derivation: HdKeyDerivation.entropyHex(entropyHex));
 
   // ignore: non_constant_identifier_names
   HdMaster.bech32(String root_sk, {Networks network = Networks.mainnet})
-      : this(network: network, derivation: ShelleyKeyDerivation.rootX(root_sk));
+      : this(network: network, derivation: HdKeyDerivation.rootX(root_sk));
 
   HdMaster.mnemonic(
     ValidMnemonicPhrase mnemonic, {
@@ -434,7 +432,7 @@ class HdMaster implements HdAbstract {
   /// Look up an account based on it's path. Paths define the cryptocraphic key of the account
   /// from which all other account keys and addresses are derived.
   HdAccount accountByPath(String path) {
-    final derivationPath = DerivationChain.fromPath(path);
+    final derivationPath = HdDerivationChain.fromPath(path);
     final accountKey = derivation.fromChain(derivationPath) as Bip32SigningKey;
     return HdAccount(
         accountSigningKey: accountKey,
@@ -446,7 +444,7 @@ class HdMaster implements HdAbstract {
   /// Audit for specific account index that can generate all internal (change) and external (spend) addresses.
   ///
   HdAudit audit({int accountIndex = 0}) {
-    final chain = DerivationChain.fromPath(_acctPathTemplate(accountIndex));
+    final chain = HdDerivationChain.fromPath(_acctPathTemplate(accountIndex));
     final ext = derivation.fromChain(chain.append(spendRole)).publicKey;
     final int = derivation.fromChain(chain.append(changeRole)).publicKey;
     final stake =
@@ -475,7 +473,7 @@ class InvalidAccountError extends Error {
 /// been used in a existing transaction.
 class ShelleyReceiveKit {
   final ShelleyAddress address;
-  final DerivationChain chain;
+  final HdDerivationChain chain;
   final bool used;
   const ShelleyReceiveKit({
     required this.address,
@@ -488,7 +486,7 @@ class ShelleyReceiveKit {
 /// signing key so it can be spent in a UTxO transaction.
 class ShelleyUtxoKit {
   final ShelleyAddress address;
-  final DerivationChain chain;
+  final HdDerivationChain chain;
   final Bip32SigningKey signingKey;
   const ShelleyUtxoKit({
     required this.address,
@@ -507,7 +505,7 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
   int beyondUsedOffset = defaultBeyondUsedOffset,
   required Networks network,
   int accountIndex = 0,
-  Segment role = spendRole,
+  HdSegment role = spendRole,
   int startIndex = 0,
   bool includeUsed = false,
 }) {
@@ -516,10 +514,10 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
   assert(role == spendRole || role == changeRole);
   assert(startIndex >= 0);
   // "m/1852'/1815'/$accountIndex'/$role/$addrIndex"
-  final baseChain = DerivationChain.m(segments: [
+  final baseChain = HdDerivationChain.m(segments: [
     cip1852,
     cip1815,
-    Segment(depth: accountIndex, harden: true),
+    HdSegment(depth: accountIndex, harden: true),
     role
   ]);
   List<ShelleyReceiveKit> results = [];
@@ -533,7 +531,7 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
     if (includeUsed || !isUsed) {
       results.add(ShelleyReceiveKit(
         address: address,
-        chain: baseChain.append(Segment(depth: index)),
+        chain: baseChain.append(HdSegment(depth: index)),
         used: isUsed,
       ));
     }
@@ -595,21 +593,21 @@ List<ShelleyUtxoKit> _signableAddresses({
   assert(accountIndex >= 0);
   assert(startIndex >= 0);
   // "m/1852'/1815'/$accountIndex'"
-  final acctChain = DerivationChain.m(segments: [
+  final acctChain = HdDerivationChain.m(segments: [
     cip1852,
     cip1815,
-    Segment(depth: accountIndex, harden: true),
+    HdSegment(depth: accountIndex, harden: true),
   ]);
   List<ShelleyUtxoKit> results = [];
   for (int index = startIndex; index < 31 ^ 2; index++) {
-    for (Segment role in [spendRole, changeRole]) {
+    for (HdSegment role in [spendRole, changeRole]) {
       final address = role == spendRole
           ? generator.baseAddress(index: index)
           : generator.changeAddress(index: index);
       if (utxos.contains(address)) {
         results.add(ShelleyUtxoKit(
           address: address,
-          chain: acctChain.append2(role, Segment(depth: index)),
+          chain: acctChain.append2(role, HdSegment(depth: index)),
           signingKey: generator.basePrivateKey(index: index),
         ));
       }

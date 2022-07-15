@@ -3,8 +3,7 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 // import 'package:cardano_wallet_sdk/src/crypto/mnemonic_english.dart';
-import 'package:cardano_wallet_sdk/src/crypto/shelley_key_derivation.dart';
-import '../crypto/icarus_key_derivation.dart';
+import 'package:cardano_wallet_sdk/src/hd/hd_shelley_key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
@@ -19,7 +18,8 @@ import './impl/read_only_wallet_impl.dart';
 import './impl/wallet_impl.dart';
 import './read_only_wallet.dart';
 import './wallet.dart';
-import 'account.dart';
+import '../hd/hd_account.dart';
+import '../hd/hd_icarus_key_derivation.dart';
 
 ///
 /// This builder creates both read-only and transactional wallets from provided
@@ -164,7 +164,7 @@ class WalletBuilder {
             .account(accountIndex: accountIndex);
       } else if (_rootSigningKey != null) {
         if (_rootSigningKey!.startsWith('root_xsk')) {
-          final derivation = ShelleyKeyDerivation.rootX(_rootSigningKey!);
+          final derivation = HdKeyDerivation.rootX(_rootSigningKey!);
           _hdAccount = HdMaster(derivation: derivation, network: network)
               .account(accountIndex: accountIndex);
         } else if (_rootSigningKey!.startsWith('acct_xsk')) {

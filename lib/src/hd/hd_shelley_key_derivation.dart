@@ -4,8 +4,8 @@
 
 import 'package:bip32_ed25519/api.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-import '../wallet/derivation_chain.dart';
-import 'icarus_key_derivation.dart';
+import './hd_derivation_chain.dart';
+import './hd_icarus_key_derivation.dart';
 
 ///
 /// This class implements a hierarchical deterministic wallet that generates cryptographic keys
@@ -37,42 +37,42 @@ import 'icarus_key_derivation.dart';
 ///     m / 1852' / 1851' / account' / role / index
 ///
 ///
-class ShelleyKeyDerivation {
+class HdKeyDerivation {
   final IcarusKeyDerivation derivation;
 
-  ShelleyKeyDerivation(Bip32Key key) : derivation = IcarusKeyDerivation(key);
+  HdKeyDerivation(Bip32Key key) : derivation = IcarusKeyDerivation(key);
 
-  ShelleyKeyDerivation.entropy(Uint8List entropy)
+  HdKeyDerivation.entropy(Uint8List entropy)
       : derivation = IcarusKeyDerivation.entropy(entropy);
 
-  ShelleyKeyDerivation.entropyHex(String entropyHex)
+  HdKeyDerivation.entropyHex(String entropyHex)
       : derivation = IcarusKeyDerivation.entropyHex(entropyHex);
 
-  // ShelleyKeyDerivation.bech32(String root_sk)
+  // HdKeyDerivation.bech32(String root_sk)
   //     : derivation = IcarusKeyDerivation(codec.decode(root_sk));
-  // ShelleyKeyDerivation.rootKey(Bip32SigningKey rootKey)
+  // HdKeyDerivation.rootKey(Bip32SigningKey rootKey)
   //     : derivation = IcarusKeyDerivation.import(codec.encode(rootKey));
 
-  ShelleyKeyDerivation.rootX(String root_xsk)
+  HdKeyDerivation.rootX(String root_xsk)
       : derivation = IcarusKeyDerivation.bech32Key(root_xsk);
 
-  ShelleyKeyDerivation.privateAcctX(String acct_xsk)
+  HdKeyDerivation.privateAcctX(String acct_xsk)
       : derivation = IcarusKeyDerivation.bech32Key(acct_xsk);
 
-  ShelleyKeyDerivation.pubicAcctX(String acct_xvk)
+  HdKeyDerivation.pubicAcctX(String acct_xvk)
       : derivation = IcarusKeyDerivation.bech32Key(acct_xvk);
 
   Bip32Key get root => derivation.root;
 
   /// Derive key from root key and DerivationChain.
-  Bip32Key fromChain(DerivationChain chain) {
-    //print("ShelleyKeyDerivation.fromChain: ${chain.toString()}");
+  Bip32Key fromChain(HdDerivationChain chain) {
+    //print("HdKeyDerivation.fromChain: ${chain.toString()}");
     return derivation.pathToKey(chain.toString());
   }
 
   /// Derive key from root key and path.
   Bip32Key fromPath(String path) {
-    //print("ShelleyKeyDerivation.fromPath: ${path.toString()}");
+    //print("HdKeyDerivation.fromPath: ${path.toString()}");
     return derivation.pathToKey(path.toString());
   }
 

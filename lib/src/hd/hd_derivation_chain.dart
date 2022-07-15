@@ -1,51 +1,41 @@
 import '../address/shelley_address.dart';
 
-class DerivationChain {
+///
+/// Provides a type-safe, abstract representation of BIP-44 tree path chain.
+///
+/// BIP-44 path:
+///     m / purpose' / coin_type' / account_ix' / change_chain / address_ix
+///
+/// BIP32-ED25519 Cardano adoption:
+///     m / 1852' / 1851' / account' / role / index
+///
+class HdDerivationChain {
   final String key;
-  final List<Segment> segments;
+  final List<HdSegment> segments;
 
-  const DerivationChain._({required this.key, required this.segments})
+  const HdDerivationChain._({required this.key, required this.segments})
       : assert(key == 'm' || key == 'M');
 
   /// Private key tree chain constructor
-  const DerivationChain.m({required List<Segment> segments})
+  const HdDerivationChain.m({required List<HdSegment> segments})
       : this._(key: 'm', segments: segments);
 
   /// Public key tree chain constructor
-  const DerivationChain.M({required List<Segment> segments})
+  const HdDerivationChain.M({required List<HdSegment> segments})
       : this._(key: 'M', segments: segments);
 
-  // DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
-  //     Segment? seg3, Segment? seg4, Segment? seg5)
-  //     : segments = [
-  //         if (seg1 != null) seg1,
-  //         if (seg2 != null) seg2,
-  //         if (seg3 != null) seg3,
-  //         if (seg4 != null) seg4,
-  //         if (seg5 != null) seg5
-  //       ];
-
-  factory DerivationChain.fromPath(String path, {int? segmentLength}) =>
+  factory HdDerivationChain.fromPath(String path, {int? segmentLength}) =>
       path.startsWith('m')
-          ? DerivationChain.m(
+          ? HdDerivationChain.m(
               segments: parsePath(path, segmentLength: segmentLength))
           : path.startsWith('M')
-              ? DerivationChain.M(
+              ? HdDerivationChain.M(
                   segments: parsePath(path, segmentLength: segmentLength))
               : throw InvalidChainError(
                   "DerivationChain ($path) must start with 'm' or 'M'");
 
-  static String parseKey(String path) {
-    final key = path.substring(0, 1);
-    if (!_legalPrefixes.contains(key)) {
-      throw InvalidChainError(
-          "DerivationChain ($path) must start with 'm' or 'M'");
-    }
-    return key;
-  }
-
-  static List<Segment> parsePath(String path, {int? segmentLength}) {
-    List<Segment> segments = [];
+  static List<HdSegment> parsePath(String path, {int? segmentLength}) {
+    List<HdSegment> segments = [];
     final tokens = path.split('/');
     segmentLength ??= tokens.length - 1;
     if (segmentLength != tokens.length - 1) {
@@ -58,24 +48,24 @@ class DerivationChain {
         final harden = tokens[i].endsWith('\'');
         final seg =
             tokens[i].substring(0, tokens[i].length + (harden ? -1 : 0));
-        final depth = Segment.checkDepthBounds(int.parse(seg));
-        segments.add(Segment(depth: depth, harden: harden));
+        final depth = HdSegment.checkDepthBounds(int.parse(seg));
+        segments.add(HdSegment(depth: depth, harden: harden));
       }
     }
     return segments;
   }
 
-  DerivationChain append(Segment tail) =>
-      DerivationChain._(key: key, segments: [...segments, tail]);
+  HdDerivationChain append(HdSegment tail) =>
+      HdDerivationChain._(key: key, segments: [...segments, tail]);
 
-  DerivationChain append2(Segment tail1, Segment tail2) =>
-      DerivationChain._(key: key, segments: [...segments, tail1, tail2]);
+  HdDerivationChain append2(HdSegment tail1, HdSegment tail2) =>
+      HdDerivationChain._(key: key, segments: [...segments, tail1, tail2]);
 
-  DerivationChain swapTail(Segment tail) => DerivationChain._(
+  HdDerivationChain swapTail(HdSegment tail) => HdDerivationChain._(
       key: key, segments: [...segments.take(segments.length - 1), tail]);
 
   /// increment the last value in the chain by one.
-  DerivationChain inc() => DerivationChain._(
+  HdDerivationChain inc() => HdDerivationChain._(
       key: key,
       segments: segments.isEmpty
           ? []
@@ -93,7 +83,7 @@ class DerivationChain {
   @override
   bool operator ==(Object other) {
     bool isEq = identical(this, other) ||
-        other is DerivationChain && runtimeType == other.runtimeType;
+        other is HdDerivationChain && runtimeType == other.runtimeType;
     if (!isEq) return false;
     return toString() == other.toString();
   }
@@ -116,7 +106,8 @@ class InvalidChainError extends Error {
   String toString() => message;
 }
 
-class Segment {
+/// BIP32-ED25519 tree level segment
+class HdSegment {
   /// The maximum BIP32-ED25519 depth of zero-based tree is 2^20 -1 or 1048576 - 1.
   static const int maxDepth = 1048576 - 1;
 
@@ -126,7 +117,7 @@ class Segment {
   /// true if is a hardened value
   final bool harden;
 
-  const Segment({required this.depth, this.harden = false});
+  const HdSegment({required this.depth, this.harden = false});
 
   /// check valid bounds, throw InvalidChainError on failure.
   static int checkDepthBounds(int depth) {
@@ -141,16 +132,17 @@ class Segment {
   int get value => harden ? depth | hardenedOffset : depth;
   @override
   String toString() => "$depth${harden ? '\'' : ''}";
-  Segment inc() => Segment(depth: depth + 1, harden: harden);
+  HdSegment inc() => HdSegment(depth: depth + 1, harden: harden);
 }
 
-const cip1852 = Segment(depth: 1852, harden: true);
-const cip1815 = Segment(depth: 1815, harden: true);
-const spendRole = Segment(depth: 0); //external
-const changeRole = Segment(depth: 1); //internal
-const stakeRole = Segment(depth: 2); //reward
-const zeroSoft = Segment(depth: 0); //generic zero index not hardened
-const zeroHard = Segment(depth: 0, harden: true); //generic zero index hardened
+const cip1852 = HdSegment(depth: 1852, harden: true);
+const cip1815 = HdSegment(depth: 1815, harden: true);
+const spendRole = HdSegment(depth: 0); //external
+const changeRole = HdSegment(depth: 1); //internal
+const stakeRole = HdSegment(depth: 2); //reward
+const zeroSoft = HdSegment(depth: 0); //generic zero index not hardened
+const zeroHard =
+    HdSegment(depth: 0, harden: true); //generic zero index hardened
 
 /// Cardano adoption of BIP-44 path:
 ///     m / 1852' / 1851' / account' / role / index

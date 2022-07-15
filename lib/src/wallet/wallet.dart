@@ -10,7 +10,7 @@ import '../address/shelley_address.dart';
 import '../transaction/model/bc_tx.dart';
 import '../util/ada_types.dart';
 import './read_only_wallet.dart';
-import './account.dart';
+import '../hd/hd_account.dart';
 
 ///
 /// Extend ReadOnlyWallet with signing and transactional capabilities. Signing (private),

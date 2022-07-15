@@ -17,8 +17,8 @@ import '../../transaction/coin_selection.dart';
 // import '../../transaction/spec/shelley_tx_logic.dart';
 // import '../../transaction/transaction_builder.dart';
 import '../../blockchain/blockchain_adapter.dart';
-import '../account.dart';
-import '../derivation_chain.dart';
+import '../../hd/hd_account.dart';
+import '../../hd/hd_derivation_chain.dart';
 import './read_only_wallet_impl.dart';
 
 ///
