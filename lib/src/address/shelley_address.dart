@@ -41,6 +41,8 @@ abstract class AbstractAddress {
   ///
   /// returns the 8 bit header of the address.
   ///
+  /// throws InvalidAddressError if not defined
+  ///
   /// shelley payment addresses:
   /// bit 7: 0
   /// bit 6: base/other
@@ -56,22 +58,22 @@ abstract class AbstractAddress {
   /// byron addresses:
   /// bits 7-4: 1000
   ///
-  /// 0000: base address: keyhash28,keyhash28
-  /// 0001: base address: scripthash28,keyhash28
-  /// 0010: base address: keyhash28,scripthash28
-  /// 0011: base address: scripthash28,scripthash28
-  /// 0100: pointer address: keyhash28, 3 variable length uint
-  /// 0101: pointer address: scripthash28, 3 variable length uint
-  /// 0110: enterprise address: keyhash28
-  /// 0111: enterprise address: scripthash28
-  /// 1000: byron address
-  /// 1001: <future use>
-  /// 1010: <future use>
-  /// 1011: <future use>
-  /// 1100: <future use>
-  /// 1101: <future use>
-  /// 1110: reward account: keyhash28
-  /// 1111: reward account: scripthash28
+  /// 0000_0000: base address: keyhash28,keyhash28
+  /// 0001_0000: base address: scripthash28,keyhash28
+  /// 0010_0000: base address: keyhash28,scripthash28
+  /// 0011_0000: base address: scripthash28,scripthash28
+  /// 0100_0000: pointer address: keyhash28, 3 variable length uint
+  /// 0101_0000: pointer address: scripthash28, 3 variable length uint
+  /// 0110_0000: enterprise address: keyhash28
+  /// 0111_0000: enterprise address: scripthash28
+  /// 1000_0000: byron address
+  /// 1001_0000: <future use>
+  /// 1010_0000: <future use>
+  /// 1011_0000: <future use>
+  /// 1100_0000: <future use>
+  /// 1101_0000: <future use>
+  /// 1110_0000: reward account: keyhash28
+  /// 1111_0000: reward account: scripthash28
   ///
   int get header => bytes[0];
 
@@ -117,6 +119,8 @@ class ByronAddress extends AbstractAddress {
   static const attributeNameTagProtocolMagic = 2;
   static const extendedAddrLen = 28;
 
+  /// Construct byron address. Currently derivationPath and protocolMagic are ignored.
+  /// throws InvalidAddressError if not a Byron address or length is below 28 bytes.
   ByronAddress(this.bytes, {this.derivationPath, this.protocolMagic}) {
     if (addressType != AddressType.byron) {
       throw InvalidAddressError(
@@ -128,6 +132,8 @@ class ByronAddress extends AbstractAddress {
     }
   }
 
+  /// Construct byron address from a base58 encoded string.
+  /// throws InvalidAddressError if not a Byron address or length is below 28 bytes.
   factory ByronAddress.fromBase58(String base58) {
     try {
       return ByronAddress(base58Codec.decode(base58));
@@ -387,44 +393,6 @@ class ShelleyAddress extends AbstractAddress {
         hrp: _computeHrp(network, hrp),
       );
 
-  // //header: 0110....
-  // public Address getEntAddress(HdPublicKey paymentKey, Network networkInfo)  {
-  //     if (paymentKey == null)
-  //         throw new AddressRuntimeException("paymentkey cannot be null");
-
-  //     byte[] paymentKeyHash = paymentKey.getKeyHash();
-
-  //     byte headerType = 0b0110_0000;
-
-  //     return getAddress(paymentKeyHash, null, headerType, networkInfo, AddressType.Enterprise);
-  // }
-
-  // factory ShelleyAddress.pointerAddress({
-  //   required Bip32PublicKey spend,
-  //   required BcPointer pointer,
-  //   NetworkId network = NetworkId.mainnet,
-  //   String hrp = defaultAddrHrp,
-  //   CredentialType paymentType = CredentialType.key,
-  // }) =>
-  //     ShelleyAddress(
-  //       [pointerDiscrim | (paymentType.index << 4) | (network.index & 0x0f)] +
-  //           blake2bHash224(spend.rawKey) +
-  //           pointer.hash,
-  //       hrp: _computeHrp(network, hrp),
-  //     );
-
-  //   public Address getPointerAddress(HdPublicKey paymentKey, Pointer delegationPointer, Network networkInfo) {
-  //     if (paymentKey == null || delegationPointer == null)
-  //         throw new AddressRuntimeException("paymentkey and delegationKey cannot be null");
-
-  //     byte[] paymentKeyHash = paymentKey.getKeyHash();
-  //     byte[] delegationPointerHash = BytesUtil.merge(variableNatEncode(delegationPointer.slot),
-  //             variableNatEncode(delegationPointer.txIndex), variableNatEncode(delegationPointer.certIndex));
-
-  //     byte headerType = 0b0100_0000;
-  //     return getAddress(paymentKeyHash, delegationPointerHash, headerType, networkInfo, AddressType.Ptr);
-  // }
-
   factory ShelleyAddress.fromBech32(String address) {
     final decoded = bech32.decode(address, 256);
     final hrp = decoded.hrp;
@@ -521,26 +489,26 @@ class ShelleyAddress extends AbstractAddress {
       Bech32Coder(hrp: defaultRewardHrp + testnetHrpSuffix);
 }
 
-//enum AddressType { base, pointer, enterprise, reward, byron }
+//enum AddressType { base, pointer, enterprise, byron, reward }
 /// byron addresses:
 /// bits 7-4: 1000
 ///
-/// 0000: base address: keyhash28,keyhash28
-/// 0001: base address: scripthash28,keyhash28
-/// 0010: base address: keyhash28,scripthash28
-/// 0011: base address: scripthash28,scripthash28
-/// 0100: pointer address: keyhash28, 3 variable length uint
-/// 0101: pointer address: scripthash28, 3 variable length uint
-/// 0110: enterprise address: keyhash28
-/// 0111: enterprise address: scripthash28
-/// 1000: byron address
-/// 1001: <future use>
-/// 1010: <future use>
-/// 1011: <future use>
-/// 1100: <future use>
-/// 1101: <future use>
-/// 1110: reward account: keyhash28
-/// 1111: reward account: scripthash28
+/// 0000_0000: base address: keyhash28,keyhash28
+/// 0001_0000: base address: scripthash28,keyhash28
+/// 0010_0000: base address: keyhash28,scripthash28
+/// 0011_0000: base address: scripthash28,scripthash28
+/// 0100_0000: pointer address: keyhash28, 3 variable length uint
+/// 0101_0000: pointer address: scripthash28, 3 variable length uint
+/// 0110_0000: enterprise address: keyhash28
+/// 0111_0000: enterprise address: scripthash28
+/// 1000_0000: byron address
+/// 1001_0000: <future use>
+/// 1010_0000: <future use>
+/// 1011_0000: <future use>
+/// 1100_0000: <future use>
+/// 1101_0000: <future use>
+/// 1110_0000: reward account: keyhash28
+/// 1111_0000: reward account: scripthash28
 ///
 enum AddressType {
   base(0 << 7), // 0b0000_0000
@@ -577,43 +545,6 @@ AbstractAddress stringToAddress(String address) {
     return ByronAddress.fromBase58(address); //Try for byron address
   }
 }
-
-// @Deprecated('use BcPointer')
-// class DelegationPointer {
-//   final int slot;
-//   final int txIndex;
-//   final int certIndex;
-
-//   DelegationPointer(
-//       {required this.slot, required this.txIndex, required this.certIndex});
-
-//   Uint8List get hash => Uint8List.fromList(
-//       _natEncode(slot) + _natEncode(txIndex) + _natEncode(certIndex));
-
-//   List<int> _natEncode(int num) {
-//     List<int> result = [];
-//     result.add(num & 0x7f);
-//     num = num ~/ 128;
-//     while (num > 0) {
-//       result.add(num & 0x7f | 0x80);
-//       num = num ~/ 128;
-//     }
-//     return result.reversed.toList();
-//   }
-//   private byte[] variableNatEncode(long num) {
-//     List<Byte> output = new ArrayList<>();
-//     output.add((byte)(num & 0x7F));
-
-//     num /= 128;
-//     while(num > 0) {
-//         output.add((byte)((num & 0x7F) | 0x80));
-//         num /= 128;
-//     }
-//     Collections.reverse(output);
-
-//     return Bytes.toArray(output);
-// }
-// }
 
 class InvalidAddressError extends Error {
   final String message;

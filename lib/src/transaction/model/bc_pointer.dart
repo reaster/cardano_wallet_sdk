@@ -5,7 +5,7 @@ class BcPointer {
   final int txIndex; //int
   final int certIndex; //int
 
-  BcPointer(
+  const BcPointer(
       {required this.slot, required this.txIndex, required this.certIndex});
 
   Uint8List get hash => Uint8List.fromList(
