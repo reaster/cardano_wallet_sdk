@@ -16,7 +16,7 @@ import './blockfrost/blockfrost_blockchain_adapter.dart';
 ///
 class BlockchainAdapterFactory {
   final Interceptor authInterceptor;
-  final NetworkId networkId;
+  final Networks network;
   final String projectId;
   Blockfrost? _blockfrost;
   BlockfrostBlockchainAdapter? _blockfrostAdapter;
@@ -25,7 +25,7 @@ class BlockchainAdapterFactory {
 
   BlockchainAdapterFactory(
       {required this.authInterceptor,
-      required this.networkId,
+      required this.network,
       required this.projectId});
 
   /// creates an interceptor give a key
@@ -33,10 +33,10 @@ class BlockchainAdapterFactory {
       BlockfrostApiKeyAuthInterceptor(projectId: key);
 
   factory BlockchainAdapterFactory.fromKey(
-          {required String key, required NetworkId networkId}) =>
+          {required String key, required Networks network}) =>
       BlockchainAdapterFactory(
           authInterceptor: interceptorFromKey(key: key),
-          networkId: networkId,
+          network: network,
           projectId: key);
 
   ///
@@ -44,10 +44,10 @@ class BlockchainAdapterFactory {
   ///
   BlockchainAdapter adapter() {
     if (_blockfrostAdapter == null) {
-      final blockfrost = _cachedBlockfrost(
-          networkId: networkId, authInterceptor: authInterceptor);
+      final blockfrost =
+          _cachedBlockfrost(network: network, authInterceptor: authInterceptor);
       _blockfrostAdapter = BlockfrostBlockchainAdapter(
-          networkId: networkId, blockfrost: blockfrost, projectId: projectId);
+          network: network, blockfrost: blockfrost, projectId: projectId);
     }
     return _blockfrostAdapter!;
   }
@@ -60,9 +60,9 @@ class BlockchainAdapterFactory {
 
   /// provides a cahced Blockfrost instance.
   Blockfrost _cachedBlockfrost(
-      {required NetworkId networkId, required Interceptor authInterceptor}) {
+      {required Networks network, required Interceptor authInterceptor}) {
     if (_blockfrost == null) {
-      final url = BlockfrostBlockchainAdapter.urlFromNetwork(networkId);
+      final url = BlockfrostBlockchainAdapter.urlFromNetwork(network);
       logger.i("new Blockfrost($url)");
       _blockfrost = Blockfrost(
         basePathOverride: url,

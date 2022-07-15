@@ -37,12 +37,13 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       'project_id'; //hack: only needed by submitTransaction
 
   /// return base URL for blockfrost service given the network type.
-  static String urlFromNetwork(NetworkId networkId) =>
-      networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl;
+  static String urlFromNetwork(Networks network) =>
+      network == Networks.mainnet ? mainnetUrl : testnetUrl;
 
   final logger = Logger();
 
-  final NetworkId networkId;
+  @override
+  final Networks network;
   //final CardanoNetwork cardanoNetwork;
   final Blockfrost blockfrost;
   final String projectId; //hack: only needed by submitTransaction
@@ -54,7 +55,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   };
 
   BlockfrostBlockchainAdapter(
-      {required this.networkId,
+      {required this.network,
       required this.blockfrost,
       required this.projectId});
 
@@ -107,7 +108,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   @override
   Future<Result<String, String>> submitTransaction(
       Uint8List cborTransaction) async {
-    final Map<String, dynamic>? headers = {projectIdKey: projectId};
+    final Map<String, dynamic> headers = {projectIdKey: projectId};
     final result = await dioCall<String>(
       request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(
           contentType: txContentType, headers: headers, data: cborTransaction),
@@ -334,6 +335,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok([stakeAccount]);
   }
 
+  //TODO should return AbstractAddresses
   Future<Result<List<ShelleyAddress>, String>> _addresses({
     required String stakeAddress,
   }) async {
@@ -379,6 +381,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(transactions);
   }
 
+//TODO should return AbstractAddresses
   List<TransactionInput> _buildIputs(BuiltList<TxContentUtxoInputs> list) {
     List<TransactionInput> results = [];
     for (var input in list) {
@@ -400,6 +403,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return results;
   }
 
+//TODO should return AbstractAddresses
   List<TransactionOutput> _buildOutputs(BuiltList<TxContentUtxoOutputs> list) {
     List<TransactionOutput> results = [];
     for (var input in list) {

@@ -1,9 +1,9 @@
-import 'package:pinenacl/digests.dart';
-import 'package:pinenacl/tweetnacl.dart';
-import 'mnemonic.dart';
-import 'package:bip32_ed25519/api.dart';
-import 'package:pinenacl/key_derivation.dart';
-import 'package:hex/hex.dart';
+// import 'package:pinenacl/digests.dart';
+// import 'package:pinenacl/tweetnacl.dart';
+// import 'mnemonic.dart';
+// import 'package:bip32_ed25519/api.dart';
+// import 'package:pinenacl/key_derivation.dart';
+// import 'package:hex/hex.dart';
 
 ///
 /// Extends bip39 mnemonics to generate

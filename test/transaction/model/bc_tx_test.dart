@@ -154,14 +154,14 @@ void main() {
       final acct1 = HdMaster.mnemonic(
         'damp wish scrub sentence vibrant gauge tumble raven game extend winner acid side amused vote edge affair buzz hospital slogan patient drum day vital'
             .split(' '),
-        network: NetworkId.testnet,
+        network: Networks.testnet,
       ).account();
       print(
           "acct_xsk: ${Bech32Coder(hrp: 'xprv').encode(acct1.basePrivateKey())}");
       final acct2 = HdMaster.mnemonic(
         'mixture peasant wood unhappy usage hero great elder emotion picnic talent fantasy program clean patch wheel drip disorder bullet cushion bulk infant balance address'
             .split(' '),
-        network: NetworkId.testnet,
+        network: Networks.testnet,
       ).account();
       //two witnesses, two signatures
       final txSigned =

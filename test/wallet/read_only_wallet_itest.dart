@@ -4,7 +4,7 @@
 @Tags(['blockfrost'])
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'blockfrost_test_auth_interceptor.dart';
+import '../blockchain/blockfrost_test_auth_interceptor.dart';
 import 'package:test/test.dart';
 import 'package:oxidized/oxidized.dart';
 
@@ -19,7 +19,7 @@ void main() {
       'stake_test1uqhwfumjye2t99ekdq02njm0wsdz84pmd0h2cxrg4napshs0uedxa';
   final interceptor = BlockfrostTestAuthInterceptor();
   final builder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..testnetAdapterKey = interceptor.apiKey;
 
   group('PublicWallet -', () {

@@ -4,6 +4,7 @@
 // import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:hex/hex.dart';
+import '../util/codec.dart';
 import 'master_key_generation.dart';
 
 // Bip32SigningKey icarusGenerateMasterKey(Uint8List entropy) {
@@ -55,8 +56,3 @@ class IcarusKeyDerivation extends Bip32Ed25519KeyDerivation with Bip32KeyTree {
     }
   }
 }
-
-const rootXskCoder = Bech32Coder(hrp: 'root_xsk');
-const acctXskCoder = Bech32Coder(hrp: 'acct_xsk');
-const acctXvkCoder = Bech32Coder(hrp: 'acct_xvk');
-const stakeXskCoder = Bech32Coder(hrp: 'stake_xsk');

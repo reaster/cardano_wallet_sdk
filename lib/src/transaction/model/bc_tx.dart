@@ -70,6 +70,9 @@ class BcMultiAsset extends BcAbstractCbor {
   String toString() {
     return 'BcMultiAsset(policyId: $policyId, assets: $assets)';
   }
+
+  @override
+  String get json => toJson(toCborMap());
 }
 
 /// Points to an UTXO unspent change entry using a transactionId and index.
@@ -99,6 +102,9 @@ class BcTransactionInput extends BcAbstractCbor {
   String toString() {
     return 'BcTransactionInput(transactionId: $transactionId, index: $index)';
   }
+
+  @override
+  String get json => toJson(toCborList());
 }
 
 /// Can be a simple ADA amount using coin or a combination of ADA and Native Tokens and their amounts.
@@ -142,6 +148,9 @@ class BcValue extends BcAbstractCbor {
   String toString() {
     return 'BcValue(coin: $coin, multiAssets: $multiAssets)';
   }
+
+  @override
+  String get json => toJson(toCborList());
 }
 
 /// Address to send to and amount to send.
@@ -183,6 +192,9 @@ class BcTransactionOutput extends BcAbstractCbor {
   String toString() {
     return 'BcTransactionOutput(address: $address, value: $value)';
   }
+
+  @override
+  String get json => toJson(toCborList());
 }
 
 /// Core of the Shelley transaction that is signed.
@@ -287,6 +299,9 @@ class BcTransactionBody extends BcAbstractCbor {
   String toString() {
     return 'BcTransactionBody(inputs: $inputs, outputs: $outputs, fee: $fee, ttl: $ttl, metadataHash: $metadataHash, validityStartInterval: $validityStartInterval, mint: $mint)';
   }
+
+  @override
+  String get json => toJson(toCborMap());
 }
 
 /// A witness is a public key and a signature (a signed hash of the body) used for on-chain validation.
@@ -315,6 +330,9 @@ class BcVkeyWitness extends BcAbstractCbor {
   String toString() {
     return 'BcVkeyWitness(vkey: $vkey, signature: $signature)';
   }
+
+  @override
+  String get json => toJson(toCborList());
 }
 
 enum BcWitnessSetType {
@@ -381,6 +399,9 @@ class BcTransactionWitnessSet extends BcAbstractCbor {
   String toString() {
     return 'BcTransactionWitnessSet(vkeyWitnesses: $vkeyWitnesses, nativeScripts: $nativeScripts)';
   }
+
+  @override
+  String get json => toJson(toCborMap());
 }
 
 ///
@@ -410,6 +431,9 @@ class BcMetadata extends BcAbstractCbor {
   String toString() {
     return 'BcMetadata(value: ${toJson(value)})';
   }
+
+  @override
+  String get json => toJson(toCborValue());
 }
 
 /// outer wrapper of a Cardano blockchain transaction.
@@ -481,5 +505,6 @@ class BcTransaction extends BcAbstractCbor {
     return 'BcTransaction(body: $body, witnessSet: $witnessSet, isValid: $isValid, metadata: $metadata)';
   }
 
+  @override
   String get json => toJson(toCborList());
 }

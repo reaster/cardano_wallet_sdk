@@ -13,12 +13,12 @@ import '../../util/ada_types.dart';
 import '../read_only_wallet.dart';
 
 ///
-/// Given a stakingAddress, generate a read-only wallet with balances of all native assets,
+/// Given a stakeAddress, generate a read-only wallet with balances of all native assets,
 /// transaction history, staking and reward history.
 ///
 class ReadOnlyWalletImpl implements ReadOnlyWallet {
   @override
-  final NetworkId networkId;
+  final Networks network;
   @override
   final ShelleyAddress stakeAddress;
   @override
@@ -36,9 +36,9 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
       {required this.blockchainAdapter,
       required this.stakeAddress,
       required this.walletName})
-      : networkId = stakeAddress.toBech32().startsWith('stake_test')
-            ? NetworkId.testnet
-            : NetworkId.mainnet;
+      : network = stakeAddress.toBech32().startsWith('stake_test')
+            ? Networks.testnet
+            : Networks.mainnet;
 
   @override
   Map<String, Coin> get currencies =>

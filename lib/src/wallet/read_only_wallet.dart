@@ -12,15 +12,15 @@ import '../util/ada_types.dart';
 
 ///
 /// Cardano read-only wallet that holds transactions, staking rewards and their associated
-/// addresses.  A public, read-ony wallet can be built given a stakingAddress and a networkId.
+/// addresses.  A public, read-ony wallet can be built given a stakingAddress and a network.
 /// All blockchain data retrieval is delegated to the BlockchainAdapter.
 ///
 abstract class ReadOnlyWallet {
   /// Return walletId. ID is public staking address for Shelley wallets.
   WalletId get walletId;
 
-  /// networkId is either mainnet or nestnet
-  NetworkId get networkId;
+  /// network is either mainnet or nestnet
+  Networks get network;
 
   /// return true if this is read-only wallet that can't sign transactions and send funds.
   bool get readOnly;

@@ -5,11 +5,11 @@
 /// The Cardano testnet and mainnet are two independent blockchains and this value
 /// determines which one your code will run on.
 ///
-enum NetworkId {
+enum Networks {
   testnet(0, 1097911063),
   mainnet(1, 764824073);
 
-  const NetworkId(this.networkId, this.protocolMagic);
+  const Networks(this.networkId, this.protocolMagic);
   final int networkId;
   final int protocolMagic;
 }

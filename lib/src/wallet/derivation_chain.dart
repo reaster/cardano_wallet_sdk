@@ -4,7 +4,8 @@ class DerivationChain {
   final String key;
   final List<Segment> segments;
 
-  const DerivationChain({required this.key, required this.segments});
+  const DerivationChain({required this.key, required this.segments})
+      : assert(key == 'm' || key == 'M');
 
   DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
       Segment? seg3, Segment? seg4, Segment? seg5)
@@ -169,8 +170,8 @@ int harden(int index) => index | hardenedOffset;
 /// Returns true if index is hardened.
 bool isHardened(int index) => index & hardenedOffset != 0;
 
-/// Function used to test address usage. Returns true if it has not been used in a transaction.
-typedef UnusedAddressFunction = bool Function(ShelleyAddress address);
+/// Function used to test address usage. Returns true if it has been used in a transaction.
+typedef UsedAddressFunction = bool Function(ShelleyAddress address);
 
-/// UnusedAddressFunction that will always return true (i.e. You'll always get the base spend/change address).
-bool alwaysUnused(_) => true;
+/// UsedAddressFunction that will always return false (i.e. You'll always get the base spend/change address).
+bool alwaysUsed(_) => false;

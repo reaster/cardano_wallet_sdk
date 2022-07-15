@@ -3,7 +3,7 @@
 
 import 'package:pinenacl/key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
-import 'package:pinenacl/digests.dart';
+// import 'package:pinenacl/digests.dart';
 
 Bip32SigningKey icarusGenerateMasterKey(Uint8List entropy) {
   final rawMaster = PBKDF2.hmac_sha512(Uint8List(0), entropy, 4096, 96);

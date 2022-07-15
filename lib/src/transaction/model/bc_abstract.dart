@@ -1,11 +1,10 @@
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:cbor/cbor.dart';
-import 'package:typed_data/typed_buffers.dart';
-import '../../util/blake2bhash.dart';
 
 abstract class BcAbstractCbor {
   Uint8List get serialize;
+  String get json;
 
   Uint8List toUint8List(CborValue value) =>
       Uint8List.fromList(cbor.encode(value));
@@ -36,11 +35,4 @@ abstract class BcAbstractCbor {
     }
     return true;
   }
-}
-
-abstract class BcAbstractScript extends BcAbstractCbor {
-  Uint8List get scriptHash => Uint8List.fromList(blake2bHash224([
-        ...[0],
-        ...serialize
-      ]));
 }

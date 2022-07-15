@@ -1,11 +1,11 @@
-import 'dart:typed_data';
-import 'package:cbor/cbor.dart';
-import 'package:hex/hex.dart';
-// import 'package:quiver/core.dart';
-import 'package:typed_data/typed_buffers.dart';
-import '../model/bc_exception.dart';
-import '../../util/blake2bhash.dart';
-import '../../util/codec.dart';
+// import 'dart:typed_data';
+// import 'package:cbor/cbor.dart';
+// import 'package:hex/hex.dart';
+// // import 'package:quiver/core.dart';
+// import 'package:typed_data/typed_buffers.dart';
+// import '../model/bc_exception.dart';
+// import '../../util/blake2bhash.dart';
+// import '../../util/codec.dart';
 
 ///
 /// From the Shelley era onwards, Cardano has supported scripts and script addresses.
@@ -22,259 +22,259 @@ import '../../util/codec.dart';
 ///
 /// see https://github.com/input-output-hk/cardano-node/blob/master/doc/reference/simple-scripts.md
 ///
-@Deprecated('use bc_script.dart')
-abstract class Script {
-  Uint8Buffer get serialize {
-    final Uint8Buffer data = Uint8Buffer()..addAll(cbor.encode(toCborList()));
-    return data;
-    //Uint8List.view(data.buffer, 0, data.length);
-  }
+// @Deprecated('use bc_script.dart')
+// abstract class Script {
+//   Uint8Buffer get serialize {
+//     final Uint8Buffer data = Uint8Buffer()..addAll(cbor.encode(toCborList()));
+//     return data;
+//     //Uint8List.view(data.buffer, 0, data.length);
+//   }
 
-  CborList toCborList({bool forJson = false});
-  //   final listBuilder = ListBuilder.builder();
-  //   listBuilder.writeInt(type.index);
-  //   if (forJson) {
-  //     listBuilder.writeString(HEX.encode(blob));
-  //   } else {
-  //     listBuilder.writeBuff(unit8BufferFromBytes(blob));
-  //   }
-  //   return listBuilder;
-  // }
+//   CborList toCborList({bool forJson = false});
+//   //   final listBuilder = ListBuilder.builder();
+//   //   listBuilder.writeInt(type.index);
+//   //   if (forJson) {
+//   //     listBuilder.writeString(HEX.encode(blob));
+//   //   } else {
+//   //     listBuilder.writeBuff(unit8BufferFromBytes(blob));
+//   //   }
+//   //   return listBuilder;
+//   // }
 
-  String get toHex => HEX.encode(serialize);
+//   String get toHex => HEX.encode(serialize);
 
-  @override
-  String toString() => toHex;
+//   @override
+//   String toString() => toHex;
 
-  @override
-  int get hashCode => toHex.hashCode;
+//   @override
+//   int get hashCode => toHex.hashCode;
 
-  @override
-  bool operator ==(Object other) {
-    bool isEq = identical(this, other) ||
-        other is NativeScript && runtimeType == other.runtimeType;
-    if (!isEq) return false;
-    final Uint8Buffer list1 = serialize;
-    final Uint8Buffer list2 = (other as NativeScript).serialize;
-    return _equalBytes(list1, list2);
-  }
+//   @override
+//   bool operator ==(Object other) {
+//     bool isEq = identical(this, other) ||
+//         other is NativeScript && runtimeType == other.runtimeType;
+//     if (!isEq) return false;
+//     final Uint8Buffer list1 = serialize;
+//     final Uint8Buffer list2 = (other as NativeScript).serialize;
+//     return _equalBytes(list1, list2);
+//   }
 
-  bool _equalBytes(Uint8Buffer a, Uint8Buffer b) {
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
+//   bool _equalBytes(Uint8Buffer a, Uint8Buffer b) {
+//     for (var i = 0; i < a.length; i++) {
+//       if (a[i] != b[i]) return false;
+//     }
+//     return true;
+//   }
 
-  String get policyId => HEX.encode(blake2bHash224([
-        ...[0],
-        ...serialize
-      ]));
+//   String get policyId => HEX.encode(blake2bHash224([
+//         ...[0],
+//         ...serialize
+//       ]));
 
-  Uint8List get scriptHash => Uint8List.fromList(blake2bHash224([
-        ...[0],
-        ...serialize
-      ]));
-}
+//   Uint8List get scriptHash => Uint8List.fromList(blake2bHash224([
+//         ...[0],
+//         ...serialize
+//       ]));
+// }
 
-class PlutusScript extends Script {
-  final String type = "PlutusScriptV1";
-  final String description;
-  final String cborHex;
+// class PlutusScript extends Script {
+//   final String type = "PlutusScriptV1";
+//   final String description;
+//   final String cborHex;
 
-  PlutusScript(this.description, this.cborHex);
+//   PlutusScript(this.description, this.cborHex);
 
-  @override
-  CborList toCborList({bool forJson = false}) => CborList(
-      [CborBytes(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true))]);
+//   @override
+//   CborList toCborList({bool forJson = false}) => CborList(
+//       [CborBytes(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true))]);
 
-  // @override
-  // ListBuilder toCborList({bool forJson = false}) {
-  //   final listBuilder = ListBuilder.builder();
-  //   listBuilder
-  //       .writeBuff(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true));
-  //   return listBuilder;
-  // }
-}
+//   // @override
+//   // ListBuilder toCborList({bool forJson = false}) {
+//   //   final listBuilder = ListBuilder.builder();
+//   //   listBuilder
+//   //       .writeBuff(uint8BufferFromHex(cborHex, utf8EncodeOnHexFailure: true));
+//   //   return listBuilder;
+//   // }
+// }
 
-enum NativeScriptType { sig, all, any, atLeast, after, before }
+// enum NativeScriptType { sig, all, any, atLeast, after, before }
 
-abstract class NativeScript extends Script {
-  NativeScriptType get type;
+// abstract class NativeScript extends Script {
+//   NativeScriptType get type;
 
-  static NativeScript fromCbor({required CborList list}) {
-    final selector = list[0] as CborSmallInt;
-    final type = NativeScriptType.values[selector.toInt()];
-    switch (type) {
-      case NativeScriptType.sig:
-        return ScriptPubkey.fromCbor(list: list);
-      case NativeScriptType.all:
-        return ScriptAll.fromCbor(list: list);
-      case NativeScriptType.any:
-        return ScriptAny.fromCbor(list: list);
-      case NativeScriptType.atLeast:
-        return ShelleScriptAtLeast.fromCbor(list: list);
-      case NativeScriptType.after:
-        return RequireTimeAfter.fromCbor(list: list);
-      case NativeScriptType.before:
-        return RequireTimeBefore.fromCbor(list: list);
-      default:
-        throw BcCborDeserializationException(
-            "unknown native script selector: $selector");
-    }
-  }
+//   static NativeScript fromCbor({required CborList list}) {
+//     final selector = list[0] as CborSmallInt;
+//     final type = NativeScriptType.values[selector.toInt()];
+//     switch (type) {
+//       case NativeScriptType.sig:
+//         return ScriptPubkey.fromCbor(list: list);
+//       case NativeScriptType.all:
+//         return ScriptAll.fromCbor(list: list);
+//       case NativeScriptType.any:
+//         return ScriptAny.fromCbor(list: list);
+//       case NativeScriptType.atLeast:
+//         return ShelleScriptAtLeast.fromCbor(list: list);
+//       case NativeScriptType.after:
+//         return RequireTimeAfter.fromCbor(list: list);
+//       case NativeScriptType.before:
+//         return RequireTimeBefore.fromCbor(list: list);
+//       default:
+//         throw BcCborDeserializationException(
+//             "unknown native script selector: $selector");
+//     }
+//   }
 
-  CborList toCborSublist(List<NativeScript> scripts, {bool forJson = false}) {
-    return CborList(scripts.map((e) => e.toCborList()).toList());
-    // final scriptListBuilder = ListBuilder.builder();
-    // for (NativeScript script in scripts) {
-    //   scriptListBuilder
-    //       .addBuilderOutput(script.toCborList(forJson: forJson).getData());
-    // }
-    // return scriptListBuilder;
-  }
-}
+//   CborList toCborSublist(List<NativeScript> scripts, {bool forJson = false}) {
+//     return CborList(scripts.map((e) => e.toCborList()).toList());
+//     // final scriptListBuilder = ListBuilder.builder();
+//     // for (NativeScript script in scripts) {
+//     //   scriptListBuilder
+//     //       .addBuilderOutput(script.toCborList(forJson: forJson).getData());
+//     // }
+//     // return scriptListBuilder;
+//   }
+// }
 
-class ScriptPubkey extends NativeScript {
-  final String keyHash;
-  @override
-  final NativeScriptType type = NativeScriptType.sig;
+// class ScriptPubkey extends NativeScript {
+//   final String keyHash;
+//   @override
+//   final NativeScriptType type = NativeScriptType.sig;
 
-  ScriptPubkey({required this.keyHash});
+//   ScriptPubkey({required this.keyHash});
 
-  factory ScriptPubkey.fromCbor({required CborList list}) {
-    final keyHash = list[1] as CborBytes;
-    return ScriptPubkey(keyHash: HEX.encode(keyHash.bytes));
-  }
+//   factory ScriptPubkey.fromCbor({required CborList list}) {
+//     final keyHash = list[1] as CborBytes;
+//     return ScriptPubkey(keyHash: HEX.encode(keyHash.bytes));
+//   }
 
-  @override
-  CborList toCborList({bool forJson = false}) {
-    return CborList([
-      CborSmallInt(type.index),
-      CborBytes(uint8BufferFromHex(keyHash, utf8EncodeOnHexFailure: true))
-    ]);
-    // final listBuilder = ListBuilder.builder();
-    // listBuilder.writeInt(type.index);
-    // listBuilder
-    //     .writeBuff(uint8BufferFromHex(keyHash, utf8EncodeOnHexFailure: true));
-    // return listBuilder;
-  }
-}
+//   @override
+//   CborList toCborList({bool forJson = false}) {
+//     return CborList([
+//       CborSmallInt(type.index),
+//       CborBytes(uint8BufferFromHex(keyHash, utf8EncodeOnHexFailure: true))
+//     ]);
+//     // final listBuilder = ListBuilder.builder();
+//     // listBuilder.writeInt(type.index);
+//     // listBuilder
+//     //     .writeBuff(uint8BufferFromHex(keyHash, utf8EncodeOnHexFailure: true));
+//     // return listBuilder;
+//   }
+// }
 
-class ScriptAll extends NativeScript {
-  @override
-  final NativeScriptType type;
-  final List<NativeScript> scripts;
+// class ScriptAll extends NativeScript {
+//   @override
+//   final NativeScriptType type;
+//   final List<NativeScript> scripts;
 
-  ScriptAll({this.type = NativeScriptType.all, required this.scripts});
+//   ScriptAll({this.type = NativeScriptType.all, required this.scripts});
 
-  factory ScriptAll.fromCbor({required CborList list}) =>
-      ScriptAll(scripts: deserializeScripts(list[1] as CborList));
+//   factory ScriptAll.fromCbor({required CborList list}) =>
+//       ScriptAll(scripts: deserializeScripts(list[1] as CborList));
 
-  static List<NativeScript> deserializeScripts(CborList scriptList) {
-    List<NativeScript> scripts = [];
-    for (dynamic blob in scriptList) {
-      final script = NativeScript.fromCbor(list: blob as CborList);
-      scripts.add(script);
-    }
-    return scripts;
-  }
+//   static List<NativeScript> deserializeScripts(CborList scriptList) {
+//     List<NativeScript> scripts = [];
+//     for (dynamic blob in scriptList) {
+//       final script = NativeScript.fromCbor(list: blob as CborList);
+//       scripts.add(script);
+//     }
+//     return scripts;
+//   }
 
-  @override
-  CborList toCborList({bool forJson = false}) {
-    return CborList([
-      CborSmallInt(type.index),
-      toCborSublist(scripts),
-    ]);
-    // final listBuilder = ListBuilder.builder();
-    // listBuilder.writeInt(type.index);
-    // listBuilder
-    //     .addBuilderOutput(toCborSublist(scripts, forJson: forJson).getData());
-    // // for (NativeScript script in scripts) {
-    // //   listBuilder
-    // //       .addBuilderOutput(script.toCborList(forJson: forJson).getData());
-    // // }
-    // return listBuilder;
-  }
-}
+//   @override
+//   CborList toCborList({bool forJson = false}) {
+//     return CborList([
+//       CborSmallInt(type.index),
+//       toCborSublist(scripts),
+//     ]);
+//     // final listBuilder = ListBuilder.builder();
+//     // listBuilder.writeInt(type.index);
+//     // listBuilder
+//     //     .addBuilderOutput(toCborSublist(scripts, forJson: forJson).getData());
+//     // // for (NativeScript script in scripts) {
+//     // //   listBuilder
+//     // //       .addBuilderOutput(script.toCborList(forJson: forJson).getData());
+//     // // }
+//     // return listBuilder;
+//   }
+// }
 
-class ScriptAny extends ScriptAll {
-  ScriptAny({required List<NativeScript> scripts})
-      : super(scripts: scripts, type: NativeScriptType.any);
-  factory ScriptAny.fromCbor({required CborList list}) =>
-      ScriptAny(scripts: ScriptAll.deserializeScripts(list[1] as CborList));
-}
+// class ScriptAny extends ScriptAll {
+//   ScriptAny({required List<NativeScript> scripts})
+//       : super(scripts: scripts, type: NativeScriptType.any);
+//   factory ScriptAny.fromCbor({required CborList list}) =>
+//       ScriptAny(scripts: ScriptAll.deserializeScripts(list[1] as CborList));
+// }
 
-class ShelleScriptAtLeast extends ScriptAll {
-  final int amount;
-  ShelleScriptAtLeast(
-      {required this.amount, required List<NativeScript> scripts})
-      : super(scripts: scripts, type: NativeScriptType.atLeast);
-  factory ShelleScriptAtLeast.fromCbor({required CborList list}) =>
-      ShelleScriptAtLeast(
-          amount: (list[1] as CborSmallInt).toInt(),
-          scripts: ScriptAll.deserializeScripts(list[2] as CborList));
-  @override
-  CborList toCborList({bool forJson = false}) {
-    return CborList([
-      CborSmallInt(type.index),
-      CborSmallInt(amount),
-      toCborSublist(scripts, forJson: forJson)
-    ]);
-    // final listBuilder = ListBuilder.builder();
-    // listBuilder.writeInt(type.index);
-    // listBuilder.writeInt(amount);
-    // listBuilder
-    //     .addBuilderOutput(toCborSublist(scripts, forJson: forJson).getData());
-    // return listBuilder;
-  }
-}
+// class ShelleScriptAtLeast extends ScriptAll {
+//   final int amount;
+//   ShelleScriptAtLeast(
+//       {required this.amount, required List<NativeScript> scripts})
+//       : super(scripts: scripts, type: NativeScriptType.atLeast);
+//   factory ShelleScriptAtLeast.fromCbor({required CborList list}) =>
+//       ShelleScriptAtLeast(
+//           amount: (list[1] as CborSmallInt).toInt(),
+//           scripts: ScriptAll.deserializeScripts(list[2] as CborList));
+//   @override
+//   CborList toCborList({bool forJson = false}) {
+//     return CborList([
+//       CborSmallInt(type.index),
+//       CborSmallInt(amount),
+//       toCborSublist(scripts, forJson: forJson)
+//     ]);
+//     // final listBuilder = ListBuilder.builder();
+//     // listBuilder.writeInt(type.index);
+//     // listBuilder.writeInt(amount);
+//     // listBuilder
+//     //     .addBuilderOutput(toCborSublist(scripts, forJson: forJson).getData());
+//     // return listBuilder;
+//   }
+// }
 
-class RequireTimeAfter extends NativeScript {
-  @override
-  final NativeScriptType type = NativeScriptType.after;
-  final int slot;
+// class RequireTimeAfter extends NativeScript {
+//   @override
+//   final NativeScriptType type = NativeScriptType.after;
+//   final int slot;
 
-  RequireTimeAfter({required this.slot});
+//   RequireTimeAfter({required this.slot});
 
-  factory RequireTimeAfter.fromCbor({required CborList list}) =>
-      RequireTimeAfter(slot: (list[1] as CborSmallInt).toInt());
+//   factory RequireTimeAfter.fromCbor({required CborList list}) =>
+//       RequireTimeAfter(slot: (list[1] as CborSmallInt).toInt());
 
-  @override
-  CborList toCborList({bool forJson = false}) {
-    return CborList([
-      CborSmallInt(type.index),
-      CborSmallInt(slot),
-    ]);
-    // final listBuilder = ListBuilder.builder();
-    // listBuilder.writeInt(type.index);
-    // listBuilder.writeInt(slot);
-    // return listBuilder;
-  }
-}
+//   @override
+//   CborList toCborList({bool forJson = false}) {
+//     return CborList([
+//       CborSmallInt(type.index),
+//       CborSmallInt(slot),
+//     ]);
+//     // final listBuilder = ListBuilder.builder();
+//     // listBuilder.writeInt(type.index);
+//     // listBuilder.writeInt(slot);
+//     // return listBuilder;
+//   }
+// }
 
-class RequireTimeBefore extends NativeScript {
-  @override
-  final NativeScriptType type = NativeScriptType.before;
-  final int slot;
+// class RequireTimeBefore extends NativeScript {
+//   @override
+//   final NativeScriptType type = NativeScriptType.before;
+//   final int slot;
 
-  RequireTimeBefore({required this.slot});
+//   RequireTimeBefore({required this.slot});
 
-  factory RequireTimeBefore.fromCbor({required CborList list}) =>
-      RequireTimeBefore(slot: (list[1] as CborSmallInt).toInt());
+//   factory RequireTimeBefore.fromCbor({required CborList list}) =>
+//       RequireTimeBefore(slot: (list[1] as CborSmallInt).toInt());
 
-  @override
-  CborList toCborList({bool forJson = false}) {
-    return CborList([
-      CborSmallInt(type.index),
-      CborSmallInt(slot),
-    ]);
-    // final listBuilder = ListBuilder.builder();
-    // listBuilder.writeInt(type.index);
-    // listBuilder.writeInt(slot);
-    // return listBuilder;
-  }
-}
+//   @override
+//   CborList toCborList({bool forJson = false}) {
+//     return CborList([
+//       CborSmallInt(type.index),
+//       CborSmallInt(slot),
+//     ]);
+//     // final listBuilder = ListBuilder.builder();
+//     // listBuilder.writeInt(type.index);
+//     // listBuilder.writeInt(slot);
+//     // return listBuilder;
+//   }
+// }
 
 // abstract class Script {
 //   Uint8List get bytes;

@@ -11,10 +11,10 @@ void main() {
   final formatter = AdaFormattter.compactCurrency();
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
-      networkId: NetworkId.testnet,
+      network: Networks.testnet,
       projectId: 'mock-id');
   final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..blockchainAdapter = mockAdapter;
   const wallet1 =
       'stake_test1uqnf58xmqyqvxf93d3d92kav53d0zgyc6zlt927zpqy2v9cyvwl7a';
@@ -65,12 +65,10 @@ void main() {
       walletBuilder.mnemonic = mnemonic2;
       final r4 = await walletBuilder.build();
       expect(r4.isOk(), isTrue, reason: "new mnemonic supplied");
-      walletBuilder.rootSigningKey =
-          Bip32SigningKey.decode(rootXsk1, coder: rootXskCoder);
+      walletBuilder.rootSigningKey = rootXsk1;
       final r5 = await walletBuilder.build();
       expect(r5.isOk(), isTrue, reason: "root signing key supplied");
-      walletBuilder.rootSigningKey =
-          Bip32SigningKey.decode(rootXsk2, coder: rootXskCoder);
+      walletBuilder.rootSigningKey = rootXsk2;
       final r6 = await walletBuilder.build();
       expect(r6.isOk(), isTrue, reason: "root signing key supplied");
       expect(r5.unwrap().walletId, isNot(r6.unwrap().walletId),
@@ -79,19 +77,16 @@ void main() {
           reason: "wallet stakeAddresses are unique");
       expect(r5.unwrap().walletName, isNot(r6.unwrap().walletName),
           reason: "wallet names are unique");
-      expect(r5.unwrap().rootKeyPair.signingKey,
-          isNot(r6.unwrap().rootKeyPair.signingKey),
-          reason: "wallet keys are unique");
     }); //, skip: ''
   });
 }
 
 final rootXskCoder = Bech32Coder(hrp: 'root_xsk');
 
-String generateRootXskBip32() {
-  final rootSigningKey =
-      HdWallet.fromMnemonic(mnemonic: WalletBuilder.generateNewMnemonic())
-          .rootSigningKey;
-  final bip32 = rootXskCoder.encode(rootSigningKey);
-  return bip32;
-}
+// String generateRootXskBip32() {
+//   final rootSigningKey =
+//       HdWallet.fromMnemonic(mnemonic: WalletBuilder.generateNewMnemonic())
+//           .rootSigningKey;
+//   final bip32 = rootXskCoder.encode(rootSigningKey);
+//   return bip32;
+// }

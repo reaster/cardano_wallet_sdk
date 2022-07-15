@@ -1,15 +1,18 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:cbor/cbor.dart';
-import 'package:bip32_ed25519/api.dart';
+// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import '../wallet/account.dart';
+import './model/bc_tx_ext.dart';
+// import 'package:cbor/cbor.dart';
+// import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:pinenacl/tweetnacl.dart';
-import '../address/hd_wallet.dart';
+// import 'package:pinenacl/tweetnacl.dart';
+// import '../address/hd_wallet.dart';
 import '../address/shelley_address.dart';
 import '../asset/asset.dart';
 import '../blockchain/blockchain_adapter.dart';
-import '../util/blake2bhash.dart';
+// import '../util/blake2bhash.dart';
 import '../util/ada_types.dart';
 import './transaction.dart';
 import '../wallet/wallet.dart';
@@ -31,11 +34,11 @@ import './model/bc_tx_body_ext.dart';
 class TxBuilder {
   BlockchainAdapter? _blockchainAdapter;
   Wallet? _wallet;
-  Bip32KeyPair? _keyPair;
+  // Bip32KeyPair? _keyPair;
   List<BcTransactionInput> _inputs = [];
   List<BcTransactionOutput> _outputs = [];
-  ShelleyAddress? _toAddress;
-  ShelleyAddress? _changeAddress;
+  AbstractAddress? _toAddress;
+  ShelleyReceiveKit? _changeAddress;
   BcValue _value = BcValue(coin: 0, multiAssets: []);
   Coin _fee = defaultFee;
   Coin _minFee = coinZero;
@@ -73,10 +76,13 @@ class TxBuilder {
   /// manually sign transacion and set single witnessSet.
   BcTransaction sign() {
     final body = _buildBody();
-    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = _loadUtxosAndTheirKeys();
-    _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
+    // Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = _loadUtxosAndTheirKeys();
+    final signingKeys =
+        _loadUtxosAndTheirKeys().values.map((p) => p.signingKey).toList();
+    //_witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
     return BcTransaction(
-        body: body, witnessSet: _witnessSet, metadata: _metadata);
+            body: body, witnessSet: _witnessSet, metadata: _metadata)
+        .sign(signingKeys);
   }
 
   /// Check if inputs and outputs including fee, add up to zero or balance out.
@@ -99,33 +105,30 @@ class TxBuilder {
     return null;
   }
 
-  Map<ShelleyAddress, Bip32KeyPair> _loadUtxosAndTheirKeys() {
+  Map<ShelleyAddress, ShelleyUtxoKit> _loadUtxosAndTheirKeys() {
     Set<ShelleyAddress> ownedAddresses = _wallet!.addresses.toSet();
-    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = {};
+    Set<ShelleyAddress> utxos = {};
     for (BcTransactionInput input in _inputs) {
       ShelleyAddress? utxo = _utxosFromTransaction(input, ownedAddresses);
       if (utxo != null) {
-        Bip32KeyPair? keyPair =
-            _wallet!.findKeyPairForChangeAddress(address: utxo);
-        if (keyPair != null) {
-          utxoKeyPairs[utxo] = keyPair;
-        }
+        utxos.add(utxo);
       }
     }
-    return utxoKeyPairs;
+    final utxoKitList = _wallet!.findSigningKeyForUtxos(utxos: utxos);
+    return {for (var k in utxoKitList) k.address: k};
   }
 
-  BcTransactionWitnessSet signAndBuildWitnesses(
-      Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs, List<int> signature) {
-    List<BcVkeyWitness> vkeyWitnesses = [];
-    for (final keyPair in utxoKeyPairs.values) {
-      final BcVkeyWitness witness =
-          BcVkeyWitness(signature: signature, vkey: keyPair.verifyKey!.rawKey);
-      vkeyWitnesses.add(witness);
-    }
-    return BcTransactionWitnessSet(
-        vkeyWitnesses: vkeyWitnesses, nativeScripts: []);
-  }
+  // BcTransactionWitnessSet signAndBuildWitnesses(
+  //     Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs, List<int> signature) {
+  //   List<BcVkeyWitness> vkeyWitnesses = [];
+  //   for (final keyPair in utxoKeyPairs.values) {
+  //     final BcVkeyWitness witness =
+  //         BcVkeyWitness(signature: signature, vkey: keyPair.verifyKey!.rawKey);
+  //     vkeyWitnesses.add(witness);
+  //   }
+  //   return BcTransactionWitnessSet(
+  //       vkeyWitnesses: vkeyWitnesses, nativeScripts: []);
+  // }
 
   ///
   /// Automates building a valid, signed transaction inlcuding checking required inputs, calculating
@@ -157,38 +160,48 @@ class TxBuilder {
     //convert value into spend output if not zero
     if (_value.coin > coinZero && _toAddress != null) {
       BcTransactionOutput spendOutput =
-          BcTransactionOutput(address: _toAddress!.toBech32(), value: _value);
+          BcTransactionOutput(address: _toAddress!.toString(), value: _value);
       _outputs.add(spendOutput);
     }
     var body = _buildBody();
     //adjust change to balance transaction
     final balanceResult = body.balancedOutputsWithChange(
-        changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+        changeAddress: _changeAddress!.address,
+        cache: _blockchainAdapter!,
+        fee: _fee);
     if (balanceResult.isErr()) return Err(balanceResult.unwrapErr());
     _outputs = balanceResult.unwrap();
     //build the complete signed transaction so we can calculate a more accurate fee
     body = _buildBody();
-    Map<ShelleyAddress, Bip32KeyPair> utxoKeyPairs = _loadUtxosAndTheirKeys();
+    Map<ShelleyAddress, ShelleyUtxoKit> utxoKeyPairs = _loadUtxosAndTheirKeys();
     if (utxoKeyPairs.isEmpty) {
       return Err("no UTxOs found in transaction");
     }
-    _witnessSet = _sign(
-        body: body,
-        keyPairSet: utxoKeyPairs.values.toSet(),
-        fakeSignature: true);
+    final signingKeys = utxoKeyPairs.values.map((p) => p.signingKey).toList();
     var tx =
-        BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+        BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata)
+            .sign(signingKeys, fakeSignature: true);
+    // _witnessSet = _sign(
+    //     body: body,
+    //     keyPairSet: utxoKeyPairs.values.toSet(),
+    //     fakeSignature: true);
+    // var tx =
+    //     BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
     _fee = calculateMinFee(tx: tx, minFee: _minFee);
     //rebalance change to fit the new fee
     final balanceResult2 = body.balancedOutputsWithChange(
-        changeAddress: _changeAddress!, cache: _blockchainAdapter!, fee: _fee);
+        changeAddress: _changeAddress!.address,
+        cache: _blockchainAdapter!,
+        fee: _fee);
     if (balanceResult2.isErr()) return Err(balanceResult2.unwrapErr());
     _outputs = balanceResult2.unwrap();
     body = _buildBody();
     //re-sign to capture changes
-    _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
-    tx =
-        BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
+    tx = BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata)
+        .sign(signingKeys, fakeSignature: false);
+    // _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
+    // tx =
+    //     BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
     if (mustBalance) {
       final balancedResult =
           tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
@@ -196,34 +209,6 @@ class TxBuilder {
     }
     return Ok(tx);
   }
-
-  BcTransactionWitnessSet _sign({
-    required BcTransactionBody body,
-    required Set<Bip32KeyPair> keyPairSet,
-    bool fakeSignature = false,
-  }) {
-    final bodyData = cbor.encode(body.toCborMap());
-    List<int> hash = blake2bHash256(bodyData);
-    List<BcVkeyWitness> witnesses = [];
-    for (Bip32KeyPair keyPair in keyPairSet) {
-      final signedMessage =
-          fakeSignature ? _fakeSign(hash) : keyPair.signingKey!.sign(hash);
-      final witness = BcVkeyWitness(
-          vkey: keyPair.verifyKey!.rawKey, signature: signedMessage.signature);
-      witnesses.add(witness);
-    }
-    return BcTransactionWitnessSet(vkeyWitnesses: witnesses, nativeScripts: []);
-  }
-
-  /// Generate fake signature that just has to be correct length for size calculation.
-  SignedMessage _fakeSign(List<int> message) {
-    var sm = Uint8List(message.length + TweetNaCl.signatureLength);
-    sm.fillRange(
-        0, sm.length, 42); //file fake sig with meaning of life & everything.
-    return SignedMessage.fromList(signedMessage: sm);
-  }
-
-  //List<int> get transactionBodyHash => blake2bHash256(_buildBody().toCborMap().getData());
 
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) {
@@ -234,9 +219,9 @@ class TxBuilder {
       return Err(
           "when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
     }
-    if (_keyPair == null) {
-      return Err("'kit' (BcAddressKit) property must be set");
-    }
+    // if (_keyPair == null) {
+    //   return Err("'kit' (BcAddressKit) property must be set");
+    // }
     if (_changeAddress == null) {
       return Err("'changeAddress' property must be set");
     }
@@ -297,15 +282,15 @@ class TxBuilder {
 
   void wallet(Wallet wallet) {
     _wallet = wallet;
-    _keyPair = _wallet!.rootKeyPair;
+    // _keyPair = _wallet!.rootKeyPair;
   }
 
   void value(BcValue value) => _value = value;
 
-  void changeAddress(ShelleyAddress changeAddress) =>
+  void changeAddress(ShelleyReceiveKit changeAddress) =>
       _changeAddress = changeAddress;
 
-  void toAddress(ShelleyAddress toAddress) => _toAddress = toAddress;
+  void toAddress(AbstractAddress toAddress) => _toAddress = toAddress;
 
   void currentSlot(int currentSlot) => _currentSlot = currentSlot;
 
@@ -388,7 +373,7 @@ class TxBuilder {
   // }
 }
 
-typedef CurrentEpochFunction = Future<int> Function();
+//typedef CurrentEpochFunction = Future<int> Function();
 
 ///
 /// Special builder for creating BcValue objects containing multi-asset transactions.

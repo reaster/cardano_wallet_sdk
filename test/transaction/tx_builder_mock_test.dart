@@ -17,14 +17,19 @@ void main() {
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
   const mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin';
-  // final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonic.split(' '));
-  // final accountIndex = defaultAccountIndex;
-  // final addressKeyPair = hdWallet.deriveAddressKeys(account: accountIndex);
+  final account0 =
+      HdMaster.mnemonic(mnemonic.split(' '), network: Networks.testnet)
+          .account();
+  // final hdWallet = HdWallet.fromMnemonic(mnemonic: );
+  // final addressKeyPair = Bip32KeyPair(
+  //     account0.basePrivateKey(), account0.basePrivateKey().publicKey);
+  // final addressKeyPair = hdWallet.deriveAddressKeys(account: 0);
   final wallet = WalletImpl(
-    account: HdMaster.mnemonic(mnemonic.split(' '), network: Networks.testnet)
-        .account(),
     blockchainAdapter: mockAdapter,
+    // stakeAddress: stakeAddress,
+    // addressKeyPair: addressKeyPair,
     walletName: 'mock wallet',
+    account: account0,
   );
 
   group('TransactionBuilder -', () {
@@ -98,7 +103,7 @@ void main() {
     //       .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 1)
     //       .build();
 
-    //   //use TransactionBuilder to assemble BcTransaction:
+    //   //use TransactionBuilder to assemble ShelleyTransaction:
     //   final builder = TransactionBuilder()
     //     ..inputs(inputsResult.unwrap().inputs)
     //     ..value(shelleyValue)
@@ -108,7 +113,7 @@ void main() {
     //     ..changeAddress(wallet.firstUnusedChangeAddress);
     //   final txResult = await builder.build();
     //   expect(txResult.isOk(), isTrue);
-    //   final BcTransaction tx = txResult.unwrap();
+    //   final ShelleyTransaction tx = txResult.unwrap();
     //   expect(tx.body.inputs.length, 2, reason: 'need an ADA tx and a TEST tx');
     //   expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
 

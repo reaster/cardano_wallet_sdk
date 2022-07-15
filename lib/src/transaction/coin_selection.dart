@@ -6,8 +6,9 @@ import 'package:oxidized/oxidized.dart';
 import '../address/shelley_address.dart';
 import '../util/ada_types.dart';
 import '../asset/asset.dart';
-import './spec/shelley_spec.dart';
+// import './spec/shelley_spec.dart';
 import './transaction.dart';
+import 'model/bc_tx.dart';
 
 ///
 /// Coin selection is the process of picking UTxO inputs to perticipate in a spending transaction.
@@ -89,7 +90,7 @@ class MultiAssetRequestBuilder {
 }
 
 class CoinSelection {
-  final List<ShelleyTransactionInput> inputs;
+  final List<BcTransactionInput> inputs;
   CoinSelection({required this.inputs});
 }
 
@@ -152,7 +153,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   final List<WalletTransaction> sortedInputs =
       List.from(unspentInputsAvailable);
   sortedInputs.sort((a, b) => b.amount.compareTo(a.amount));
-  List<ShelleyTransactionInput> results = [];
+  List<BcTransactionInput> results = [];
   Coin selectedAmount = 0;
   int coinsSelected = 0;
   for (final tx in sortedInputs) {
@@ -181,8 +182,8 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
                     "coinsSelected ($coinsSelected) exceeds allowed coinSelectionLimit ($coinSelectionLimit)",
               ));
             }
-            results.add(
-                ShelleyTransactionInput(index: index, transactionId: tx.txId));
+            results
+                .add(BcTransactionInput(index: index, transactionId: tx.txId));
           }
         }
       }

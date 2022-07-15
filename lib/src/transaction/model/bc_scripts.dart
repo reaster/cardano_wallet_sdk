@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:hex/hex.dart';
 import 'package:cbor/cbor.dart';
-import 'package:typed_data/typed_data.dart';
+// import 'package:typed_data/typed_data.dart';
 import '../../util/blake2bhash.dart';
 import '../../util/codec.dart';
 import 'bc_exception.dart';
@@ -23,14 +23,33 @@ import 'bc_abstract.dart';
 /// see https://github.com/input-output-hk/cardano-node/blob/master/doc/reference/simple-scripts.md
 ///
 
+enum BcScriptType {
+  native(0),
+  plutusV1(1),
+  plutusV2(2);
+
+  final int header;
+  const BcScriptType(this.header);
+}
+
+abstract class BcAbstractScript extends BcAbstractCbor {
+  BcScriptType get type;
+  Uint8List get scriptHash => Uint8List.fromList(blake2bHash224([
+        ...[type.header],
+        ...serialize
+      ]));
+}
+
 class BcPlutusScript extends BcAbstractScript {
-  static const type = 'PlutusScriptV1';
-  final String? description;
+  @override
+  final BcScriptType type;
   final String cborHex;
+  final String? description;
 
   BcPlutusScript({
-    this.description,
+    this.type = BcScriptType.plutusV1,
     required this.cborHex,
+    this.description,
   });
 
   CborBytes toCborBytes() => cbor.decode(serialize) as CborBytes;
@@ -53,18 +72,23 @@ class BcPlutusScript extends BcAbstractScript {
   @override
   Uint8List get scriptHash {
     final bytes = [
-      ...[1],
+      ...[type.header],
       ...toCborBytes().bytes
     ];
     //print("scriptHash bytes=[${bytes.join(',')}]");
     return Uint8List.fromList(blake2bHash224(bytes));
   }
+
+  @override
+  String get json => toJson(toCborBytes());
 }
 
 enum BcNativeScriptType { sig, all, any, atLeast, after, before }
 
 abstract class BcNativeScript extends BcAbstractScript {
-  BcNativeScriptType get type;
+  @override
+  final BcScriptType type = BcScriptType.native;
+  BcNativeScriptType get nativeType;
 
   CborList toCborList();
 
@@ -73,8 +97,8 @@ abstract class BcNativeScript extends BcAbstractScript {
 
   static BcNativeScript fromCbor({required CborList list}) {
     final selector = list[0] as CborSmallInt;
-    final type = BcNativeScriptType.values[selector.toInt()];
-    switch (type) {
+    final nativeType = BcNativeScriptType.values[selector.toInt()];
+    switch (nativeType) {
       case BcNativeScriptType.sig:
         return BcScriptPubkey.fromCbor(list: list);
       case BcNativeScriptType.all:
@@ -94,7 +118,7 @@ abstract class BcNativeScript extends BcAbstractScript {
   }
 
   String get policyId => HEX.encode(blake2bHash224([
-        ...[0],
+        ...[type.header],
         ...serialize
       ]));
 
@@ -104,11 +128,14 @@ abstract class BcNativeScript extends BcAbstractScript {
         BcNativeScript.fromCbor(list: blob as CborList),
     ];
   }
+
+  @override
+  String get json => toJson(toCborList());
 }
 
 class BcScriptPubkey extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.sig;
+  final BcNativeScriptType nativeType = BcNativeScriptType.sig;
   final String keyHash;
 
   BcScriptPubkey({
@@ -123,20 +150,20 @@ class BcScriptPubkey extends BcNativeScript {
   @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborBytes(uint8BufferFromHex(keyHash, utf8EncodeOnHexFailure: true))
     ]);
   }
 
   @override
   String toString() {
-    return 'BcScriptPubkey(type: $type, keyHash: $keyHash)';
+    return 'BcScriptPubkey(nativeType: $nativeType, keyHash: $keyHash)';
   }
 }
 
 class BcScriptAll extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.all;
+  final BcNativeScriptType nativeType = BcNativeScriptType.all;
   final List<BcNativeScript> scripts;
 
   BcScriptAll({
@@ -151,20 +178,20 @@ class BcScriptAll extends BcNativeScript {
   @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborList([for (var s in scripts) s.toCborList()]),
     ]);
   }
 
   @override
   String toString() {
-    return 'BcScriptAll(type: $type, scripts: $scripts)';
+    return 'BcScriptAll(nativeType: $nativeType, scripts: $scripts)';
   }
 }
 
 class BcScriptAny extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.any;
+  final BcNativeScriptType nativeType = BcNativeScriptType.any;
   final List<BcNativeScript> scripts;
   BcScriptAny({
     required this.scripts,
@@ -178,20 +205,20 @@ class BcScriptAny extends BcNativeScript {
   @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborList([for (var s in scripts) s.toCborList()]),
     ]);
   }
 
   @override
   String toString() {
-    return 'BcScriptAny(type: $type, scripts: $scripts)';
+    return 'BcScriptAny(nativeType: $nativeType, scripts: $scripts)';
   }
 }
 
 class BcScriptAtLeast extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.atLeast;
+  final BcNativeScriptType nativeType = BcNativeScriptType.atLeast;
   final int amount;
   final List<BcNativeScript> scripts;
   BcScriptAtLeast({
@@ -208,7 +235,7 @@ class BcScriptAtLeast extends BcNativeScript {
   @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborSmallInt(amount),
       CborList([for (var s in scripts) s.toCborList()]),
     ]);
@@ -216,13 +243,13 @@ class BcScriptAtLeast extends BcNativeScript {
 
   @override
   String toString() {
-    return 'BcScriptAtLeast(type: $type, amount: $amount, scripts: $scripts)';
+    return 'BcScriptAtLeast(nativeType: $nativeType, amount: $amount, scripts: $scripts)';
   }
 }
 
 class BcRequireTimeAfter extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.after;
+  final BcNativeScriptType nativeType = BcNativeScriptType.after;
   final int slot;
   BcRequireTimeAfter({
     required this.slot,
@@ -235,20 +262,20 @@ class BcRequireTimeAfter extends BcNativeScript {
   @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborSmallInt(slot),
     ]);
   }
 
   @override
   String toString() {
-    return 'BcRequireTimeAfter(type: $type, slot: $slot)';
+    return 'BcRequireTimeAfter(nativeType: $nativeType, slot: $slot)';
   }
 }
 
 class BcRequireTimeBefore extends BcNativeScript {
   @override
-  final BcNativeScriptType type = BcNativeScriptType.before;
+  final BcNativeScriptType nativeType = BcNativeScriptType.before;
   final int slot;
   BcRequireTimeBefore({
     required this.slot,
@@ -258,15 +285,16 @@ class BcRequireTimeBefore extends BcNativeScript {
     return BcRequireTimeBefore(slot: (list[1] as CborSmallInt).toInt());
   }
 
+  @override
   CborList toCborList() {
     return CborList([
-      CborSmallInt(type.index),
+      CborSmallInt(nativeType.index),
       CborSmallInt(slot),
     ]);
   }
 
   @override
   String toString() {
-    return 'BcRequireTimeBefore(type: $type, slot: $slot)';
+    return 'BcRequireTimeBefore(nativeType: $nativeType, slot: $slot)';
   }
 }

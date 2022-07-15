@@ -72,7 +72,7 @@ result.when(
 Create a wallet builder for the testnet using a [BlockFrost](https://github.com/reaster/blockfrost_api) key.
 ```dart
 final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..testnetAdapterKey = blockfrostKey;
 ```
 
@@ -80,7 +80,7 @@ Create a read-only wallet using a staking address.
 ```dart
 var address = ShelleyAddress.fromBech32('stake_test1uqvwl7a...');
 final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..testnetAdapterKey = blockfrostKey
     ..stakeAddress = address;
 Result<ReadOnlyWallet, String> result = await walletBuilder.readOnlyBuildAndSync();
@@ -94,7 +94,7 @@ Restore existing wallet using 24 word mnemonic.
 ```dart
 List<String> mnemonic = 'rude stadium move gallery receive just...'.split(' ');
 final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..testnetAdapterKey = blockfrostKey
     ..mnemonic = mnemonic;
 Result<Wallet, String> result = await walletBuilder.buildAndSync();
@@ -107,7 +107,7 @@ if (result.isOk()) {
 Update existing wallet.
 ```dart
 final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
+    ..network = Networks.testnet
     ..testnetAdapterKey = blockfrostKey
     ..mnemonic = mnemonic;
 Result<Wallet, String> result = walletBuilder.build();
@@ -167,7 +167,7 @@ print("${pair.signingKey}, ${pair.verifyKey}");
 
 Access staking address.
 ```dart
-print(wallet.stakingAddress));
+print(wallet.account.stakeAddress));
 ```
 
 First unused change address.

@@ -3,23 +3,23 @@
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 // import 'package:cardano_wallet_sdk/src/crypto/mnemonic_english.dart';
-// import '../crypto/mnemonic.dart' as bip39;
-// import 'package:bip39/bip39.dart' as bip39;
+import 'package:cardano_wallet_sdk/src/crypto/shelley_key_derivation.dart';
+import '../crypto/icarus_key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
-import '../address/hd_wallet.dart';
 import '../address/shelley_address.dart';
 import '../blockchain/blockchain_adapter.dart';
 import '../blockchain/blockchain_adapter_factory.dart';
-import '../blockchain/blockfrost/blockfrost_blockchain_adapter.dart';
 // import '../crypto/mnemonic.dart';
 import '../network/network_id.dart';
 import '../transaction/coin_selection.dart';
+import '../util/codec.dart';
 import './impl/read_only_wallet_impl.dart';
 import './impl/wallet_impl.dart';
 import './read_only_wallet.dart';
 import './wallet.dart';
+import 'account.dart';
 
 ///
 /// This builder creates both read-only and transactional wallets from provided
@@ -35,16 +35,16 @@ import './wallet.dart';
 /// Finally, all wallets must choose to run on either the mainnet or testnet.
 ///
 class WalletBuilder {
-  NetworkId? _networkId;
+  Networks? _network;
   String? _walletName;
   BlockchainAdapter? _blockchainAdapter;
   String? _testnetAdapterKey;
   String? _mainnetAdapterKey;
   ShelleyAddress? _stakeAddress;
   List<String>? _mnemonic;
-  Bip32SigningKey? _rootSigningKey;
-  int accountIndex = defaultAccountIndex;
-  HdWallet? _hdWallet;
+  String? _rootSigningKey;
+  int accountIndex = 0;
+  HdAccount? _hdAccount;
   CoinSelectionAlgorithm _coinSelectionFunction = largestFirst;
   //LoadMnemonicWordsFunction loadWordsFunction = loadEnglishMnemonicWords();
 
@@ -69,13 +69,13 @@ class WalletBuilder {
   set walletName(String? walletName) => _walletName = walletName;
 
   /// Set the NetworkId of the blockchain, either testnet or mainnet.
-  set networkId(NetworkId? networkId) => _networkId = networkId;
+  set network(Networks? network) => _network = network;
 
-  /// Set a preconfigured HdWallet wallet instance.
-  set hdWallet(HdWallet hdWallet) => _hdWallet = hdWallet;
+  /// Set a preconfigured HdAccount instance.
+  set hdAccount(HdAccount hdAccount) => _hdAccount = hdAccount;
 
   /// Set the root private or signing key for this wallet.
-  set rootSigningKey(Bip32SigningKey? rootSigningKey) =>
+  set rootSigningKey(String? rootSigningKey) =>
       _rootSigningKey = rootSigningKey;
 
   // set seed(Uint8List seed) => _seed = seed;
@@ -92,7 +92,7 @@ class WalletBuilder {
     _stakeAddress = null;
     _walletName = null;
     _rootSigningKey = null;
-    _hdWallet = null;
+    _hdAccount = null;
     _mnemonic = null;
   }
 
@@ -102,16 +102,10 @@ class WalletBuilder {
       return Err("Read-only wallet creation requires a staking address");
     }
     _walletName ??= "Wallet #${_walletNameIndex++}";
-    if (_blockchainAdapter != null) {
-      if (_blockchainAdapter! is BlockfrostBlockchainAdapter) {
-        _networkId =
-            (_blockchainAdapter as BlockfrostBlockchainAdapter).networkId;
-      }
-    } else {
-      _networkId ??= NetworkId.mainnet;
+    if (_blockchainAdapter == null) {
       final adapterResult = _lookupOrCreateBlockchainAdapter(
-        networkId: _networkId!,
-        key: _networkId! == NetworkId.mainnet
+        network: network,
+        key: network == Networks.mainnet
             ? _mainnetAdapterKey
             : _testnetAdapterKey,
       );
@@ -139,49 +133,70 @@ class WalletBuilder {
     return Ok(wallet);
   }
 
+  /// try to figure out which network is intended or use mainnet otherwise
+  Networks get network {
+    if (_network == null) {
+      if (_hdAccount != null) {
+        _network = _hdAccount!.network;
+      } else if (_blockchainAdapter != null) {
+        _network = _blockchainAdapter!.network;
+      } else if (_testnetAdapterKey != null && _mainnetAdapterKey == null) {
+        _network = Networks.testnet;
+      } else if (_mainnetAdapterKey != null && _testnetAdapterKey == null) {
+        _network = Networks.mainnet;
+      } else if (_stakeAddress != null) {
+        _network = _stakeAddress!.toBech32().startsWith('stake_test')
+            ? Networks.testnet
+            : Networks.mainnet;
+      } else {
+        _network = Networks.mainnet;
+      }
+    }
+    return _network!;
+  }
+
   /// Create a transactional wallet matching the supplied properties.
   /// Resets the builder.
   Result<Wallet, String> build() {
-    if (_hdWallet != null) {
-      _rootSigningKey = _hdWallet!.rootSigningKey;
-    } else {
+    if (_hdAccount == null) {
       if (_mnemonic != null) {
-        _hdWallet = HdWallet.fromMnemonic(mnemonic: _mnemonic!);
-        _rootSigningKey = _hdWallet!.rootSigningKey;
+        _hdAccount = HdMaster.mnemonic(_mnemonic!, network: network)
+            .account(accountIndex: accountIndex);
       } else if (_rootSigningKey != null) {
-        _hdWallet = HdWallet(rootSigningKey: _rootSigningKey!);
+        if (_rootSigningKey!.startsWith('root_xsk')) {
+          final derivation = ShelleyKeyDerivation.rootX(_rootSigningKey!);
+          _hdAccount = HdMaster(derivation: derivation, network: network)
+              .account(accountIndex: accountIndex);
+        } else if (_rootSigningKey!.startsWith('acct_xsk')) {
+          final accountSigningKey =
+              Bip32SigningKey.decode(_rootSigningKey!, coder: acctXskCoder);
+          _hdAccount = HdAccount(
+              accountSigningKey: accountSigningKey,
+              network: network,
+              accountIndex: accountIndex);
+        } else {
+          return Err(
+              "rootSigningKey must be a master (starting with 'root_xsk') or a account root (starting with 'acct_xsk') private extended key: $_rootSigningKey");
+        }
       } else {
         return Err("wallet creation requires a 'rootPrivateKey' or 'mnemonic'");
       }
     }
     _walletName ??= "Wallet #${_walletNameIndex++}";
-    if (_blockchainAdapter != null) {
-      if (_blockchainAdapter! is BlockfrostBlockchainAdapter) {
-        _networkId =
-            (_blockchainAdapter as BlockfrostBlockchainAdapter).networkId;
-      }
-    } else {
-      _networkId ??= NetworkId.mainnet;
+    if (_blockchainAdapter == null) {
       final adapterResult = _lookupOrCreateBlockchainAdapter(
-        networkId: _networkId!,
-        key: _networkId! == NetworkId.mainnet
+        network: network,
+        key: network == Networks.mainnet
             ? _mainnetAdapterKey
             : _testnetAdapterKey,
       );
       if (adapterResult.isErr()) return Err(adapterResult.unwrapErr());
       _blockchainAdapter = adapterResult.unwrap();
     }
-    final stakeKeyPair = _hdWallet!.deriveAddressKeys(role: stakingRoleIndex);
-    final stakeAddress = _hdWallet!.toRewardAddress(
-        spend: stakeKeyPair.verifyKey!, networkId: _networkId!);
-    final addressKeyPair = _hdWallet!.deriveAddressKeys(account: accountIndex);
-    //printKey(addressKeyPair);
     final wallet = WalletImpl(
       blockchainAdapter: _blockchainAdapter!,
-      stakeAddress: stakeAddress,
-      addressKeyPair: addressKeyPair,
       walletName: _walletName!,
-      hdWallet: _hdWallet!,
+      account: _hdAccount!,
       coinSelectionFunction: _coinSelectionFunction,
     );
     reset();
@@ -204,31 +219,28 @@ class WalletBuilder {
   // static List<String> generateNewMnemonic() =>
   //     (bip39.generateNewMnemonic(strength: 256));
 
-  static final Map<NetworkId, BlockchainAdapterFactory>
+  static final Map<Networks, BlockchainAdapterFactory>
       _blockchainAdapterFactoryCache = {};
-  static final Map<NetworkId, BlockchainAdapter> _blockchainAdapterCache = {};
+  static final Map<Networks, BlockchainAdapter> _blockchainAdapterCache = {};
 
   static Result<BlockchainAdapter, String> _lookupOrCreateBlockchainAdapter(
-      {required NetworkId networkId, String? key}) {
-    BlockchainAdapter? adapter = _blockchainAdapterCache[networkId];
+      {required Networks network, String? key}) {
+    BlockchainAdapter? adapter = _blockchainAdapterCache[network];
     if (adapter != null) return Ok(adapter);
-    BlockchainAdapterFactory? factory =
-        _blockchainAdapterFactoryCache[networkId];
+    BlockchainAdapterFactory? factory = _blockchainAdapterFactoryCache[network];
     if (factory == null) {
       if (key == null) {
         return Err(
-            "no BlockFrost key supplied for ${networkId.toString()} network");
+            "no BlockFrost key supplied for ${network.toString()} network");
       }
       Interceptor authInterceptor =
           BlockchainAdapterFactory.interceptorFromKey(key: key);
       factory = BlockchainAdapterFactory(
-          authInterceptor: authInterceptor,
-          networkId: networkId,
-          projectId: key);
-      _blockchainAdapterFactoryCache[networkId] = factory;
+          authInterceptor: authInterceptor, network: network, projectId: key);
+      _blockchainAdapterFactoryCache[network] = factory;
     }
     adapter = factory.adapter();
-    _blockchainAdapterCache[networkId] = adapter;
+    _blockchainAdapterCache[network] = adapter;
     return Ok(adapter);
   }
 }

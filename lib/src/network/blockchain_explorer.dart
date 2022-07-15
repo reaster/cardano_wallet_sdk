@@ -16,9 +16,9 @@ class CardanoBlockchainExplorer {
 
   CardanoBlockchainExplorer({this.baseUrl = mainnetUrl, this.lang = 'en'});
 
-  factory CardanoBlockchainExplorer.fromNetwork(NetworkId networkId) =>
+  factory CardanoBlockchainExplorer.fromNetwork(Networks network) =>
       CardanoBlockchainExplorer(
-          baseUrl: networkId == NetworkId.mainnet ? mainnetUrl : testnetUrl);
+          baseUrl: network == Networks.mainnet ? mainnetUrl : testnetUrl);
 
   /// result example: https://explorer.cardano.org/en/epoch?number=268
   String epicUrl({required int epicNumber}) =>

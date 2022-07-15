@@ -13,7 +13,7 @@ void main() {
   const blockfrostKey = 'dummy-key';
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
-      networkId: NetworkId.testnet,
+      network: Networks.testnet,
       projectId: 'mock-id');
   final mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin'
@@ -37,7 +37,7 @@ void main() {
           'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg';
       var address = ShelleyAddress.fromBech32(bechAddr);
       final walletBuilder = WalletBuilder()
-        ..networkId = NetworkId.testnet
+        ..network = Networks.testnet
         ..testnetAdapterKey = blockfrostKey
         ..stakeAddress = address
         ..blockchainAdapter = mockAdapter;
@@ -51,7 +51,7 @@ void main() {
     test('Restore existing wallet using 24 word mnemonic', () async {
       //List<String> mnemonic = 'rude stadium move...gallery receive just'.split(' ');
       final walletBuilder = WalletBuilder()
-        ..networkId = NetworkId.testnet
+        ..network = Networks.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
         ..blockchainAdapter = mockAdapter;
@@ -63,7 +63,7 @@ void main() {
     }, skip: "TODO");
     test('Update existing wallet', () async {
       final walletBuilder = WalletBuilder()
-        ..networkId = NetworkId.testnet
+        ..network = Networks.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
         ..blockchainAdapter = mockAdapter;
@@ -86,14 +86,14 @@ void main() {
           'addr_test1qqwncl938qg3sf46z8n878z26fnq426ttyarv3hk58keyzpxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsq32vnr');
       final adaAmount = 2 * 1000000;
       final walletBuilder = WalletBuilder()
-        ..networkId = NetworkId.testnet
+        ..network = Networks.testnet
         ..testnetAdapterKey = blockfrostKey
         ..mnemonic = mnemonic
         ..blockchainAdapter = mockAdapter;
       final walletResult = await walletBuilder.buildAndSync();
       if (walletResult.isOk()) {
         var wallet = walletResult.unwrap();
-        final Result<ShelleyTransaction, String> result = await wallet.sendAda(
+        final Result<BcTransaction, String> result = await wallet.sendAda(
           toAddress: bobsAddress,
           lovelace: adaAmount,
         );

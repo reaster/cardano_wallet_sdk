@@ -3,14 +3,14 @@
 
 import 'package:logger/logger.dart';
 import '../util/ada_types.dart';
-import './spec/shelley_spec.dart';
+// import './spec/shelley_spec.dart';
 import 'package:cbor/cbor.dart';
 
 import 'model/bc_tx.dart';
 
-@Deprecated('use MinFeeFunction')
-typedef MinFeeFunctionOld = Coin Function(
-    {required ShelleyTransaction transaction, LinearFee linearFee});
+// @Deprecated('use MinFeeFunction')
+// typedef MinFeeFunctionOld = Coin Function(
+//     {required ShelleyTransaction transaction, LinearFee linearFee});
 
 typedef MinFeeFunction = Coin Function(
     {required BcTransaction transaction, LinearFee linearFee});
@@ -30,18 +30,18 @@ Coin simpleMinFee(
   return result;
 }
 
-@Deprecated('use simpleMinFee')
-Coin simpleMinFeeOld(
-    {required ShelleyTransaction transaction,
-    LinearFee linearFee = defaultLinearFee}) {
-  final logger = Logger();
-  final len = cbor.encode(transaction.toCborList()).length;
-  final result =
-      (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
-  logger.i(
-      "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
-  return result;
-}
+// @Deprecated('use simpleMinFee')
+// Coin simpleMinFeeOld(
+//     {required ShelleyTransaction transaction,
+//     LinearFee linearFee = defaultLinearFee}) {
+//   final logger = Logger();
+//   final len = cbor.encode(transaction.toCborList()).length;
+//   final result =
+//       (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
+//   logger.i(
+//       "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
+//   return result;
+// }
 
 ///
 /// Used in calculating Cardano transaction fees.

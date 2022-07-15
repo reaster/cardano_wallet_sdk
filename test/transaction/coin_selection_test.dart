@@ -9,7 +9,7 @@ const ada = 1000000;
 void main() {
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
-      networkId: NetworkId.testnet,
+      network: Networks.testnet,
       projectId: '');
   final address = ShelleyAddress.fromBech32(stakeAddr2);
   final wallet = ReadOnlyWalletImpl(

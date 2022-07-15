@@ -9,7 +9,7 @@ void main() {
   final formatter = AdaFormattter.compactCurrency();
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
-      networkId: NetworkId.testnet,
+      network: Networks.testnet,
       projectId: 'mock-id');
   group('MockPublicWallet -', () {
     test('create testnet wallet 2', () async {

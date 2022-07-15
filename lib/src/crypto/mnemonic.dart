@@ -176,7 +176,7 @@ Uint8List _mnemonicToSeed(String mnemonic, {String passphrase = ""}) {
   const iterationCount = 2048;
   const desiredKeyLength = 64;
   final passwordBytes = Uint8List.fromList(mnemonic.codeUnits);
-  final saltBytes = Uint8List.fromList(utf8.encode('mnemonic' + passphrase));
+  final saltBytes = Uint8List.fromList(utf8.encode('mnemonic$passphrase'));
   return PBKDF2.hmac_sha512(
       passwordBytes, saltBytes, iterationCount, desiredKeyLength);
 }
@@ -197,7 +197,7 @@ bool validateMnemonic(
   return true;
 }
 
-//TODO remove legacy API
+// remove legacy API
 // String _mnemonicToEntropy(String mnemonic, {required MnemonicLang lang}) {
 //   var words = mnemonic.split(' ');
 //   Uint8List entropyBytes = mnemonicWordsToEntropyBytes(words, lang: lang);

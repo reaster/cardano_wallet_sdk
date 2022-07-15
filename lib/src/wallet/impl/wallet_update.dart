@@ -13,6 +13,7 @@ import '../../util/ada_types.dart';
 class WalletUpdate {
   final Coin balance;
   final List<RawTransaction> transactions;
+  //TODO should return AbstractAddresses
   final List<ShelleyAddress> addresses;
   final Map<String, CurrencyAsset> assets;
   final List<StakeAccount> stakeAccounts;
