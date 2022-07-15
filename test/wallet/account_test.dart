@@ -6,6 +6,7 @@ import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:pinenacl/key_derivation.dart';
 import 'package:hex/hex.dart';
 import 'package:test/test.dart';
+import 'dart:math';
 
 class MockPlutusScript extends BcPlutusScript {
   MockPlutusScript() : super(cborHex: '4e4d01000033222220051200120011');
@@ -15,9 +16,6 @@ class MockPlutusScript extends BcPlutusScript {
 }
 
 void main() {
-  List<int> tolist(String csv) =>
-      csv.split(',').map((n) => int.parse(n)).toList();
-
   group('Account address -', () {
     final mnemonic =
         'coconut you order found animal inform tent anxiety pepper aisle web horse source indicate eyebrow viable lawsuit speak dragon scheme among animal slogan exchange'
@@ -36,26 +34,48 @@ void main() {
       expect(addr.toBech32(),
           'addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx');
     });
-    /*
-            @Test
-        void getEntAddress_type06_mainnet_script() throws CborSerializationException {
-            Address address = AddressService.getInstance().getEntAddress(script, Networks.mainnet());
-            assertThat(address.toBech32()).isEqualTo("addr1w8phkx6acpnf78fuvxn0mkew3l0fd058hzquvz7w36x4gtcyjy7wx");
-        }
-*/
 
     test('audit', () {
       const testEntropy =
           '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
+      const pointer = BcPointer(certIndex: 1, slot: 2, txIndex: 3);
+      final script = MockPlutusScript();
       final master = HdMaster.entropyHex(testEntropy);
-      final acct0 = master.account();
-      final audit0 = master.audit();
-      expect(audit0.baseAddress().toBech32(),
-          equals(acct0.baseAddress().toBech32()));
-      expect(audit0.changeAddress().toBech32(),
-          equals(acct0.changeAddress().toBech32()));
-      expect(audit0.stakeAddress.toBech32(),
-          equals(acct0.stakeAddress.toBech32()));
+
+      //iterate threw a few account depths:
+      for (int accountIndex in [0, 13, Segment.maxDepth]) {
+        final acctN = master.account(accountIndex: accountIndex);
+        final auditA = acctN.audit;
+        final auditB = master.audit(accountIndex: accountIndex);
+        expect(auditA.stakeAddress.toBech32(),
+            equals(acctN.stakeAddress.toBech32()));
+        expect(auditA.baseScriptStakeAddress(script: script).toBech32(),
+            equals(acctN.baseScriptStakeAddress(script: script).toBech32()));
+        expect(auditB.stakeAddress.toBech32(),
+            equals(acctN.stakeAddress.toBech32()));
+        //try a few different tree depths:
+        for (int i in [0, 99, Segment.maxDepth]) {
+          expect(auditA.baseAddress(index: i).toBech32(),
+              equals(acctN.baseAddress(index: i).toBech32()));
+          expect(auditA.changeAddress(index: i).toBech32(),
+              equals(acctN.changeAddress(index: i).toBech32()));
+          expect(auditA.enterpriseAddress(index: i).toBech32(),
+              equals(acctN.enterpriseAddress(index: i).toBech32()));
+          expect(
+              auditA.pointerAddress(pointer: pointer, index: i).toBech32(),
+              equals(
+                  acctN.pointerAddress(pointer: pointer, index: i).toBech32()));
+          expect(
+              auditA.baseKeyScriptAddress(script: script, index: i).toBech32(),
+              equals(acctN
+                  .baseKeyScriptAddress(script: script, index: i)
+                  .toBech32()));
+          expect(auditB.baseAddress(index: i).toBech32(),
+              equals(acctN.baseAddress(index: i).toBech32()));
+          expect(auditB.changeAddress(index: i).toBech32(),
+              equals(acctN.changeAddress(index: i).toBech32()));
+        }
+      }
     });
 
     test('enterpriseKeyAddressMainnet', () {
@@ -169,11 +189,11 @@ void main() {
     });
 
     test('validate mainnet Account', () {
-      final expectedAccount0Xsk = tolist(
+      final expectedAccount0Xsk = csvToUint8List(
           '64,246,231,31,5,34,87,102,234,127,223,47,231,16,38,174,155,203,159,162,244,12,68,28,233,29,109,16,7,17,143,69,99,163,20,154,255,245,240,102,22,115,68,73,66,109,26,74,157,47,205,195,175,131,141,179,153,220,26,66,152,143,39,236,77,87,90,245,169,59,223,73,5,163,112,47,173,237,244,81,234,88,71,145,210,51,173,233,9,101,214,8,186,197,115,4');
-      final expectedSpend0Xsk = tolist(
+      final expectedSpend0Xsk = csvToUint8List(
           '16,41,227,180,98,205,86,19,164,21,138,56,61,41,138,149,60,198,210,108,65,244,169,96,247,21,18,90,21,17,143,69,194,70,255,246,50,124,72,102,231,105,50,116,96,25,83,94,245,96,206,37,0,21,11,224,246,1,224,54,119,47,202,15,23,236,32,214,162,3,215,59,218,48,86,59,210,15,41,200,58,115,47,149,36,193,106,147,177,129,121,138,250,247,136,13');
-      // final expectedStake0Xsk = tolist(
+      // final expectedStake0Xsk = csvToUint8List(
       //     '40,184,124,185,16,22,113,157,33,204,24,190,209,97,23,160,125,79,145,114,178,38,114,18,12,243,32,248,12,17,143,69,125,104,75,46,40,163,136,6,34,32,65,216,70,97,70,131,241,143,123,118,111,164,172,17,148,250,121,254,98,152,125,49,87,224,30,183,139,184,57,170,146,167,191,86,138,123,240,59,3,81,148,105,27,177,61,94,63,155,51,150,90,200,13,150');
       const expectedSpend0Bech32 =
           'addr1qyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sdn8p3d';
@@ -191,7 +211,7 @@ void main() {
     });
 
     test('validate testnet Account', () {
-      final xsk = Bip32SigningKey(Uint8List.fromList(tolist(
+      final xsk = Bip32SigningKey(Uint8List.fromList(csvToUint8List(
           '64,246,231,31,5,34,87,102,234,127,223,47,231,16,38,174,155,203,159,162,244,12,68,28,233,29,109,16,7,17,143,69,99,163,20,154,255,245,240,102,22,115,68,73,66,109,26,74,157,47,205,195,175,131,141,179,153,220,26,66,152,143,39,236,77,87,90,245,169,59,223,73,5,163,112,47,173,237,244,81,234,88,71,145,210,51,173,233,9,101,214,8,186,197,115,4')));
       const expectedSpend0 =
           'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
@@ -203,7 +223,7 @@ void main() {
     test('validate Master', () {
       final entropyHex =
           '4e828f9a67ddcff0e6391ad4f26ddb7579f59ba14b6dd4baf63dcfdb9d2420da';
-      final expectedSpend0Xsk = tolist(
+      final expectedSpend0Xsk = csvToUint8List(
           '16,41,227,180,98,205,86,19,164,21,138,56,61,41,138,149,60,198,210,108,65,244,169,96,247,21,18,90,21,17,143,69,194,70,255,246,50,124,72,102,231,105,50,116,96,25,83,94,245,96,206,37,0,21,11,224,246,1,224,54,119,47,202,15,23,236,32,214,162,3,215,59,218,48,86,59,210,15,41,200,58,115,47,149,36,193,106,147,177,129,121,138,250,247,136,13');
 
       final icarus = IcarusKeyDerivation.entropyHex(entropyHex);

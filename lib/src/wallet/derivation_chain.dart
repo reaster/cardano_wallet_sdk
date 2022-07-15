@@ -4,28 +4,42 @@ class DerivationChain {
   final String key;
   final List<Segment> segments;
 
-  const DerivationChain({required this.key, required this.segments})
+  const DerivationChain._({required this.key, required this.segments})
       : assert(key == 'm' || key == 'M');
 
-  DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
-      Segment? seg3, Segment? seg4, Segment? seg5)
-      : segments = [
-          if (seg1 != null) seg1,
-          if (seg2 != null) seg2,
-          if (seg3 != null) seg3,
-          if (seg4 != null) seg4,
-          if (seg5 != null) seg5
-        ];
+  /// Private key tree chain constructor
+  const DerivationChain.m({required List<Segment> segments})
+      : this._(key: 'm', segments: segments);
+
+  /// Public key tree chain constructor
+  const DerivationChain.M({required List<Segment> segments})
+      : this._(key: 'M', segments: segments);
+
+  // DerivationChain.segments(this.key, Segment? seg1, Segment? seg2,
+  //     Segment? seg3, Segment? seg4, Segment? seg5)
+  //     : segments = [
+  //         if (seg1 != null) seg1,
+  //         if (seg2 != null) seg2,
+  //         if (seg3 != null) seg3,
+  //         if (seg4 != null) seg4,
+  //         if (seg5 != null) seg5
+  //       ];
 
   factory DerivationChain.fromPath(String path, {int? segmentLength}) =>
-      DerivationChain(
-          key: parseKey(path),
-          segments: parsePath(path, segmentLength: segmentLength));
+      path.startsWith('m')
+          ? DerivationChain.m(
+              segments: parsePath(path, segmentLength: segmentLength))
+          : path.startsWith('M')
+              ? DerivationChain.M(
+                  segments: parsePath(path, segmentLength: segmentLength))
+              : throw InvalidChainError(
+                  "DerivationChain ($path) must start with 'm' or 'M'");
 
   static String parseKey(String path) {
     final key = path.substring(0, 1);
     if (!_legalPrefixes.contains(key)) {
-      throw ArgumentError("DerivationChain must start with 'm' or 'M'", path);
+      throw InvalidChainError(
+          "DerivationChain ($path) must start with 'm' or 'M'");
     }
     return key;
   }
@@ -35,9 +49,8 @@ class DerivationChain {
     final tokens = path.split('/');
     segmentLength ??= tokens.length - 1;
     if (segmentLength != tokens.length - 1) {
-      throw ArgumentError(
-          "path must have $segmentLength segments, not ${tokens.length - 1}",
-          path);
+      throw InvalidChainError(
+          "path ($path) must have $segmentLength segments, not ${tokens.length - 1}");
     }
     for (int i = 0; i < tokens.length; i++) {
       if (i > 0) {
@@ -45,22 +58,24 @@ class DerivationChain {
         final harden = tokens[i].endsWith('\'');
         final seg =
             tokens[i].substring(0, tokens[i].length + (harden ? -1 : 0));
-        final value = int.parse(seg);
-        segments.add(Segment(index: value, harden: harden));
+        final depth = Segment.checkDepthBounds(int.parse(seg));
+        segments.add(Segment(depth: depth, harden: harden));
       }
     }
     return segments;
   }
 
   DerivationChain append(Segment tail) =>
-      DerivationChain(key: key, segments: [...segments, tail]);
+      DerivationChain._(key: key, segments: [...segments, tail]);
+
   DerivationChain append2(Segment tail1, Segment tail2) =>
-      DerivationChain(key: key, segments: [...segments, tail1, tail2]);
-  DerivationChain swapTail(Segment tail) => DerivationChain(
+      DerivationChain._(key: key, segments: [...segments, tail1, tail2]);
+
+  DerivationChain swapTail(Segment tail) => DerivationChain._(
       key: key, segments: [...segments.take(segments.length - 1), tail]);
 
   /// increment the last value in the chain by one.
-  DerivationChain inc() => DerivationChain(
+  DerivationChain inc() => DerivationChain._(
       key: key,
       segments: segments.isEmpty
           ? []
@@ -94,23 +109,48 @@ class DerivationChain {
   static const _legalPrefixes = [_privateKeyPrefix, _publicKeyPrefix];
 }
 
-class Segment {
-  final int index;
-  final bool harden;
-  const Segment({required this.index, this.harden = false});
-  int get value => harden ? index | hardenedOffset : index;
+class InvalidChainError extends Error {
+  final String message;
+  InvalidChainError(this.message);
   @override
-  String toString() => "$index${harden ? '\'' : ''}";
-  Segment inc() => Segment(index: index + 1, harden: harden);
+  String toString() => message;
 }
 
-const cip1852 = Segment(index: 1852, harden: true);
-const cip1815 = Segment(index: 1815, harden: true);
-const spendRole = Segment(index: 0); //external
-const changeRole = Segment(index: 1); //internal
-const stakeRole = Segment(index: 2); //reward
-const zeroSoft = Segment(index: 0); //generic zero index not hardened
-const zeroHard = Segment(index: 0, harden: true); //generic zero index hardened
+class Segment {
+  /// The maximum BIP32-ED25519 depth of zero-based tree is 2^20 -1 or 1048576 - 1.
+  static const int maxDepth = 1048576 - 1;
+
+  /// zero-based tree depth
+  final int depth;
+
+  /// true if is a hardened value
+  final bool harden;
+
+  const Segment({required this.depth, this.harden = false});
+
+  /// check valid bounds, throw InvalidChainError on failure.
+  static int checkDepthBounds(int depth) {
+    if (depth < 0 || depth > maxDepth) {
+      throw InvalidChainError(
+          "depth outside valid range [0..$maxDepth]: $depth");
+    }
+    return depth;
+  }
+
+  /// return depth, adding hardenedOffset if applicable
+  int get value => harden ? depth | hardenedOffset : depth;
+  @override
+  String toString() => "$depth${harden ? '\'' : ''}";
+  Segment inc() => Segment(depth: depth + 1, harden: harden);
+}
+
+const cip1852 = Segment(depth: 1852, harden: true);
+const cip1815 = Segment(depth: 1815, harden: true);
+const spendRole = Segment(depth: 0); //external
+const changeRole = Segment(depth: 1); //internal
+const stakeRole = Segment(depth: 2); //reward
+const zeroSoft = Segment(depth: 0); //generic zero index not hardened
+const zeroHard = Segment(depth: 0, harden: true); //generic zero index hardened
 
 /// Cardano adoption of BIP-44 path:
 ///     m / 1852' / 1851' / account' / role / index
