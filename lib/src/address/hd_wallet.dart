@@ -1,23 +1,24 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import '../crypto/mnemonic.dart' as bip39;
-import 'package:pinenacl/key_derivation.dart';
-import 'package:logger/logger.dart';
-import 'package:bip32_ed25519/bip32_ed25519.dart';
-import 'package:hex/hex.dart';
-import '../crypto/mnemonic.dart';
-import '../crypto/mnemonic_english.dart';
-import '../network/network_id.dart';
-import '../wallet/derivation_chain.dart';
-import 'shelley_address.dart';
+// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+// import '../crypto/mnemonic.dart' as bip39;
+// import 'package:pinenacl/key_derivation.dart';
+// import 'package:logger/logger.dart';
+// import 'package:bip32_ed25519/bip32_ed25519.dart';
+// import 'package:hex/hex.dart';
+// import '../crypto/mnemonic.dart';
+// import '../crypto/mnemonic_english.dart';
+// import '../network/network_id.dart';
+// import '../wallet/derivation_chain.dart';
+// import 'shelley_address.dart';
 
 /// Private/signing and public/varification key pair.
-class Bip32KeyPair {
-  final Bip32SigningKey? signingKey;
-  final Bip32VerifyKey? verifyKey;
-  const Bip32KeyPair({this.signingKey, this.verifyKey});
-}
+// class Bip32KeyPair {
+//   final Bip32SigningKey? signingKey;
+//   final Bip32VerifyKey? verifyKey;
+//   const Bip32KeyPair({this.signingKey, this.verifyKey});
+// }
 
 ///
 /// This class implements a hierarchical deterministic wallet that generates cryptographic keys and
@@ -96,279 +97,278 @@ class Bip32KeyPair {
 /// +--------------------------+    +-----------------------+
 ///
 ///
-@Deprecated('use MultiAccountWallet')
-class HdWallet {
-  final Bip32SigningKey rootSigningKey;
-  final _derivator = Bip32Ed25519KeyDerivation.instance;
-  static const maxOverrun = 10;
-  final logger = Logger();
+// @Deprecated('use MultiAccountWallet')
+// class HdWallet {
+//   final Bip32SigningKey rootSigningKey;
+//   final _derivator = Bip32Ed25519KeyDerivation.instance;
+//   static const maxOverrun = 10;
+//   final logger = Logger();
 
-  /// root constructor taking a root signing key
-  HdWallet({required this.rootSigningKey});
+//   /// root constructor taking a root signing key
+//   HdWallet({required this.rootSigningKey});
 
-  /// Create HdWallet from seed
-  // factory HdWallet.fromSeed(Uint8List seed) =>
-  //     HdWallet(rootSigningKey: bip39.seedToMasterKey(seed));
+//   /// Create HdWallet from seed
+//   // factory HdWallet.fromSeed(Uint8List seed) =>
+//   //     HdWallet(rootSigningKey: bip39.seedToMasterKey(seed));
 
-  // factory HdWallet.fromHexSeed(String hexSeed) =>
-  //     HdWallet(rootSigningKey: bip39.seedHexToMasterKey(hexSeed));
+//   // factory HdWallet.fromHexSeed(String hexSeed) =>
+//   //     HdWallet(rootSigningKey: bip39.seedHexToMasterKey(hexSeed));
 
-  // factory HdWallet.fromMnemonic(String mnemonic) => HdWallet(
-  //     rootSigningKey: bip39.mnemonicToMasterKey(mnemonic.trim().split(' ')));
+//   // factory HdWallet.fromMnemonic(String mnemonic) => HdWallet(
+//   //     rootSigningKey: bip39.mnemonicToMasterKey(mnemonic.trim().split(' ')));
 
-  factory HdWallet.fromMnemonic({
-    required bip39.ValidMnemonicPhrase mnemonic,
-    LoadMnemonicWordsFunction loadWordsFunction = loadEnglishMnemonicWords,
-    MnemonicLang lang = MnemonicLang.english,
-  }) =>
-      HdWallet.fromHexEntropy(bip39.mnemonicToEntropyHex(
-          mnemonic: mnemonic,
-          loadWordsFunction: loadWordsFunction,
-          lang: lang));
+//   factory HdWallet.fromMnemonic({
+//     required bip39.ValidMnemonicPhrase mnemonic,
+//     LoadMnemonicWordsFunction loadWordsFunction = loadEnglishMnemonicWords,
+//     MnemonicLang lang = MnemonicLang.english,
+//   }) =>
+//       HdWallet.fromHexEntropy(bip39.mnemonicToEntropyHex(
+//           mnemonic: mnemonic,
+//           loadWordsFunction: loadWordsFunction,
+//           lang: lang));
 
-  factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(
-      rootSigningKey:
-          _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
+//   factory HdWallet.fromHexEntropy(String hexEntropy) => HdWallet(
+//       rootSigningKey:
+//           _bip32signingKey(Uint8List.fromList(HEX.decode(hexEntropy))));
 
-  /// return the root signing key
-  Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
+//   /// return the root signing key
+//   Bip32VerifyKey get rootVerifyKey => rootSigningKey.verifyKey;
 
-  /// derive root signing key given a seed
-  static Bip32SigningKey _bip32signingKey(Uint8List seed) {
-    final rawMaster = PBKDF2.hmac_sha512(
-        Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
-    final Bip32SigningKey rootXsk = Bip32SigningKey.normalizeBytes(rawMaster);
-    return rootXsk;
-  }
+//   /// derive root signing key given a seed
+//   static Bip32SigningKey _bip32signingKey(Uint8List seed) {
+//     final rawMaster = PBKDF2.hmac_sha512(
+//         Uint8List(0), seed, 4096, cip16ExtendedSigningKeySize);
+//     final Bip32SigningKey rootXsk = Bip32SigningKey.normalizeBytes(rawMaster);
+//     return rootXsk;
+//   }
 
-  /// The magic of parent-to-child key-pair derivation happens here. If a parent signing key is
-  /// provided, a child signing key is generated. If a parent verify key is provided and the index
-  /// is NOT hardened, then a child verify key is also included. If hardened and no signingKey is
-  /// provied, it returns an empty pair (i.e. error condition).
-  Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
-    // computes a child extended private key from the parent extended private key.
-    Bip32SigningKey? signingKey = keys.signingKey != null
-        ? _derivator.ckdPriv(keys.signingKey!, index) as Bip32SigningKey
-        : null;
-    Bip32VerifyKey? verifyKey = isHardened(index)
-        ? null
-        : keys.verifyKey != null
-            ? _derivator.ckdPub(keys.verifyKey!, index) as Bip32VerifyKey
-            : _derivator.neuterPriv(signingKey!) as Bip32VerifyKey;
-    return Bip32KeyPair(signingKey: signingKey, verifyKey: verifyKey);
-  }
+//   /// The magic of parent-to-child key-pair derivation happens here. If a parent signing key is
+//   /// provided, a child signing key is generated. If a parent verify key is provided and the index
+//   /// is NOT hardened, then a child verify key is also included. If hardened and no signingKey is
+//   /// provied, it returns an empty pair (i.e. error condition).
+//   Bip32KeyPair derive({required Bip32KeyPair keys, required int index}) {
+//     // computes a child extended private key from the parent extended private key.
+//     Bip32SigningKey? signingKey = keys.signingKey != null
+//         ? _derivator.ckdPriv(keys.signingKey!, index) as Bip32SigningKey
+//         : null;
+//     Bip32VerifyKey? verifyKey = isHardened(index)
+//         ? null
+//         : keys.verifyKey != null
+//             ? _derivator.ckdPub(keys.verifyKey!, index) as Bip32VerifyKey
+//             : _derivator.neuterPriv(signingKey!) as Bip32VerifyKey;
+//     return Bip32KeyPair(signingKey: signingKey, verifyKey: verifyKey);
+//   }
 
-  /// run down the 5 level hierarchical chain to derive a new address key pair.
-  Bip32KeyPair deriveAddressKeys(
-      {int purpose = defaultPurpose,
-      int coinType = defaultCoinType,
-      int account = defaultAccountIndex,
-      int role = paymentRoleIndex,
-      int index = defaultAddressIndex}) {
-    final rootKeys =
-        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
-    final purposeKey = derive(keys: rootKeys, index: purpose);
-    final coinKey = derive(keys: purposeKey, index: coinType);
-    final accountKey = derive(keys: coinKey, index: account);
-    final roleKeys = derive(keys: accountKey, index: role);
-    final addressKeys = derive(keys: roleKeys, index: index);
-    return addressKeys;
-  }
+//   /// run down the 5 level hierarchical chain to derive a new address key pair.
+//   Bip32KeyPair deriveAddressKeys(
+//       {int purpose = defaultPurpose,
+//       int coinType = defaultCoinType,
+//       int account = defaultAccountIndex,
+//       int role = paymentRoleIndex,
+//       int index = defaultAddressIndex}) {
+//     final rootKeys =
+//         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+//     final purposeKey = derive(keys: rootKeys, index: purpose);
+//     final coinKey = derive(keys: purposeKey, index: coinType);
+//     final accountKey = derive(keys: coinKey, index: account);
+//     final roleKeys = derive(keys: accountKey, index: role);
+//     final addressKeys = derive(keys: roleKeys, index: index);
+//     return addressKeys;
+//   }
 
-  /// return account keypair.
-  Bip32KeyPair accountKeys({int account = defaultAccountIndex}) =>
-      deriveAddressKeys(account: account);
+//   /// return account keypair.
+//   Bip32KeyPair accountKeys({int account = defaultAccountIndex}) =>
+//       deriveAddressKeys(account: account);
 
-  /// return keypair from arbitrary BIP32 path
-  Bip32KeyPair pathKeys({required DerivationChain path}) {
-    final rootKeys =
-        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
-    var keyPair = rootKeys;
-    for (Segment segment in path.segments) {
-      keyPair = derive(keys: keyPair, index: segment.value);
-    }
-    return keyPair;
-  }
+//   /// return keypair from arbitrary BIP32 path
+//   Bip32KeyPair pathKeys({required DerivationChain path}) {
+//     final rootKeys =
+//         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+//     var keyPair = rootKeys;
+//     for (Segment segment in path.segments) {
+//       keyPair = derive(keys: keyPair, index: segment.value);
+//     }
+//     return keyPair;
+//   }
 
-  Bip32KeyPair stakingKeyPair({
-    int account = defaultAccountIndex,
-    int index = defaultAddressIndex,
-  }) {
-    final rootKeys =
-        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
-    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
-    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
-    final accountKey = derive(keys: coinKey, index: account);
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
-    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
-    return stakeAddressKeys;
-  }
+//   Bip32KeyPair stakingKeyPair({
+//     int account = defaultAccountIndex,
+//     int index = defaultAddressIndex,
+//   }) {
+//     final rootKeys =
+//         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+//     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+//     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+//     final accountKey = derive(keys: coinKey, index: account);
+//     final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
+//     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+//     return stakeAddressKeys;
+//   }
 
-  /// iterate key chain until an unused address is found, then return keys and address.
-  ShelleyAddressKit deriveUnusedBaseAddressKit(
-      {int account = defaultAccountIndex,
-      int role = paymentRoleIndex,
-      int index = defaultAddressIndex,
-      NetworkId networkId = NetworkId.testnet,
-      UnusedAddressFunction unusedCallback = alwaysUnused}) {
-    assert(role == paymentRoleIndex || role == changeRoleIndex);
-    final rootKeys =
-        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
-    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
-    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
-    final accountKey = derive(keys: coinKey, index: account);
-    //stake chain:
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
-    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
-    //address chain:
-    int i = index;
-    final spendRoleKeys = derive(keys: accountKey, index: role);
-    ShelleyAddress addr;
-    Bip32KeyPair keyPair;
-    do {
-      keyPair = derive(keys: spendRoleKeys, index: i++);
-      addr = toBaseAddress(
-          spend: keyPair.verifyKey!,
-          stake: stakeAddressKeys.verifyKey!,
-          networkId: networkId);
-      logger.i("addr[$i][role:$role]: $addr");
-    } while (!unusedCallback(addr));
-    final result = ShelleyAddressKit(
-      account: account,
-      role: role,
-      index: i - 1,
-      signingKey: keyPair.signingKey,
-      verifyKey: keyPair.verifyKey,
-      address: addr,
-    );
-    return result;
-  }
+//   /// iterate key chain until an unused address is found, then return keys and address.
+//   LegacyShelleyAddressKit deriveUnusedBaseAddressKit(
+//       {int account = defaultAccountIndex,
+//       int role = paymentRoleIndex,
+//       int index = defaultAddressIndex,
+//       NetworkId networkId = NetworkId.testnet,
+//       UnusedAddressFunction unusedCallback = alwaysUnused}) {
+//     assert(role == paymentRoleIndex || role == changeRoleIndex);
+//     final rootKeys =
+//         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+//     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+//     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+//     final accountKey = derive(keys: coinKey, index: account);
+//     //stake chain:
+//     final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
+//     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+//     //address chain:
+//     int i = index;
+//     final spendRoleKeys = derive(keys: accountKey, index: role);
+//     ShelleyAddress addr;
+//     Bip32KeyPair keyPair;
+//     do {
+//       keyPair = derive(keys: spendRoleKeys, index: i++);
+//       addr = toBaseAddress(
+//           spend: keyPair.verifyKey!,
+//           stake: stakeAddressKeys.verifyKey!,
+//           networkId: networkId);
+//       logger.i("addr[$i][role:$role]: $addr");
+//     } while (!unusedCallback(addr));
+//     final result = LegacyShelleyAddressKit(
+//       account: account,
+//       role: role,
+//       index: i - 1,
+//       signingKey: keyPair.signingKey,
+//       verifyKey: keyPair.verifyKey,
+//       address: addr,
+//     );
+//     return result;
+//   }
 
-  /// Build a cache of spend or change addresses their keys. When used addresses are encounted, cache size is increased to maintain beyondUsedOffset.
-  List<ShelleyAddressKit> buildAddressKitCache({
-    Set<ShelleyAddress> usedSet = const {},
-    int account = defaultAccountIndex,
-    int role = paymentRoleIndex,
-    int index = defaultAddressIndex,
-    NetworkId networkId = NetworkId.testnet,
-    int beyondUsedOffset = maxOverrun,
-  }) {
-    assert(role == paymentRoleIndex || role == changeRoleIndex);
-    final rootKeys =
-        Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
-    final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
-    final coinKey = derive(keys: purposeKey, index: defaultCoinType);
-    final accountKey = derive(keys: coinKey, index: account);
-    //stake chain:
-    final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
-    final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
-    //address chain:
-    int i = index;
-    int cutoff = beyondUsedOffset;
-    final spendRoleKeys = derive(keys: accountKey, index: role);
-    List<ShelleyAddressKit> results = [];
-    do {
-      final Bip32KeyPair keyPair = derive(keys: spendRoleKeys, index: i);
-      final ShelleyAddress addr = toBaseAddress(
-          spend: keyPair.verifyKey!,
-          stake: stakeAddressKeys.verifyKey!,
-          networkId: networkId);
-      final result = ShelleyAddressKit(
-        account: account,
-        role: role,
-        index: i,
-        signingKey: keyPair.signingKey,
-        verifyKey: keyPair.verifyKey,
-        address: addr,
-      );
-      results.add(result);
-      final isUsed = usedSet.contains(addr);
-      //logger.i("addr[$i][role:$role] used:{$isUsed}: $addr");
-      if (isUsed) {
-        //extend cache size?
-        cutoff = beyondUsedOffset + i + 1;
-      }
-    } while (++i < cutoff);
-    return results;
-  }
+//   /// Build a cache of spend or change addresses their keys. When used addresses are encounted, cache size is increased to maintain beyondUsedOffset.
+//   List<LegacyShelleyAddressKit> buildAddressKitCache({
+//     Set<ShelleyAddress> usedSet = const {},
+//     int account = defaultAccountIndex,
+//     int role = paymentRoleIndex,
+//     int index = defaultAddressIndex,
+//     NetworkId networkId = NetworkId.testnet,
+//     int beyondUsedOffset = maxOverrun,
+//   }) {
+//     assert(role == paymentRoleIndex || role == changeRoleIndex);
+//     final rootKeys =
+//         Bip32KeyPair(signingKey: rootSigningKey, verifyKey: rootVerifyKey);
+//     final purposeKey = derive(keys: rootKeys, index: defaultPurpose);
+//     final coinKey = derive(keys: purposeKey, index: defaultCoinType);
+//     final accountKey = derive(keys: coinKey, index: account);
+//     //stake chain:
+//     final stakeRoleKeys = derive(keys: accountKey, index: stakingRoleIndex);
+//     final stakeAddressKeys = derive(keys: stakeRoleKeys, index: 0);
+//     //address chain:
+//     int i = index;
+//     int cutoff = beyondUsedOffset;
+//     final spendRoleKeys = derive(keys: accountKey, index: role);
+//     List<LegacyShelleyAddressKit> results = [];
+//     do {
+//       final Bip32KeyPair keyPair = derive(keys: spendRoleKeys, index: i);
+//       final ShelleyAddress addr = toBaseAddress(
+//           spend: keyPair.verifyKey!,
+//           stake: stakeAddressKeys.verifyKey!,
+//           networkId: networkId);
+//       final result = LegacyShelleyAddressKit(
+//         account: account,
+//         role: role,
+//         index: i,
+//         signingKey: keyPair.signingKey,
+//         verifyKey: keyPair.verifyKey,
+//         address: addr,
+//       );
+//       results.add(result);
+//       final isUsed = usedSet.contains(addr);
+//       //logger.i("addr[$i][role:$role] used:{$isUsed}: $addr");
+//       if (isUsed) {
+//         //extend cache size?
+//         cutoff = beyondUsedOffset + i + 1;
+//       }
+//     } while (++i < cutoff);
+//     return results;
+//   }
 
-  /// construct a Shelley base address give a public spend key, public stake key and networkId
-  ShelleyAddress toBaseAddress(
-          {required Bip32PublicKey spend,
-          required Bip32PublicKey stake,
-          NetworkId networkId = NetworkId.testnet}) =>
-      ShelleyAddress.toBaseAddress(
-          spend: spend, stake: stake, networkId: networkId);
+//   /// construct a Shelley base address give a public spend key, public stake key and networkId
+//   ShelleyAddress toBaseAddress(
+//           {required Bip32PublicKey spend,
+//           required Bip32PublicKey stake,
+//           NetworkId networkId = NetworkId.testnet}) =>
+//       ShelleyAddress.toBaseAddress(
+//           spend: spend, stake: stake, networkId: networkId);
 
-  /// construct a Shelley staking address give a public spend key and networkId
-  ShelleyAddress toRewardAddress(
-          {required Bip32PublicKey spend,
-          NetworkId networkId = NetworkId.testnet}) =>
-      ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
-}
-
-/// Cardano adoption of BIP-44 path:
-///     m / 1852' / 1851' / account' / role / index
-// @Deprecated('not sure this is needed or useful')
-// class CIP1852Path extends DerivationChain {
-//   CIP1852Path({
-//     required key,
-//     required Segment purpose,
-//     required Segment coinType,
-//     required Segment account,
-//     required Segment role,
-//     required Segment index,
-//   }) : super(key: key, segments: [purpose, coinType, account, role, index]);
-
-//   factory CIP1852Path.fromPath(String path) =>
-//       DerivationChain.fromPath(path, segmentLength: 5) as CIP1852Path;
-//   Segment get purpose => segments[0];
-//   Segment get coinType => segments[1];
-//   Segment get account => segments[2];
-//   Segment get role => segments[3];
-//   Segment get index => segments[4];
+//   /// construct a Shelley staking address give a public spend key and networkId
+//   ShelleyAddress toRewardAddress(
+//           {required Bip32PublicKey spend,
+//           NetworkId networkId = NetworkId.testnet}) =>
+//       ShelleyAddress.toRewardAddress(spend: spend, networkId: networkId);
 // }
 
-/// Everything you need to add a spend (or change) address to a UTxO transaction.
-@Deprecated('not the way other Cardano SDKs handle keys and addresses')
-class ShelleyAddressKit extends Bip32KeyPair {
-  final int account;
-  final int role;
-  final int index;
-  final ShelleyAddress address;
-  const ShelleyAddressKit(
-      {this.account = defaultAccountIndex,
-      this.role = paymentRoleIndex,
-      required this.index,
-      required this.address,
-      Bip32SigningKey? signingKey,
-      Bip32VerifyKey? verifyKey})
-      : super(signingKey: signingKey, verifyKey: verifyKey);
-}
+// /// Cardano adoption of BIP-44 path:
+// ///     m / 1852' / 1851' / account' / role / index
+// // @Deprecated('not sure this is needed or useful')
+// // class CIP1852Path extends DerivationChain {
+// //   CIP1852Path({
+// //     required key,
+// //     required Segment purpose,
+// //     required Segment coinType,
+// //     required Segment account,
+// //     required Segment role,
+// //     required Segment index,
+// //   }) : super(key: key, segments: [purpose, coinType, account, role, index]);
 
-// /// Hardended chain values should not have public keys.
-// /// They are denoted by a single quote in chain values.
-// const int hardenedOffset = 0x80000000;
+// //   factory CIP1852Path.fromPath(String path) =>
+// //       DerivationChain.fromPath(path, segmentLength: 5) as CIP1852Path;
+// //   Segment get purpose => segments[0];
+// //   Segment get coinType => segments[1];
+// //   Segment get account => segments[2];
+// //   Segment get role => segments[3];
+// //   Segment get index => segments[4];
+// // }
 
-// /// Default purpose. The year Ada Lovelace passed away.
-// /// Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
-const int defaultPurpose = 1852 | hardenedOffset;
+// @Deprecated('use ShelleyAddressKit')
+// class LegacyShelleyAddressKit extends Bip32KeyPair {
+//   final int account;
+//   final int role;
+//   final int index;
+//   final ShelleyAddress address;
+//   const LegacyShelleyAddressKit(
+//       {this.account = defaultAccountIndex,
+//       this.role = paymentRoleIndex,
+//       required this.index,
+//       required this.address,
+//       Bip32SigningKey? signingKey,
+//       Bip32VerifyKey? verifyKey})
+//       : super(signingKey: signingKey, verifyKey: verifyKey);
+// }
 
-// /// Coin-type for Cardano ADA. Ada Lovelace's year of birth.
-const int defaultCoinType = 1815 | hardenedOffset;
+// // /// Hardended chain values should not have public keys.
+// // /// They are denoted by a single quote in chain values.
+// // const int hardenedOffset = 0x80000000;
 
-// /// Is zero. This returns the base account address.
-const int defaultAccountIndex = 0 | hardenedOffset;
+// // /// Default purpose. The year Ada Lovelace passed away.
+// // /// Reference: [CIP-1852](https://github.com/cardano-foundation/CIPs/blob/master/CIP-1852/CIP-1852.md)
+// const int defaultPurpose = 1852 | hardenedOffset;
 
-// /// role 0=external/payments
-const int paymentRoleIndex = 0;
+// // /// Coin-type for Cardano ADA. Ada Lovelace's year of birth.
+// const int defaultCoinType = 1815 | hardenedOffset;
 
-// /// role 1=internal/change
-const int changeRoleIndex = 1;
+// // /// Is zero. This returns the base account address.
+// const int defaultAccountIndex = 0 | hardenedOffset;
 
-// /// role 2=staking
-const int stakingRoleIndex = 2;
-const int defaultAddressIndex = 0;
+// // /// role 0=external/payments
+// const int paymentRoleIndex = 0;
+
+// // /// role 1=internal/change
+// const int changeRoleIndex = 1;
+
+// // /// role 2=staking
+// const int stakingRoleIndex = 2;
+// const int defaultAddressIndex = 0;
 
 // /// Extended private key size in bytes
 // const cip16ExtendedSigningKeySize = 96;

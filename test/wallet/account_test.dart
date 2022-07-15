@@ -25,8 +25,8 @@ void main() {
     final entropyHex = mnemonicToEntropyHex(
         mnemonic: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
     final derivation = IcarusKeyDerivation.entropyHex(entropyHex);
-    final tw = HdMaster.mnemonic(mnemonic, network: NetworkId.testnet);
-    final mw = HdMaster.mnemonic(mnemonic, network: NetworkId.mainnet);
+    final tw = HdMaster.mnemonic(mnemonic, network: Networks.testnet);
+    final mw = HdMaster.mnemonic(mnemonic, network: Networks.mainnet);
 
     test('enterpriseScriptAddressTestnet0', () {
       final a0 = mw.account();
@@ -54,6 +54,8 @@ void main() {
           equals(acct0.baseAddress().toBech32()));
       expect(audit0.changeAddress().toBech32(),
           equals(acct0.changeAddress().toBech32()));
+      expect(audit0.stakeAddress.toBech32(),
+          equals(acct0.stakeAddress.toBech32()));
     });
 
     test('enterpriseKeyAddressMainnet', () {
@@ -83,7 +85,7 @@ void main() {
           'alpha desert more credit sad balance receive sand someone correct used castle present bar shop borrow inmate estate year flip theory recycle measure silk'
               .split(' ');
       final account =
-          HdMaster.mnemonic(mnemonic, network: NetworkId.testnet).account();
+          HdMaster.mnemonic(mnemonic, network: Networks.testnet).account();
       const acct0xvk =
           'acct_xvk1xfehjaqtvn0vdjqrrfwlgvfk8qedv4fus04thny96lj6rhc2tphsx0wlcdaehpjzjfyj7uref4uqlacrtft55u9ll6eal4h4ac75yzqdnqwtf';
       final acctVerifyKey =
@@ -116,7 +118,7 @@ void main() {
       const addrChange1 =
           'addr_test1qpcdsfzewqkl3w5kxk553hts5lvw9tdjda9nzt069gqmyud24fm4c4hnud6cw53zj8v48kdwmeykn0knf74ag68tmf9s89kyst';
       final account =
-          HdMaster.mnemonic(mnemonic, network: NetworkId.testnet).account();
+          HdMaster.mnemonic(mnemonic, network: Networks.testnet).account();
       final _addr0 = account.baseAddress(index: 0).toBech32();
       expect(_addr0, equals(addr0), reason: 'acct 0, address 0');
       final _addr1 = account.baseAddress(index: 1).toBech32();
@@ -124,11 +126,11 @@ void main() {
       final _addrChange1 = account.changeAddress(index: 1).toBech32();
       expect(_addrChange1, equals(addrChange1),
           reason: 'acct 0, change address 1');
-      final _stakeAddr = account.stakeAddress().toBech32();
+      final _stakeAddr = account.stakeAddress.toBech32();
       expect(stakeAddr, equals(_stakeAddr), reason: 'stake address');
       final enterprise = account.enterpriseAddress();
       print("enterprise: ${enterprise.toBech32()}");
-      expect(enterprise.networkId, equals(NetworkId.testnet),
+      expect(enterprise.network, equals(Networks.testnet),
           reason: 'network encoded in header');
       expect(enterprise.addressType, equals(AddressType.enterprise),
           reason: 'AddressType encoded in header');
@@ -194,7 +196,7 @@ void main() {
       const expectedSpend0 =
           'addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj';
       final account =
-          HdAccount(accountSigningKey: xsk, network: NetworkId.testnet);
+          HdAccount(accountSigningKey: xsk, network: Networks.testnet);
       expect(account.baseAddress().toBech32(), expectedSpend0);
     });
 
@@ -225,21 +227,19 @@ void main() {
           icarusGenerateMasterKey(entropy);
 
       // manual master
-      final _master = mnemonicToEntropy(
-          mnemonic: mnemonicBob, loadWordsFunction: loadEnglishMnemonicWords);
-      final Bip32SigningKey _root = icarusGenerateMasterKey(_master);
+      final Bip32SigningKey _root = icarusGenerateMasterKey(entropy);
       expect(_root, equals(expectedMasterKey));
 
       // Master / Account derivation
-      final wallet = HdMaster.mnemonic(mnemonicBob,
+      final master = HdMaster.mnemonic(mnemonicBob,
           loadWordsFunction: loadEnglishMnemonicWords,
-          network: NetworkId.testnet);
+          network: Networks.testnet);
       // print(rootXskCoder.encode(hdWallet.rootSigningKey));
 
-      expect(wallet.derivation.root, equals(expectedMasterKey));
+      expect(master.derivation.root, equals(expectedMasterKey));
       // print(rootXskCoder.encode(wallet.derivation.root));
 
-      HdAccount account = wallet.account();
+      HdAccount account = master.account();
       final expectedAcct0PvtKey =
           ShelleyKeyDerivation(expectedMasterKey).fromPath("m/1852'/1815'/0'");
       expect(account.accountSigningKey, equals(expectedAcct0PvtKey));
@@ -249,14 +249,14 @@ void main() {
       final _spendPvtKey = account.basePrivateKey(index: 9);
       expect(_spendPvtKey, _key9);
       //print(acctXskCoder.encode(_spendPvtKey));
-      final _stakePvtKey = account.stakePrivateKey();
+      final _stakePvtKey = account.stakePrivateKey;
       // print(stakeXskCoder.encode(_stakePvtKey));
       final _addr9 = account.baseAddress(index: 9);
       expect(_addr9.toBech32(), equals(addr9));
-      final __addr9 = ShelleyAddress.toBaseAddress(
+      final __addr9 = ShelleyAddress.baseAddress(
         spend: _key9.verifyKey,
         stake: _stakePvtKey.verifyKey,
-        networkId: NetworkId.testnet,
+        network: Networks.testnet,
       );
       expect(__addr9.toBech32(), equals(addr9));
     });

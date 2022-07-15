@@ -19,20 +19,17 @@ void main() async {
   // the adapter talks to the blockchain and caches immutable data
   final blockchainAdapter = BlockchainAdapterFactory.fromKey(
     key: blockfrostKey,
-    networkId: NetworkId.testnet,
+    network: Networks.testnet,
   ).adapter();
 
   final mnemonic0 =
       'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat';
-  final hdWallet = HdWallet.fromMnemonic(mnemonic: mnemonic0.split(' '));
-  final Bip32SigningKey rootSigningKey = hdWallet.rootSigningKey;
-
-  final walletBuilder = WalletBuilder()
-    ..networkId = NetworkId.testnet
-    ..testnetAdapterKey = blockfrostKey
-    ..rootSigningKey = rootSigningKey;
-  Result<Wallet, String> result = walletBuilder.build();
-  Wallet wallet = result.unwrap();
+  final account0 =
+      HdMaster.mnemonic(mnemonic0.split(' '), network: Networks.testnet);
+  final wallet = WalletImpl(
+      account: account0,
+      walletName: "Bob's Wallet",
+      blockchainAdapter: blockchainAdapter);
   Coin oldBalance = wallet.balance;
   for (int i = 0; i < 20; i++) {
     sleep(Duration(seconds: 1));
@@ -48,12 +45,13 @@ void main() async {
   //build a read-only wallet from a staking address
   final stakeAddress = ShelleyAddress.fromBech32(
       'stake_test1uz425a6u2me7xav82g3frk2nmxhdujtfhmf5l275dr4a5jc3urkeg');
-  final walletBuilder1 = WalletBuilder()
-    ..walletName = 'Fred'
-    ..blockchainAdapter = blockchainAdapter
-    ..stakeAddress = stakeAddress;
-  final Result<ReadOnlyWallet, String> result1 =
-      await walletBuilder1.readOnlyBuildAndSync();
+  final readOnlyWallet = ReadOnlyWalletImpl(
+    stakeAddress: stakeAddress,
+    walletName: "Fred's Wallet",
+    blockchainAdapter: blockchainAdapter,
+  );
+
+  readOnlyWallet.readOnlyBuildAndSync();
   result1.when(
     ok: (wallet) {
       print(
@@ -101,7 +99,7 @@ void main() async {
   // Bob sends 2 ADA to Alice
   const lovelace = 2 * 1000000;
   final sendResult = await bobsWallet.sendAda(
-    toAddress: alicesWallet.firstUnusedReceiveAddress,
+    toAddress: alicesWallet.firstUnusedReceiveAddress.address,
     lovelace: lovelace,
     logTx: true,
     logTxHex: true,
