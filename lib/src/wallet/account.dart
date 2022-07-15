@@ -10,6 +10,7 @@ import '../crypto/shelley_key_derivation.dart';
 import '../network/network_id.dart';
 import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';
+import '../util/codec.dart';
 import './derivation_chain.dart';
 
 ///
@@ -135,16 +136,16 @@ class HdAudit implements HdAddressGenerator, HdLegacyReceiver {
     required this.publicStakeKey,
     this.network = Networks.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain(key: 'M', segments: []),
+  })  : chain = const DerivationChain.M(segments: []),
         derivation = ShelleyKeyDerivation(publicExternalKey),
         derivationInternal = ShelleyKeyDerivation(publicInternalKey);
 
   Bip32VerifyKey externalAddrPublicKey({int index = 0}) =>
-      derivation.fromChain(chain.append(Segment(index: index)))
+      derivation.fromChain(chain.append(Segment(depth: index)))
           as Bip32VerifyKey;
 
   Bip32VerifyKey internalAddrPublicKey({int index = 0}) =>
-      derivationInternal.fromChain(chain.append(Segment(index: index)))
+      derivationInternal.fromChain(chain.append(Segment(depth: index)))
           as Bip32VerifyKey;
 
   @override
@@ -210,6 +211,12 @@ class HdAudit implements HdAddressGenerator, HdLegacyReceiver {
   AbstractAddress receiveAddress({int index = 0}) => baseAddress(index: index);
 
   String get chainLabel => "M/$accountIndex'";
+
+  @override
+  String toString() {
+    const roleXvkCoder = Bech32Coder(hrp: 'role_xvk');
+    return "external ${roleXvkCoder.encode(derivation.root)}, internal: ${roleXvkCoder.encode(derivationInternal.root)}, stake: ${addrXvkCoder.encode(publicStakeKey)}";
+  }
 }
 
 ///
@@ -242,7 +249,7 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
     required this.accountSigningKey,
     this.network = Networks.mainnet,
     this.accountIndex = 0,
-  })  : chain = const DerivationChain(key: 'm', segments: []),
+  })  : chain = const DerivationChain.m(segments: []),
         // chainKey = DerivationChain(key: 'm', segments: [
         //   cip1852,
         //   cip1815,
@@ -255,8 +262,12 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
   }
 
   HdAudit get audit => HdAudit(
-        publicExternalKey: basePrivateKey().publicKey,
-        publicInternalKey: changePrivateKey().publicKey,
+        publicExternalKey: derivation
+            .fromChain(chain.append(spendRole))
+            .publicKey as Bip32VerifyKey,
+        publicInternalKey: derivation
+            .fromChain(chain.append(changeRole))
+            .publicKey as Bip32VerifyKey,
         publicStakeKey: stakePrivateKey.publicKey,
         network: network,
         accountIndex: accountIndex,
@@ -264,12 +275,12 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
 
   @override
   Bip32SigningKey basePrivateKey({int index = 0}) =>
-      derivation.fromChain(chain.append2(spendRole, Segment(index: index)))
+      derivation.fromChain(chain.append2(spendRole, Segment(depth: index)))
           as Bip32SigningKey;
 
   @override
   Bip32SigningKey changePrivateKey({int index = 0}) =>
-      derivation.fromChain(chain.append2(changeRole, Segment(index: index)))
+      derivation.fromChain(chain.append2(changeRole, Segment(depth: index)))
           as Bip32SigningKey;
 
   @override
@@ -374,7 +385,7 @@ class HdMaster implements HdAbstract {
   final HdUseCase useCase = HdUseCase.fullWalletSharing;
   @override
   final Networks network;
-  final DerivationChain chain = const DerivationChain(key: 'm', segments: [
+  final DerivationChain chain = const DerivationChain.m(segments: [
     cip1852,
     cip1815,
   ]);
@@ -427,7 +438,7 @@ class HdMaster implements HdAbstract {
     final accountKey = derivation.fromChain(derivationPath) as Bip32SigningKey;
     return HdAccount(
         accountSigningKey: accountKey,
-        accountIndex: derivationPath.segments.last.index,
+        accountIndex: derivationPath.segments.last.depth,
         network: network);
   }
 
@@ -505,10 +516,10 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
   assert(role == spendRole || role == changeRole);
   assert(startIndex >= 0);
   // "m/1852'/1815'/$accountIndex'/$role/$addrIndex"
-  final baseChain = DerivationChain(key: 'm', segments: [
+  final baseChain = DerivationChain.m(segments: [
     cip1852,
     cip1815,
-    Segment(index: accountIndex, harden: true),
+    Segment(depth: accountIndex, harden: true),
     role
   ]);
   List<ShelleyReceiveKit> results = [];
@@ -522,7 +533,7 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
     if (includeUsed || !isUsed) {
       results.add(ShelleyReceiveKit(
         address: address,
-        chain: baseChain.append(Segment(index: index)),
+        chain: baseChain.append(Segment(depth: index)),
         used: isUsed,
       ));
     }
@@ -584,10 +595,10 @@ List<ShelleyUtxoKit> _signableAddresses({
   assert(accountIndex >= 0);
   assert(startIndex >= 0);
   // "m/1852'/1815'/$accountIndex'"
-  final acctChain = DerivationChain(key: 'm', segments: [
+  final acctChain = DerivationChain.m(segments: [
     cip1852,
     cip1815,
-    Segment(index: accountIndex, harden: true),
+    Segment(depth: accountIndex, harden: true),
   ]);
   List<ShelleyUtxoKit> results = [];
   for (int index = startIndex; index < 31 ^ 2; index++) {
@@ -598,7 +609,7 @@ List<ShelleyUtxoKit> _signableAddresses({
       if (utxos.contains(address)) {
         results.add(ShelleyUtxoKit(
           address: address,
-          chain: acctChain.append2(role, Segment(index: index)),
+          chain: acctChain.append2(role, Segment(depth: index)),
           signingKey: generator.basePrivateKey(index: index),
         ));
       }
