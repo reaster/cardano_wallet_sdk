@@ -11,7 +11,7 @@ import '../settings/settings_service.dart';
 /// the it's metadata.
 ///
 class WalletService {
-  static const NetworkId testnet = NetworkId.testnet;
+  static const Networks testnet = Networks.testnet;
   final store = WalletCacheMemory<WalletMetadata>();
   final SettingsService settingService;
 
@@ -20,7 +20,7 @@ class WalletService {
 
   WalletService({required this.settingService})
       : blockchainAdapter = BlockchainAdapterFactory.fromKey(
-                key: settingService.adapterKey, networkId: testnet)
+                key: settingService.adapterKey, network: testnet)
             .adapter();
 
   List<ReadOnlyWallet> get wallets =>

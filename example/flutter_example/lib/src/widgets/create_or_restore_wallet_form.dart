@@ -56,7 +56,9 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
     walletName = widget.walletName;
     walletNameController = TextEditingController(text: widget.walletName);
     if (widget.isNew && widget.mnemonic.isEmpty) {
-      mnemonic = WalletBuilder.generateNewMnemonic().join(' ');
+      mnemonic =
+          generateNewMnemonic(loadWordsFunction: loadEnglishMnemonicWords)
+              .join(' ');
     } else {
       mnemonic = widget.mnemonic;
     }
@@ -139,7 +141,8 @@ class _CreateOrRestoreWalletFormState extends State<CreateOrRestoreWalletForm> {
         maxLines: null,
         onChanged: (value) => setState(() => mnemonic = value),
         validator: (value) {
-          final result = validMnemonic(phrase: value ?? '');
+          final result = validMnemonic(
+              phrase: value ?? '', loadWordsFunction: loadEnglishMnemonicWords);
           if (result.isErr()) {
             debugPrint(result.unwrapErr());
             return result.unwrapErr();

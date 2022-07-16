@@ -177,7 +177,7 @@ class WalletCustomScrollView extends StatelessWidget {
                           ),
                       ],
                     ),
-                    onTap: () => _launchBrowser(tx, wallet.networkId),
+                    onTap: () => _launchBrowser(tx, wallet.network),
                     //exit_to_app, call_made_outlined, insert_link, launch, logout, open_in_browser, open_in_new, visibility_outlined
                     trailing: const Icon(Icons.insert_link, color: Colors.grey),
                   ),
@@ -206,8 +206,8 @@ class WalletCustomScrollView extends StatelessWidget {
     );
   }
 
-  void _launchBrowser(WalletTransaction tx, NetworkId networkId) async {
-    final browser = CardanoScanBlockchainExplorer.fromNetwork(networkId);
+  void _launchBrowser(WalletTransaction tx, Networks network) async {
+    final browser = CardanoScanBlockchainExplorer.fromNetwork(network);
     final url = browser.transactionUrl(transactionIdHex32: tx.txId);
     debugPrint(url);
     try {

@@ -96,7 +96,7 @@ class HdDerivationChain {
 
   static const _privateKeyPrefix = 'm';
   static const _publicKeyPrefix = 'M';
-  static const _legalPrefixes = [_privateKeyPrefix, _publicKeyPrefix];
+  // static const _legalPrefixes = [_privateKeyPrefix, _publicKeyPrefix];
 }
 
 class InvalidChainError extends Error {
@@ -146,7 +146,7 @@ const zeroHard =
 
 /// Cardano adoption of BIP-44 path:
 ///     m / 1852' / 1851' / account' / role / index
-// @Deprecated('not sure this is needed or useful')
+// not sure this is needed or useful
 // class CIP1852Path extends DerivationChain {
 //   CIP1852Path({
 //     required key,

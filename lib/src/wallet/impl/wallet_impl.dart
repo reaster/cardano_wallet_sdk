@@ -1,21 +1,15 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-// import 'package:bip32_ed25519/api.dart';
 import 'package:hex/hex.dart';
 import 'package:oxidized/oxidized.dart';
-// import '../../network/network_id.dart';
 import '../../transaction/model/bc_tx.dart';
 import '../../transaction/model/bc_tx_ext.dart';
 import '../../transaction/tx_builder.dart';
 import '../../wallet/wallet.dart';
 import '../../util/ada_types.dart';
-// import '../../address/hd_wallet.dart';
 import '../../address/shelley_address.dart';
 import '../../transaction/coin_selection.dart';
-// import '../../transaction/spec/shelley_spec.dart';
-// import '../../transaction/spec/shelley_tx_logic.dart';
-// import '../../transaction/transaction_builder.dart';
 import '../../blockchain/blockchain_adapter.dart';
 import '../../hd/hd_account.dart';
 import '../../hd/hd_derivation_chain.dart';
@@ -151,193 +145,10 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     return txResult;
   }
 
-  // @override
-  // bool get readOnly => false;
-
-  // @override
-  // Bip32KeyPair get rootKeyPair => Bip32KeyPair(
-  //     signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
+  @override
+  bool get readOnly => false;
 }
 
-// @Deprecated('use WalletImpl')
-// class LegacyWalletImpl extends ReadOnlyWalletImpl implements LegacyWallet {
-//   @override
-//   final HdWallet hdWallet;
-//   @override
-//   final int accountIndex;
-//   @override
-//   final Bip32KeyPair addressKeyPair;
-//   final CoinSelectionAlgorithm coinSelectionFunction;
-//   final Map<ShelleyAddress, LegacyShelleyAddressKit> _addressCache = {};
-//   // final logger = Logger();
-
-//   /// Normaly WalletFactory is used to build a wallet and call this method.
-//   LegacyWalletImpl({
-//     required BlockchainAdapter blockchainAdapter,
-//     required ShelleyAddress stakeAddress,
-//     required this.addressKeyPair,
-//     required String walletName,
-//     required this.hdWallet,
-//     this.accountIndex = defaultAddressIndex,
-//     this.coinSelectionFunction = largestFirst,
-//   }) : super(
-//             blockchainAdapter: blockchainAdapter,
-//             stakeAddress: stakeAddress,
-//             walletName: walletName);
-
-//   @override
-//   ShelleyAddress get firstUnusedReceiveAddress => hdWallet
-//       .deriveUnusedBaseAddressKit(
-//           networkId: network, unusedCallback: isUnusedAddress)
-//       .address;
-
-//   /// Find signing key for spend or change address.
-//   @override
-//   Bip32KeyPair? findKeyPairForChangeAddress({
-//     required ShelleyAddress address,
-//     int account = defaultAccountIndex,
-//     int index = defaultAddressIndex,
-//   }) {
-//     if (_addressCache.isEmpty) {
-//       final spends = hdWallet.buildAddressKitCache(
-//           usedSet: addresses.toSet(),
-//           account: account,
-//           role: paymentRoleIndex,
-//           index: index,
-//           networkId: network,
-//           beyondUsedOffset: HdWallet.maxOverrun);
-//       for (var kit in spends) {
-//         _addressCache[kit.address] = kit;
-//       }
-//       final change = hdWallet.buildAddressKitCache(
-//           usedSet: addresses.toSet(),
-//           account: account,
-//           role: changeRoleIndex,
-//           index: index,
-//           networkId: network,
-//           beyondUsedOffset: HdWallet.maxOverrun);
-//       for (var kit in change) {
-//         _addressCache[kit.address] = kit;
-//       }
-//     }
-//     final kit = _addressCache[address];
-//     return kit == null
-//         ? null
-//         : Bip32KeyPair(signingKey: kit.signingKey, verifyKey: kit.verifyKey);
-//   }
-
-//   @override
-//   ShelleyAddress get firstUnusedChangeAddress => hdWallet
-//       .deriveUnusedBaseAddressKit(
-//         role: changeRoleIndex,
-//         networkId: network,
-//         unusedCallback: isUnusedAddress,
-//       )
-//       .address;
-//   // to duplicate cardano-client-lib we always return the 1st paymentAddress.
-//   // ShelleyAddress get firstUnusedChangeAddress => hdWallet
-//   //     .deriveUnusedBaseAddressKit(
-//   //       role: paymentRoleIndex,
-//   //       networkId: networkId,
-//   //       unusedCallback: alwaysUnused,
-//   //     )
-//   //     .address;
-
-//   /// return true if the address has not been used before
-//   bool isUnusedAddress(ShelleyAddress address) =>
-//       !addresses.toSet().contains(address);
-
-//   @override
-//   Future<Result<ShelleyTransaction, String>> submitTransaction({
-//     required ShelleyTransaction tx,
-//   }) async {
-//     final submitResult =
-//         await blockchainAdapter.submitTransaction(tx.serialize);
-//     if (submitResult.isErr()) return Err(submitResult.unwrapErr());
-//     return Ok(tx);
-//   }
-
-//   @override
-//   Future<Result<ShelleyTransaction, String>> sendAda({
-//     required ShelleyAddress toAddress,
-//     required int lovelace,
-//     int ttl = 0,
-//     int fee = 0,
-//     bool logTxHex = false,
-//     bool logTx = false,
-//   }) async {
-//     final txResult = await buildSpendTransaction(
-//       toAddress: toAddress,
-//       lovelace: lovelace,
-//       ttl: ttl,
-//       fee: fee,
-//     );
-//     if (txResult.isErr()) {
-//       return Err(txResult.unwrapErr());
-//     }
-//     if (logTxHex) {
-//       print("tx hex: ${HEX.encode(txResult.unwrap().serialize)}");
-//     }
-//     if (logTx) {
-//       print("tx: ${txResult.unwrap().toJson(prettyPrint: true)}");
-//     }
-//     final sendResult = submitTransaction(
-//       tx: txResult.unwrap(),
-//     );
-//     return sendResult;
-//   }
-
-//   @override
-//   Future<Result<ShelleyTransaction, String>> buildSpendTransaction({
-//     required ShelleyAddress toAddress,
-//     required int lovelace,
-//     int ttl = 0,
-//     int fee = 0,
-//   }) async {
-//     if (lovelace > balance) {
-//       return Err('insufficient balance');
-//     }
-//     if (toAddress.addressType != AddressType.base) {
-//       return Err('only base shelley addresses currently supported');
-//     }
-//     if (toAddress.hrp != 'addr' && toAddress.hrp != 'addr_test') {
-//       return Err(
-//           "not a valid shelley external addresses, expecting 'addr' or 'addr_test' prefix");
-//     }
-//     //coin selection:
-//     //TODO handle edge-case where fee adjustment requires input recalculation.
-//     const Coin maxFeeGuess = 200000; //0.2 ADA
-//     final inputsResult = await coinSelectionFunction(
-//       unspentInputsAvailable: unspentTransactions,
-//       outputsRequested: [MultiAssetRequest.lovelace(lovelace + maxFeeGuess)],
-//       ownedAddresses: addresses.toSet(),
-//     );
-//     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
-//     //use builder to build ShelleyTransaction
-//     //final pair = hdWallet.accountKeys();
-//     final builder = TransactionBuilder()
-//       ..inputs(inputsResult.unwrap().inputs)
-//       ..value(ShelleyValue(coin: lovelace, multiAssets: []))
-//       ..toAddress(toAddress)
-//       ..wallet(this) //contains sign key & verify key
-//       ..blockchainAdapter(blockchainAdapter)
-//       ..changeAddress(firstUnusedChangeAddress)
-//       ..ttl(ttl)
-//       ..fee(fee);
-//     final txResult = await builder.buildAndSign();
-//     if (txResult.isOk() && !txResult.unwrap().verify) {
-//       return Err('transaction validation failed');
-//     }
-//     return txResult;
-//   }
-
-//   @override
-//   bool get readOnly => false;
-
-//   @override
-//   Bip32KeyPair get rootKeyPair => Bip32KeyPair(
-//       signingKey: hdWallet.rootSigningKey, verifyKey: hdWallet.rootVerifyKey);
-// }
 
 // Yorio Wallet interface for reference:
 

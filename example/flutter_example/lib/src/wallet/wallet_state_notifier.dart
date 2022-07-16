@@ -73,7 +73,7 @@ class WalletStateNotifier extends StateNotifier<List<ReadOnlyWallet>> {
     return result;
   }
 
-  Future<Result<ShelleyTransaction, String>> sendAda({
+  Future<Result<BcTransaction, String>> sendAda({
     required Wallet wallet,
     required ShelleyAddress toAddress,
     required int lovelace,

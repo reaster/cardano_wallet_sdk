@@ -2,24 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:bip32_ed25519/bip32_ed25519.dart';
-// import 'package:cardano_wallet_sdk/src/crypto/mnemonic_english.dart';
-import 'package:cardano_wallet_sdk/src/hd/hd_shelley_key_derivation.dart';
 import 'package:bip32_ed25519/api.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:dio/dio.dart';
 import '../address/shelley_address.dart';
 import '../blockchain/blockchain_adapter.dart';
 import '../blockchain/blockchain_adapter_factory.dart';
-// import '../crypto/mnemonic.dart';
 import '../network/network_id.dart';
 import '../transaction/coin_selection.dart';
 import '../util/codec.dart';
+import '../hd/hd_account.dart';
+import '../hd/hd_shelley_key_derivation.dart';
 import './impl/read_only_wallet_impl.dart';
 import './impl/wallet_impl.dart';
 import './read_only_wallet.dart';
 import './wallet.dart';
-import '../hd/hd_account.dart';
-import '../hd/hd_icarus_key_derivation.dart';
 
 ///
 /// This builder creates both read-only and transactional wallets from provided

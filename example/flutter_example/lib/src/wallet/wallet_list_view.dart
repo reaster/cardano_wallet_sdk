@@ -276,7 +276,7 @@ void _deleteWallet(BuildContext context, ReadOnlyWallet wallet) {
 }
 
 void _copyReceiveAddressToClipboard(BuildContext context, Wallet wallet) {
-  final toAddress = wallet.firstUnusedReceiveAddress.toBech32();
+  final toAddress = wallet.firstUnusedReceiveAddress.address.toBech32();
   Clipboard.setData(ClipboardData(text: toAddress)).then((_) {
     _showSnackBar('${wallet.walletName} address copied to clipboard');
   });
