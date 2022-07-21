@@ -26,7 +26,6 @@ dependencies:
   hex: ^0.2.0
   quiver: ^3.0.1+1
   oxidized: ^5.1.0 #TODO swap oxidized Result for dartz Either?
-  coingecko_dart: ^0.1.0 #TODO remove coingecko_dart
   logger: ^1.1.0
   freezed_annotation: ^2.0.3
   json_annotation: ^4.5.0
