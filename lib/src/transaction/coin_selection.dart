@@ -38,9 +38,8 @@ import './model/bc_tx.dart';
 typedef CoinSelectionAlgorithm
     = Future<Result<CoinSelection, CoinSelectionError>> Function({
   required List<WalletTransaction> unspentInputsAvailable,
-  required List<BcMultiAsset> outputsRequested,
+  required FlatMultiAsset spendRequest,
   required Set<AbstractAddress> ownedAddresses,
-  required Coin estimatedFee,
   int coinSelectionLimit,
   bool logSelection,
 });
@@ -189,27 +188,28 @@ const defaultCoinSelectionLimit = 20;
 
 Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   required List<WalletTransaction> unspentInputsAvailable,
-  required List<BcMultiAsset> outputsRequested,
+  // required List<BcMultiAsset> outputsRequested,
+  required FlatMultiAsset spendRequest,
   required Set<AbstractAddress> ownedAddresses,
-  required Coin estimatedFee,
+  // required Coin estimatedFee,
   int coinSelectionLimit = defaultCoinSelectionLimit,
   bool logSelection = false,
 }) async {
   // final logger = Logger();
-  if (outputsRequested.isEmpty) {
+  if (spendRequest.assets.isEmpty) {
     return Err(CoinSelectionError(
         reason: CoinSelectionErrorEnum.inputCountInsufficient,
         message: "can't create an empty transaction"));
   }
   //define target coin sums the transactions must cover, including fee
-  final target = FlatMultiAsset.outputsRequested(
-      BcValue(coin: coinZero, multiAssets: outputsRequested),
-      fee: estimatedFee);
+  // final target = FlatMultiAsset.outputsRequested(
+  //     BcValue(coin: coinZero, multiAssets: outputsRequested),
+  //     fee: estimatedFee);
   // var solution = FlatMultiAsset(assets: {}, fee: coinZero);
   final Set<UTxO> availableUtxos =
       unspentInputsAvailable.fold(<UTxO>{}, (set, tx) => set..addAll(tx.utxos));
   //sort coin types by amount
-  final sortedTargetEntryList = target.assets.entries.toList();
+  final sortedTargetEntryList = spendRequest.assets.entries.toList();
   sortedTargetEntryList.sort((e1, e2) => e2.value.compareTo(e1.value));
   // List<WalletTransaction> selectedTransactions = [];
   Set<UTxO> selectedUTxOs = {};
@@ -220,12 +220,12 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
         availableUtxos.where((u) => u.output.containsAssetId(assetId)).toList();
     if (sortedCoinUtxos.isEmpty) {
       return Err(CoinSelectionError(
-          reason: CoinSelectionErrorEnum.inputsExhausted,
+          reason: CoinSelectionErrorEnum.inputValueInsufficient,
           message: "No UTxOs for coin $assetId"));
     }
     sortedCoinUtxos.sort((a, b) => b.output
-        .quantityAssetId(assetId[assetId])
-        .compareTo(a.output.quantityAssetId(assetId[assetId])));
+        .quantityAssetId(assetId)
+        .compareTo(a.output.quantityAssetId(assetId)));
     //sort transactions for specific coin type into descending order
     // final List<WalletTransaction> sorted = List.from(unspentInputsAvailable);
     // sorted.sort((a, b) => (b.currencies[e.key] ?? coinZero)
@@ -233,7 +233,6 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
     //add transactions until coin type balance is acheived or we run out of UTxOs
     for (UTxO utxo in sortedCoinUtxos) {
       selectedUTxOs.add(utxo);
-      // solution.add(assetId: assetId, quantity: utxo.output.quantityAssetId(assetId));
       if (selectedUTxOs.length > coinSelectionLimit) {
         return Err(CoinSelectionError(
           reason: CoinSelectionErrorEnum.inputsExhausted,
@@ -242,15 +241,15 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
         ));
       }
       //have we met or exceeded the required balance?
-      if (target.assetIdFunded(selectedUTxOs, assetId)) {
+      if (spendRequest.assetIdFunded(selectedUTxOs, assetId)) {
         break;
       }
     }
-    if (target.funded(selectedUTxOs)) {
+    if (spendRequest.funded(selectedUTxOs)) {
       break;
     }
   }
-  if (target.funded(selectedUTxOs)) {
+  if (spendRequest.funded(selectedUTxOs)) {
     //generate inputs:
     List<BcTransactionInput> inputs = selectedUTxOs
         .map((u) =>
@@ -259,7 +258,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
     return Ok(CoinSelection(inputs: inputs));
   } else {
     return Err(CoinSelectionError(
-      reason: CoinSelectionErrorEnum.inputsExhausted,
+      reason: CoinSelectionErrorEnum.inputValueInsufficient,
       message:
           "($selectedUTxOs.length) UTxOs selected exceeds allowed coinSelectionLimit ($coinSelectionLimit)",
     ));

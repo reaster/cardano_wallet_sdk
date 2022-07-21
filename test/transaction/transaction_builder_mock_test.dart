@@ -28,9 +28,9 @@ void main() {
   );
 
   //Wallet UTxOs
-  //tx.outputs[1].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 99228617)
+  //tx.outputs[1].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 99,228,617)
   //tx.outputs[1].amounts: TransactionAmount(unit: 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7 quantity: 1)
-  //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100000000)
+  //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100,000,000)
   //Total balance:
   //6c6f76656c616365(lovelace): 199,228,617
   // 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7(test): 1

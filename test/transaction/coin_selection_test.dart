@@ -36,38 +36,66 @@ void main() {
       final unspentTxs = wallet.unspentTransactions;
       expect(unspentTxs.length, equals(2));
     });
-    test('setup coin selection - 100 ADA', () async {
+    //Wallet UTxOs
+    //tx.outputs[1].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 99,228,617)
+    //tx.outputs[1].amounts: TransactionAmount(unit: 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7 quantity: 1)
+    //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100,000,000)
+
+    test('setup coin selection - 99 ADA', () async {
       final result = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [BcMultiAsset.lovelace(100 * ada)],
-        estimatedFee: 200000,
+        spendRequest:
+            FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 99 * ada}),
+        // outputsRequested: [BcMultiAsset.lovelace(99 * ada)],
+        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result.isOk(), isTrue);
       final coins = result.unwrap();
-      expect(coins.inputs.length, 1);
+      expect(coins.inputs.length, 1,
+          reason: 'largest is 100 ADA and it covers 99 + fee');
       expect(coins.inputs[0].index, 0);
     });
-    test('setup coin selection - 101 ADA', () async {
+    test('setup coin selection - 100 ADA', () async {
       final result2 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [BcMultiAsset.lovelace(101 * ada)],
-        estimatedFee: 200000,
+        spendRequest:
+            FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 100 * ada}),
+        // outputsRequested: [BcMultiAsset.lovelace(100 * ada)],
+        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result2.isOk(), isTrue);
       final coins2 = result2.unwrap();
-      expect(coins2.inputs.length, 2);
+      expect(coins2.inputs.length, 2,
+          reason: "largest is 100 ADA and it doesn't cover 100 + fee");
       expect(coins2.inputs[0].index, 0);
       expect(coins2.inputs[1].index, 1);
     });
-    test('insufficient funds error', () async {
-      //setup coin selection - 201 ADA, which will result in insufficient funds error
+    test('setup multi-asset coin selection - 99 ADA, 1 Test', () async {
       final result3 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [BcMultiAsset.lovelace(201 * ada)],
+        spendRequest: FlatMultiAsset(fee: 200000, assets: {
+          lovelaceHex: 0 * ada,
+          '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1,
+        }),
+        ownedAddresses: wallet.addresses.toSet(),
+      );
+      expect(result3.isOk(), isTrue);
+      final coins2 = result3.unwrap();
+      expect(coins2.inputs.length, 1, reason: "takes 1 UTxOs");
+      expect(coins2.inputs[0].index, 1);
+    });
+
+    test('insufficient funds error', () async {
+      //setup coin selection - 200 ADA, which will result in insufficient funds error
+      final result3 = await largestFirst(
+        unspentInputsAvailable: wallet.unspentTransactions,
+        spendRequest:
+            FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 200 * ada}),
+        // outputsRequested: [BcMultiAsset.lovelace(200 * ada)],
         coinSelectionLimit: 4,
-        estimatedFee: 200000,
+        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result3.isErr(), isTrue);
@@ -75,11 +103,13 @@ void main() {
           CoinSelectionErrorEnum.inputValueInsufficient);
     });
     test('InputsExhausted', () async {
-      //setup coin selection - 101 ADA and coinSelectionLimit = 1 - which will give InputsExhausted
+      //setup coin selection - 100 ADA and coinSelectionLimit = 1 - which will give InputsExhausted
       final result4 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
-        outputsRequested: [BcMultiAsset.lovelace(101 * ada)],
-        estimatedFee: 200000,
+        spendRequest:
+            FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 100 * ada}),
+        // outputsRequested: [BcMultiAsset.lovelace(100 * ada)],
+        // estimatedFee: 200000,
         coinSelectionLimit: 1,
         ownedAddresses: wallet.addresses.toSet(),
       );

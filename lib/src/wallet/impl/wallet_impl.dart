@@ -1,8 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:hex/hex.dart';
 import 'package:oxidized/oxidized.dart';
+import '../../asset/asset.dart';
 import '../../transaction/model/bc_tx.dart';
 import '../../transaction/model/bc_tx_ext.dart';
 import '../../transaction/tx_builder.dart';
@@ -123,8 +125,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     const Coin maxFeeGuess = 200000; //0.2 ADA
     final inputsResult = await coinSelectionFunction(
       unspentInputsAvailable: unspentTransactions,
-      outputsRequested: [BcMultiAsset.lovelace(lovelace)],
-      estimatedFee: maxFeeGuess,
+      spendRequest:
+          FlatMultiAsset(fee: maxFeeGuess, assets: {lovelaceHex: lovelace}),
       ownedAddresses: addresses.toSet(),
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);
