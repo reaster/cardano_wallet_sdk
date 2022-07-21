@@ -13,7 +13,7 @@ void main() {
       network: Networks.testnet,
       projectId: '');
   final stakeAddress = ShelleyAddress.fromBech32(stakeAddr2);
-  final toAddress = ShelleyAddress.fromBech32(
+  final toAddress = parseAddress(
       'addr_test1qrf6r5df3v4p43f5ncyjgtwmajnasvw6zath6wa7226jxcfxngwdkqgqcvjtzmz624d6efz67ysf3597k24uyzqg5ctsw3hqzt');
   const mnemonic =
       'chest task gorilla dog maximum forget shove tag project language head try romance memory actress raven resist aisle grunt check immense wrap enlist napkin';
@@ -27,7 +27,15 @@ void main() {
     walletName: 'mock wallet',
   );
 
-  group('TransactionBuilder -', () {
+  //Wallet UTxOs
+  //tx.outputs[1].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 99228617)
+  //tx.outputs[1].amounts: TransactionAmount(unit: 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7 quantity: 1)
+  //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100000000)
+  //Total balance:
+  //6c6f76656c616365(lovelace): 199,228,617
+  // 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7(test): 1
+
+  group('TxBuilder -', () {
     setUp(() async {
       //setup wallet
       final updateResult =
@@ -43,13 +51,26 @@ void main() {
       final filteredTxs = wallet.filterTransactions(assetId: lovelaceHex);
       expect(filteredTxs.length, equals(4));
       final unspentTxs = wallet.unspentTransactions;
+      unspentTxs.forEach((tx) {
+        print("txId: ${tx.txId}:");
+        tx.utxos.forEach((utxo) {
+          tx.outputs[utxo.index].amounts.forEach((a) {
+            print("tx.outputs[${utxo.index}].amounts: ${a}");
+          });
+          print("utxo.output: ${tx.outputs[utxo.index]}");
+        });
+      });
       expect(unspentTxs.length, equals(2));
+      wallet.currencies.forEach((key, value) {
+        print("$key: $value");
+      });
     });
     test('sendAda - 99 ADA - 1 UTxOs', () async {
       Result<BcTransaction, String> result =
           await wallet.sendAda(toAddress: toAddress, lovelace: ada * 99);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
+      expect(tx.verify, isTrue, reason: 'witnesses validate signatures');
       expect(tx.body.inputs.length, 1,
           reason: 'the largest Utxo 100ADA > spend + fee');
       expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
@@ -58,12 +79,13 @@ void main() {
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
       expect(tx.body.fee, lessThan(defaultFee));
-    }, skip: "TODO");
+    });
     test('sendAda - 100 ADA - 2 UTxOs', () async {
       Result<BcTransaction, String> result =
           await wallet.sendAda(toAddress: toAddress, lovelace: ada * 100);
       expect(result.isOk(), isTrue);
       final tx = result.unwrap();
+      expect(tx.verify, isTrue, reason: 'witnesses validate signatures');
       expect(tx.body.inputs.length, 2,
           reason: 'the largest Utxo 100ADA will not cover fee');
       expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
@@ -79,42 +101,64 @@ void main() {
       expect(result.isErr(), isTrue);
       //print("Error: ${result.unwrapErr()}");
     });
-    // test('send multi-asset transaction using builder', () async {
-    //   //build multi-asset request of 5 ADD and 1 TEST token
-    //   final Coin maxFeeGuess = 200000; //add fee to requested ADA amount
-    //   final multiAssetRequest = MultiAssetRequestBuilder(coin: ADA * 5 + maxFeeGuess)
-    //       .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 1)
-    //       .build();
-    //   //coin selection:
-    //   final inputsResult = await largestFirst(
-    //     unspentInputsAvailable: wallet.unspentTransactions,
-    //     outputsRequested: multiAssetRequest,
-    //     ownedAddresses: wallet.addresses.toSet(),
-    //   );
-    //   expect(inputsResult.isOk(), isTrue);
 
-    //   //mirror request in a ShelleyValue, less the fee:
-    //   final shelleyValue = MultiAssetBuilder(coin: ADA * 5)
-    //       .nativeAsset(policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7', value: 1)
-    //       .build();
+    test(
+      'send multi-asset transaction using builder',
+      () async {
+        //build multi-asset request of 5 ADD and 1 TEST token
+        wallet.currencies.forEach((key, value) {
+          print("currency: $key -> $value");
+        });
+        final filteredTxs = wallet.filterTransactions(
+            assetId:
+                '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7');
+        print("currency 6b8d..1aa7 tx count: ${filteredTxs.length}");
+        final Coin maxFeeGuess = 200000; //add fee to requested ADA amount
+        final multiAssetRequest = MultiAssetRequestBuilder(coin: ada * 5)
+            .nativeAsset(
+                policyId:
+                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+                value: 1)
+            .build();
+        //coin selection:
+        final inputsResult = await largestFirst(
+          unspentInputsAvailable: wallet.unspentTransactions,
+          outputsRequested: multiAssetRequest,
+          estimatedFee: maxFeeGuess,
+          ownedAddresses: wallet.addresses.toSet(),
+        );
+        if (inputsResult.isErr()) print("error: ${inputsResult.unwrapErr()}");
+        expect(inputsResult.isOk(), isTrue);
 
-    //   //use TransactionBuilder to assemble BcTransaction:
-    //   final builder = TransactionBuilder()
-    //     ..inputs(inputsResult.unwrap().inputs)
-    //     ..value(shelleyValue)
-    //     ..fee(maxFeeGuess)
-    //     ..kit(wallet.hdWallet.deriveUnusedBaseAddressKit()) //contains sign key, verify key & toAddress
-    //     ..blockchainAdapter(wallet.blockchainAdapter)
-    //     ..changeAddress(wallet.firstUnusedChangeAddress);
-    //   final txResult = await builder.build();
-    //   expect(txResult.isOk(), isTrue);
-    //   final BcTransaction tx = txResult.unwrap();
-    //   expect(tx.body.inputs.length, 2, reason: 'need an ADA tx and a TEST tx');
-    //   expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
+        //mirror request in a ShelleyValue, less the fee:
+        final shelleyValue = MultiAssetBuilder(coin: ada * 5)
+            .nativeAsset(
+                policyId:
+                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+                value: 1)
+            .build();
 
-    //   //submit transaction to blockchain:
-    //   final submitResult = await wallet.blockchainAdapter.submitTransaction(tx.serialize);
-    //   expect(submitResult.isOk(), isTrue);
-    // });
+        //use TxBuilder to assemble BcTransaction:
+        final builder = TxBuilder()
+          ..inputs(inputsResult.unwrap().inputs)
+          ..value(shelleyValue)
+          ..fee(maxFeeGuess)
+          ..wallet(wallet)
+          ..blockchainAdapter(wallet.blockchainAdapter)
+          ..changeAddress(wallet.firstUnusedChangeAddress);
+        final BcTransaction tx = await builder.build();
+        expect(builder.isBalanced, isTrue);
+        expect(tx.body.inputs.length, 2,
+            reason: 'need an ADA tx and a TEST tx');
+        expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
+        expect(tx.verify, isTrue, reason: 'found private keys');
+
+        //submit transaction to blockchain:
+        final submitResult =
+            await wallet.blockchainAdapter.submitTransaction(tx.serialize);
+        expect(submitResult.isOk(), isTrue);
+      },
+      //skip:  'not supported yet, need to rewrite largestFirst CoinSelectionAlgorithm'
+    );
   });
 }

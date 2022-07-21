@@ -140,6 +140,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         transactions: [],
         addresses: [],
         assets: {},
+        // utxos: [],
         stakeAccounts: [],
       ));
     }
@@ -164,7 +165,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     //final Set<String> addressSet = addresses.map((a) => a.toBech32()).toSet();
     for (var address in addresses) {
       final trans = await _transactions(
-          address: address.toBech32(), duplicateTxHashes: duplicateTxHashes);
+          address: address.toString(), duplicateTxHashes: duplicateTxHashes);
       if (trans.isErr()) {
         return Err(trans.unwrapErr());
       }
@@ -174,7 +175,9 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     }
     //set transaction status
     transactionList = markSpentTransactions(transactionList);
-
+    //collect UTxOs
+    // final utxos = collectUTxOs(
+    //     transactions: transactionList, ownedAddresses: addresses.toSet());
     //sort
     transactionList.sort((d1, d2) => sortOrder == TemperalSortOrder.descending
         ? d2.time.compareTo(d1.time)
@@ -198,6 +201,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         transactions: transactionList,
         addresses: addresses,
         assets: assets,
+        // utxos: utxos,
         stakeAccounts: stakeAccounts));
   }
 
@@ -218,6 +222,29 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
             : tx)
         .toList();
   }
+
+  // List<UTxO> collectUTxOs(
+  //     {required List<RawTransactionImpl> transactions,
+  //     required Set<AbstractAddress> ownedAddresses}) {
+  //   List<UTxO> results = [];
+  //   for (final tx in transactions) {
+  //     if (tx.status != TransactionStatus.unspent) {
+  //       logger.i("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
+  //     }
+  //     for (int index = 0; index < tx.outputs.length; index++) {
+  //       final output = tx.outputs[index];
+  //       final contains = ownedAddresses.contains(output.address);
+  //       // logger.i(
+  //       //     "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
+  //       if (contains) {
+  //         final utxo =
+  //             UTxO(output: output, transactionId: tx.txId, index: index);
+  //         results.add(utxo);
+  //       }
+  //     }
+  //   }
+  //   return results;
+  // }
 
   // bool _isSpent(RawTransaction tx, Map<String, RawTransaction> txIdLookup) =>
   //     tx.inputs.any((input) => txIdLookup.containsKey(input.txHash));
@@ -335,15 +362,14 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok([stakeAccount]);
   }
 
-  //TODO should return AbstractAddresses
-  Future<Result<List<ShelleyAddress>, String>> _addresses({
+  Future<Result<List<AbstractAddress>, String>> _addresses({
     required String stakeAddress,
   }) async {
     Response<BuiltList<JsonObject>> result = await blockfrost
         .getCardanoAccountsApi()
         .accountsStakeAddressAddressesGet(
             stakeAddress: stakeAddress, count: 50);
-    List<ShelleyAddress> addresses = [];
+    List<AbstractAddress> addresses = [];
     if (result.statusCode != 200 || result.data == null) {
       return Err("${result.statusCode}: ${result.statusMessage}");
     }
@@ -351,7 +377,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     for (var jsonObject in result.data!) {
       String? address = jsonObject.isMap ? jsonObject.asMap['address'] : null;
       if (address != null) {
-        final shelley = ShelleyAddress.fromBech32(address);
+        final shelley = parseAddress(address);
         addresses.add(shelley);
         logger.i("address: $address, shelley: $shelley");
       }
@@ -381,7 +407,6 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return Ok(transactions);
   }
 
-//TODO should return AbstractAddresses
   List<TransactionInput> _buildIputs(BuiltList<TxContentUtxoInputs> list) {
     List<TransactionInput> results = [];
     for (var input in list) {
@@ -394,7 +419,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
       results.add(TransactionInput(
-        address: ShelleyAddress.fromBech32(input.address),
+        address: parseAddress(input.address),
         amounts: amounts,
         txHash: input.txHash,
         outputIndex: input.outputIndex,
@@ -403,7 +428,6 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     return results;
   }
 
-//TODO should return AbstractAddresses
   List<TransactionOutput> _buildOutputs(BuiltList<TxContentUtxoOutputs> list) {
     List<TransactionOutput> results = [];
     for (var input in list) {
@@ -416,7 +440,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         amounts.add(TransactionAmount(unit: unit, quantity: quantity));
       }
       results.add(TransactionOutput(
-        address: ShelleyAddress.fromBech32(input.address),
+        address: parseAddress(input.address),
         amounts: amounts,
       ));
     }

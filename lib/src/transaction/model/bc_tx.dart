@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';
-// import 'package:typed_data/typed_buffers.dart';
+import '../../asset/asset.dart';
 import '../../util/ada_types.dart';
 import '../../util/blake2bhash.dart';
 import '../../util/codec.dart';
@@ -11,7 +11,7 @@ import 'bc_scripts.dart';
 
 class BcAsset {
   final String name;
-  final int value;
+  final Coin value;
 
   BcAsset({required this.name, required this.value});
 
@@ -41,6 +41,9 @@ class BcMultiAsset extends BcAbstractCbor {
     required this.policyId,
     required this.assets,
   });
+
+  BcMultiAsset.lovelace(Coin value)
+      : this(policyId: '', assets: [BcAsset(name: lovelaceHex, value: value)]);
 
   factory BcMultiAsset.fromCbor({required MapEntry mapEntry}) {
     final policyId = HEX.encode((mapEntry.key as CborBytes).bytes);

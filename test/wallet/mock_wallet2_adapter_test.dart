@@ -41,7 +41,7 @@ void main() {
 
             //addresses
             for (var addr in update.addresses) {
-              print(addr.toBech32());
+              print(addr.toString());
             }
             expect(wallet.addresses.length, equals(3));
 
@@ -55,7 +55,7 @@ void main() {
             final testcoinHex = wallet.findAssetByTicker('TEST')!.assetId;
 
             //transactions
-            final Set<ShelleyAddress> addressSet = update.addresses.toSet();
+            final Set<AbstractAddress> addressSet = update.addresses.toSet();
             for (var tx in update.transactions) {
               final w = WalletTransactionImpl(
                   rawTransaction: tx, addressSet: addressSet);

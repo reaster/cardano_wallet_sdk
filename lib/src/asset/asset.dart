@@ -3,6 +3,7 @@
 
 import 'package:hex/hex.dart';
 import 'package:pinenacl/encoding.dart';
+import '../util/ada_types.dart';
 import '../util/blake2bhash.dart';
 import '../util/codec.dart';
 
@@ -42,6 +43,16 @@ class CurrencyAsset {
             .encode(assetName), //if assetName is not hex, this will usualy fail
         fingerprint = fingerprint ??
             calculateFingerprint(policyId: policyId, assetNameHex: assetName);
+  CurrencyAsset.fromName(
+      {required String name,
+      required String policyId,
+      Coin quantity = coinZero,
+      required String initialMintTxHash})
+      : this(
+            assetName: str2hex.encode(name),
+            policyId: policyId,
+            quantity: '$quantity',
+            initialMintTxHash: initialMintTxHash);
 
   bool get isNativeToken => assetId != lovelaceAssetId;
   bool get isADA => assetId == lovelaceAssetId;

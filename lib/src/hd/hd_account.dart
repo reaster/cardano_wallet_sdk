@@ -5,7 +5,6 @@ import 'package:bip32_ed25519/api.dart';
 import '../address/shelley_address.dart';
 import '../crypto/mnemonic.dart';
 import '../crypto/mnemonic_english.dart';
-// import '../transaction/model/bc_abstract.dart';
 import '../network/network_id.dart';
 import '../transaction/model/bc_pointer.dart';
 import '../transaction/model/bc_scripts.dart';

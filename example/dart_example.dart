@@ -25,7 +25,8 @@ void main() async {
   final mnemonic0 =
       'army bid park alter aunt click border awake happy sport addict heavy robot change artist sniff height general dust fiber salon fan snack wheat';
   final account0 =
-      HdMaster.mnemonic(mnemonic0.split(' '), network: Networks.testnet);
+      HdMaster.mnemonic(mnemonic0.split(' '), network: Networks.testnet)
+          .account();
   final wallet = WalletImpl(
       account: account0,
       walletName: "Bob's Wallet",
@@ -51,12 +52,12 @@ void main() async {
     blockchainAdapter: blockchainAdapter,
   );
 
-  readOnlyWallet.readOnlyBuildAndSync();
+  final result1 = await readOnlyWallet.update();
   result1.when(
-    ok: (wallet) {
+    ok: (_) {
       print(
-          "${wallet.walletName}'s balance: ${formatter.format(wallet.balance)}");
-      for (final tx in wallet.transactions) {
+          "${readOnlyWallet.walletName}'s balance: ${formatter.format(readOnlyWallet.balance)}");
+      for (final tx in readOnlyWallet.transactions) {
         final type =
             tx.type == TransactionType.deposit ? 'deposit' : 'withdrawal';
         print("    $type ${tx.time} ${tx.amount} + ${tx.fees} fee");
@@ -82,7 +83,8 @@ void main() async {
   print("${bobsWallet.walletName}'s: ${formatter.format(bobsWallet.balance)}");
 
   //create a new wallet
-  final mnemonic2 = WalletBuilder.generateNewMnemonic();
+  final mnemonic2 =
+      generateNewMnemonic(loadWordsFunction: loadEnglishMnemonicWords);
   final walletBuilder3 = WalletBuilder()
     ..walletName = 'Alice'
     ..blockchainAdapter = blockchainAdapter

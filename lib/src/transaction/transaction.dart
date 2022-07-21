@@ -1,7 +1,10 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:logger/logger.dart';
+import 'package:quiver/core.dart';
+import 'package:collection/collection.dart';
 import '../address/shelley_address.dart';
 import '../util/ada_types.dart';
 import '../asset/asset.dart';
@@ -36,10 +39,11 @@ abstract class RawTransaction {
 abstract class WalletTransaction extends RawTransaction {
   TransactionType get type;
   Coin get amount;
-  Map<String, Coin> get currencies;
-  Coin currencyAmount({required String assetId});
-  bool containsCurrency({required String assetId});
-  Set<ShelleyAddress> get ownedAddresses;
+  Map<AssetId, Coin> get currencies;
+  Coin currencyAmount({required AssetId assetId});
+  bool containsCurrency({required AssetId assetId});
+  Set<AbstractAddress> get ownedAddresses;
+  Set<UTxO> get utxos;
 }
 
 ///
@@ -57,7 +61,7 @@ class TransactionAmount {
 /// Inputs or outputs for a given transaction.
 ///
 class TransactionInput {
-  final ShelleyAddress address;
+  final AbstractAddress address;
   final List<TransactionAmount> amounts;
   final String txHash;
   final int outputIndex;
@@ -72,14 +76,46 @@ class TransactionInput {
 }
 
 class TransactionOutput {
-  final ShelleyAddress address;
+  final AbstractAddress address;
   final List<TransactionAmount> amounts;
   final bool isChange;
   TransactionOutput(
       {required this.address, required this.amounts, this.isChange = false});
+
+  bool containsAssetId(String assetId) => amounts.any((a) => a.unit == assetId);
+
+  int quantityAssetId(String assetId) =>
+      amounts.firstWhereOrNull((a) => a.unit == assetId)?.quantity ?? 0;
+
+  Map<AssetId, Coin> get toMap => amounts.fold(
+      <AssetId, Coin>{},
+      (map, amount) => map
+        ..[amount.unit] = (map[amount.unit] ?? coinZero) + amount.quantity);
+
   @override
   String toString() =>
       "TransactionOutput(address: $address, isChange: $isChange, count: ${amounts.length})";
+}
+
+class UTxO {
+  final TransactionOutput output;
+  final String transactionId;
+  final int index;
+  // AssetId get assetId => output.amounts[index].unit;
+  // Coin get quantity => output.amounts[index].quantity;
+
+  UTxO(
+      {required this.output, required this.transactionId, required this.index});
+
+  @override
+  int get hashCode => hashObjects([transactionId, index]);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UTxO &&
+          index == other.index &&
+          transactionId == other.transactionId;
 }
 
 class WalletTransactionImpl implements WalletTransaction {
@@ -87,9 +123,9 @@ class WalletTransactionImpl implements WalletTransaction {
   @override
   final Map<String, Coin> currencies;
   @override
-  final Set<ShelleyAddress> ownedAddresses;
+  final Set<AbstractAddress> ownedAddresses;
   WalletTransactionImpl(
-      {required this.rawTransaction, required Set<ShelleyAddress> addressSet})
+      {required this.rawTransaction, required Set<AbstractAddress> addressSet})
       : currencies = rawTransaction.sumCurrencies(addressSet: addressSet),
         ownedAddresses = rawTransaction.filterAddresses(addressSet: addressSet);
 
@@ -142,6 +178,10 @@ class WalletTransactionImpl implements WalletTransaction {
       currencies[assetId] ?? coinZero;
 
   bool get payedFees => type == TransactionType.withdrawal;
+
+  @override
+  Set<UTxO> get utxos =>
+      collectUTxOs(transactions: [this], ownedAddresses: ownedAddresses);
 }
 
 class RawTransactionImpl implements RawTransaction {
@@ -220,7 +260,7 @@ extension TransactionScanner on RawTransaction {
   /// An AssetId is the hex representation of a policyId concatenated to the coin name
   /// in hex (i.e. unit).
   ///
-  Map<AssetId, Coin> sumCurrencies({required Set<ShelleyAddress> addressSet}) {
+  Map<AssetId, Coin> sumCurrencies({required Set<AbstractAddress> addressSet}) {
     //if (_cachedSums.isEmpty) {
     Map<String, Coin> result = {lovelaceHex: coinZero};
     for (var input in inputs) {
@@ -251,9 +291,9 @@ extension TransactionScanner on RawTransaction {
   ///
   /// filter addresses to those found in this wallet
   ///
-  Set<ShelleyAddress> filterAddresses(
-      {required Set<ShelleyAddress> addressSet}) {
-    Set<ShelleyAddress> result = {};
+  Set<AbstractAddress> filterAddresses(
+      {required Set<AbstractAddress> addressSet}) {
+    Set<AbstractAddress> result = {};
     for (var input in inputs) {
       if (addressSet.contains(input.address)) {
         result.add(input.address);
@@ -268,6 +308,29 @@ extension TransactionScanner on RawTransaction {
         "filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
     return result;
   }
+}
+
+/// Given a list of transactions and a set of wallet addresses, collect UTxOs.
+Set<UTxO> collectUTxOs(
+    {required List<WalletTransaction> transactions,
+    required Set<AbstractAddress> ownedAddresses}) {
+  Set<UTxO> results = {};
+  for (final tx in transactions) {
+    if (tx.status == TransactionStatus.unspent) {
+      for (int index = 0; index < tx.outputs.length; index++) {
+        final output = tx.outputs[index];
+        final contains = ownedAddresses.contains(output.address);
+        // logger.i(
+        //     "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
+        if (contains) {
+          final utxo =
+              UTxO(output: output, transactionId: tx.txId, index: index);
+          results.add(utxo);
+        }
+      }
+    }
+  }
+  return results;
 }
 
 // class UtxoOutputAmount {

@@ -51,11 +51,11 @@ abstract class ReadOnlyWallet {
   List<WalletTransaction> get transactions;
   List<WalletTransaction> get unspentTransactions;
   List<WalletTransaction> filterTransactions({required AssetId assetId});
-  List<ShelleyAddress> get addresses;
+  List<AbstractAddress> get addresses;
   bool refresh(
       {required int balance,
       required List<RawTransaction> transactions,
-      required List<ShelleyAddress> usedAddresses,
+      required List<AbstractAddress> usedAddresses,
       required Map<String, CurrencyAsset> assets,
       required List<StakeAccount> stakeAccounts});
 

@@ -58,6 +58,9 @@ extension BcTransactionLogic on BcTransaction {
   /// Verify each witness in the witness set.
   ///
   bool get verify {
+    if (witnessSet == null || witnessSet!.isEmpty) {
+      return false;
+    }
     for (BcVkeyWitness witness in witnessSet!.vkeyWitnesses) {
       final signature =
           Signature(Uint8List.fromList(witness.signature.sublist(0, 64)));
