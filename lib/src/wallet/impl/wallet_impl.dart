@@ -16,7 +16,7 @@ import '../../hd/hd_derivation_chain.dart';
 import './read_only_wallet_impl.dart';
 
 ///
-/// Build transactional wallet by combining features of HdAccount, TransactionBuilder and
+/// Build transactional wallet by combining features of HdAccount, TxBuilder and
 /// ReadOnlyWallet.
 ///
 class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
@@ -71,7 +71,7 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
 
   @override
   Future<Result<BcTransaction, String>> sendAda({
-    required ShelleyAddress toAddress,
+    required AbstractAddress toAddress,
     required int lovelace,
     int ttl = 0,
     int fee = 0,
@@ -123,7 +123,8 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     const Coin maxFeeGuess = 200000; //0.2 ADA
     final inputsResult = await coinSelectionFunction(
       unspentInputsAvailable: unspentTransactions,
-      outputsRequested: [MultiAssetRequest.lovelace(lovelace + maxFeeGuess)],
+      outputsRequested: [BcMultiAsset.lovelace(lovelace)],
+      estimatedFee: maxFeeGuess,
       ownedAddresses: addresses.toSet(),
     );
     if (inputsResult.isErr()) return Err(inputsResult.unwrapErr().message);

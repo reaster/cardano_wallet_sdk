@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logger/logger.dart';
+
 import '../hd/hd_account.dart';
 import './model/bc_tx_ext.dart';
 // import 'package:cbor/cbor.dart';
@@ -32,8 +34,9 @@ import './model/bc_tx_body_ext.dart';
 /// Coin selection is not currently handled internally, see CoinSelectionAlgorithm.
 ///
 class TxBuilder {
+  final logger = Logger();
   BlockchainAdapter? _blockchainAdapter;
-  Wallet? _wallet;
+  Wallet? _wallet; //TODO prefer not to depend on high-level API
   // Bip32KeyPair? _keyPair;
   List<BcTransactionInput> _inputs = [];
   List<BcTransactionOutput> _outputs = [];
@@ -92,8 +95,8 @@ class TxBuilder {
     return result.isOk() && result.unwrap();
   }
 
-  ShelleyAddress? _utxosFromTransaction(
-      BcTransactionInput input, Set<ShelleyAddress> ownSet) {
+  AbstractAddress? _utxosFromTransaction(
+      BcTransactionInput input, Set<AbstractAddress> ownSet) {
     final RawTransaction? tx =
         _blockchainAdapter!.cachedTransaction(input.transactionId);
     if (tx != null) {
@@ -105,13 +108,18 @@ class TxBuilder {
     return null;
   }
 
+  /// TODO don't support spending Byron UTxOs
   Map<ShelleyAddress, ShelleyUtxoKit> _loadUtxosAndTheirKeys() {
-    Set<ShelleyAddress> ownedAddresses = _wallet!.addresses.toSet();
+    Set<AbstractAddress> ownedAddresses = _wallet!.addresses.toSet();
     Set<ShelleyAddress> utxos = {};
     for (BcTransactionInput input in _inputs) {
-      ShelleyAddress? utxo = _utxosFromTransaction(input, ownedAddresses);
+      AbstractAddress? utxo = _utxosFromTransaction(input, ownedAddresses);
       if (utxo != null) {
-        utxos.add(utxo);
+        if (utxo.addressType == AddressType.byron) {
+          logger.e("don't support spending Byron UTxOs: $utxo");
+        } else {
+          utxos.add(utxo as ShelleyAddress);
+        }
       }
     }
     final utxoKitList = _wallet!.findSigningKeyForUtxos(utxos: utxos);
@@ -356,7 +364,7 @@ class TxBuilder {
   // void unspentInputsAvailable(List<WalletTransaction> unspentInputsAvailable) =>
   //     _unspentInputsAvailable = unspentInputsAvailable;
 
-  // void coinSelectionOutputsRequested(List<MultiAssetRequest> coinSelectionOutputsRequested) =>
+  // void coinSelectionOutputsRequested(List<BcMultiAsset> coinSelectionOutputsRequested) =>
   //     _coinSelectionOutputsRequested = coinSelectionOutputsRequested;
 
   // void coinSelectionOwnedAddresses(Set<ShelleyAddress> coinSelectionOwnedAddresses) =>
@@ -379,7 +387,7 @@ class TxBuilder {
 /// Special builder for creating BcValue objects containing multi-asset transactions.
 ///
 class MultiAssetBuilder {
-  final int coin;
+  final Coin coin;
   final List<BcMultiAsset> _multiAssets = [];
   MultiAssetBuilder({required this.coin});
   BcValue build() => BcValue(coin: coin, multiAssets: _multiAssets);

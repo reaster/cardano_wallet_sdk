@@ -538,7 +538,7 @@ const String testnetHrpSuffix = '_test';
 /// return either a ShelleyAddress or a ByronAddress
 /// throws InvalidAddressError if invalid input
 ///
-AbstractAddress stringToAddress(String address) {
+AbstractAddress parseAddress(String address) {
   if (address.startsWith("addr") || address.startsWith("stake")) {
     return ShelleyAddress.fromBech32(address); //Shelley address
   } else {

@@ -75,7 +75,7 @@ class WalletStateNotifier extends StateNotifier<List<ReadOnlyWallet>> {
 
   Future<Result<BcTransaction, String>> sendAda({
     required Wallet wallet,
-    required ShelleyAddress toAddress,
+    required AbstractAddress toAddress,
     required int lovelace,
   }) async {
     final result = await wallet.sendAda(

@@ -43,7 +43,7 @@ abstract class Wallet extends ReadOnlyWallet {
 
   /// Send ADA to another address.
   Future<Result<BcTransaction, String>> sendAda({
-    required ShelleyAddress toAddress,
+    required AbstractAddress toAddress,
     required Coin lovelace,
     int ttl = 0,
     int fee = 0,

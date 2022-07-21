@@ -254,7 +254,7 @@ void main() {
       //Daedalus-style: Starting with  DdzFF
       final addr =
           "DdzFFzCqrhszg6cqZvDhEwUX7cZyNzdycAVpm4Uo2vjKMgTLrVqiVKi3MBt2tFAtDe7NkptK6TAhVkiYzhavmKV5hE79CWwJnPCJTREK";
-      final byronAddr = stringToAddress(addr);
+      final byronAddr = parseAddress(addr);
       expect(byronAddr, isInstanceOf<ByronAddress>());
       expect((byronAddr as ByronAddress).toBase58, equals(addr));
     });
@@ -262,22 +262,22 @@ void main() {
       //Icarus-style: Starting with Ae2
       final addr =
           "Ae2tdPwUPEZ3MHKkpT5Bpj549vrRH7nBqYjNXnCV8G2Bc2YxNcGHEa8ykDp";
-      final byronAddr = stringToAddress(addr);
+      final byronAddr = parseAddress(addr);
       expect(byronAddr, isInstanceOf<ByronAddress>());
       expect((byronAddr as ByronAddress).toBase58, equals(addr));
     });
     test('issue13', () {
       final addr =
           'DdzFFzCqrht64pcFbyLyDbVd87ApfbPKumaXiNjPf1kn9LUtGraWdkmWYMNbEG8e7MoA5Y8GASDFG34F13BBeJjvF8tt9oLCkYcicWse';
-      final byronAddr = stringToAddress(addr);
+      final byronAddr = parseAddress(addr);
       expect(byronAddr, isInstanceOf<ByronAddress>());
       expect((byronAddr as ByronAddress).toBase58, equals(addr));
     });
     test('InvalidAddressError', () {
-      expect(() => stringToAddress('junk'),
+      expect(() => parseAddress('junk'),
           throwsA(TypeMatcher<InvalidAddressError>()));
       expect(
-          () => stringToAddress(
+          () => parseAddress(
               'Ae2t#PwUPEZ3MHKkpT5Bpj549vrRH7nBqYjNXnCV8G2Bc2YxNcGHEa8ykDp'),
           throwsA(TypeMatcher<InvalidAddressError>()));
     });
@@ -347,10 +347,10 @@ void main() {
     final stakeKey = account0.stakePrivateKey.publicKey;
     final pointer = BcPointer(slot: 2498243, txIndex: 27, certIndex: 3);
     test('network header', () {
-      var a = ShelleyAddress.fromBech32(addr);
+      var a = parseAddress(addr);
       expect(a.network, Networks.mainnet, reason: 'set mainnet bit in header');
       expect(a.addressType, AddressType.base);
-      a = ShelleyAddress.fromBech32(addrTest);
+      a = parseAddress(addrTest);
       expect(a.network, Networks.testnet, reason: 'set testnet bit in header');
       expect(a.addressType, AddressType.base);
       expect(a.header & 0x30, isZero); //0b0011_0000 & header == 0
@@ -360,12 +360,12 @@ void main() {
         network: Networks.testnet,
       );
       expect(a.network, Networks.testnet, reason: 'set testnet bit in header');
-      expect(a.toBech32(), startsWith('addr_test1'),
+      expect(a.toString(), startsWith('addr_test1'),
           reason: 'set testnet bit in header');
       a = ShelleyAddress.baseAddress(
           spend: spendKey, stake: stakeKey, network: Networks.mainnet);
       expect(a.network, Networks.mainnet, reason: 'set mainnet bit in header');
-      expect(a.toBech32(), startsWith('addr1'),
+      expect(a.toString(), startsWith('addr1'),
           reason: 'set mainnet bit in header');
     });
     test('credential type header', () {
@@ -393,11 +393,11 @@ void main() {
           reason: 'toRewardAddress sets address type');
     });
     test('address equals', () {
-      var a = ShelleyAddress.fromBech32(addrTest);
-      var b = ShelleyAddress.fromBech32(addrTest2);
-      var c = ShelleyAddress.fromBech32(addrTest);
+      var a = parseAddress(addrTest);
+      var b = parseAddress(addrTest2);
+      var c = parseAddress(addrTest);
       expect(a == c, isTrue, reason: 'equals works');
-      Set<ShelleyAddress> set = {a, b};
+      Set<AbstractAddress> set = {a, b};
       expect(set.contains(c), isTrue, reason: 'equals works');
     });
 

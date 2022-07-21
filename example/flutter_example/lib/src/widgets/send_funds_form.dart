@@ -14,12 +14,12 @@ import './alert_dialog.dart';
 // ignore: must_be_immutable
 class SendFundsForm extends StatefulWidget {
   final Wallet wallet;
-  ShelleyAddress? toAddress;
+  AbstractAddress? toAddress;
   int lovelace = 0;
   final void Function({
     required BuildContext context,
     required Wallet wallet,
-    required ShelleyAddress toAddress,
+    required AbstractAddress toAddress,
     required int lovelace,
   }) doSendAda;
   final void Function(BuildContext context) doCancel;
@@ -48,7 +48,7 @@ class _SendFundsFormState extends State<SendFundsForm> {
   @override
   void initState() {
     super.initState();
-    toAddress = widget.toAddress?.toBech32() ?? '';
+    toAddress = widget.toAddress?.toString() ?? '';
     toAddressController = TextEditingController(text: toAddress);
     double initialAda = widget.lovelace / adaToLovelace;
     adaText = initialAda == 0.0 ? '' : '$initialAda';
@@ -100,7 +100,7 @@ class _SendFundsFormState extends State<SendFundsForm> {
                             double.tryParse(validAda(ada: adaText).unwrap()) ??
                                 0.0;
                         final lovelace = (ada * adaToLovelace).toInt();
-                        final address = ShelleyAddress.fromBech32(toAddress);
+                        final address = parseAddress(toAddress);
                         widget.doSendAda(
                             context: context,
                             wallet: widget.wallet,
@@ -192,7 +192,7 @@ class _SendFundsFormState extends State<SendFundsForm> {
 
 /// Function to load SendFundsForm wrapped in a AlertDialog.
 Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
-  late ShelleyAddress targetAddress;
+  late AbstractAddress targetAddress;
   Coin lovelaceToSend = coinZero;
   final form = SendFundsForm(
     key: const Key('sendAdaForm'),
@@ -202,7 +202,7 @@ Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
     doSendAda: (
         {required BuildContext context,
         required Wallet wallet,
-        required ShelleyAddress toAddress,
+        required AbstractAddress toAddress,
         required int lovelace}) {
       targetAddress = toAddress;
       lovelaceToSend = lovelace;
@@ -224,7 +224,7 @@ Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
     result.when(
       ok: (tx) {
         final message =
-            'sent ${_formatter.format(lovelaceToSend)} to ${targetAddress.toBech32().substring(0, 30)}...';
+            'sent ${_formatter.format(lovelaceToSend)} to ${targetAddress.toString().substring(0, 30)}...';
         debugPrint(message);
         _showSnackBar(context, message);
       },
@@ -232,7 +232,7 @@ Future<void> openSendAdaForm(BuildContext context, Wallet wallet) async {
         debugPrint("error sending ada: $message");
         asyncAlertDialog(
             context,
-            'Error sending ${_formatter.format(lovelaceToSend)} to ${targetAddress.toBech32().substring(0, 30)}...',
+            'Error sending ${_formatter.format(lovelaceToSend)} to ${targetAddress.toString().substring(0, 30)}...',
             message);
       },
     );

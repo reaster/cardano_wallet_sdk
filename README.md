@@ -184,7 +184,7 @@ print(wallet.firstUnusedSpendAddress));
 
 Send 3 ADA to Bob.
 ```dart
-var bobsAddress = ShelleyAddress.fromBech32('addr1qyy6...');
+var bobsAddress = parseAddress('addr1qyy6...');
 final Result<ShelleyTransaction, String> result = await wallet.sendAda(
     toAddress: bobsAddress,
     lovelace: 3 * 1000000,

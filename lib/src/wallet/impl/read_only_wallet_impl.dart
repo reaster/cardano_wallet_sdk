@@ -27,8 +27,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   final BlockchainAdapter blockchainAdapter;
   int _balance = 0;
   List<WalletTransaction> _transactions = [];
-  List<ShelleyAddress> _usedAddresses = [];
-  //List<Utxo> utxos = [];
+  List<AbstractAddress> _usedAddresses = [];
   Map<String, CurrencyAsset> _assets = {};
   List<StakeAccount> _stakeAccounts = [];
 
@@ -60,7 +59,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   @override
   bool refresh({
     required Coin balance,
-    required List<ShelleyAddress> usedAddresses,
+    required List<AbstractAddress> usedAddresses,
     required List<RawTransaction> transactions,
     required Map<String, CurrencyAsset> assets,
     required List<StakeAccount> stakeAccounts,
@@ -80,10 +79,11 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
     }
     if (_transactions.length != transactions.length) {
       change = true;
+      final ownedAddresses = _usedAddresses.toSet();
       //swap raw transactions for wallet-centric transactions:
       _transactions = transactions
           .map((t) => WalletTransactionImpl(
-              rawTransaction: t, addressSet: _usedAddresses.toSet()))
+              rawTransaction: t, addressSet: ownedAddresses))
           .toList();
     }
     if (_stakeAccounts.length != stakeAccounts.length) {
@@ -100,7 +100,7 @@ class ReadOnlyWalletImpl implements ReadOnlyWallet {
   bool get readOnly => true;
 
   @override
-  List<ShelleyAddress> get addresses => _usedAddresses;
+  List<AbstractAddress> get addresses => _usedAddresses;
 
   @override
   String toString() => "Wallet(name: $walletName, balance: $balance lovelace)";

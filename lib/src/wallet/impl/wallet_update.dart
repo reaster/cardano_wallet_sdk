@@ -1,6 +1,8 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:convert';
+
 import '../../address/shelley_address.dart';
 import '../../stake/stake_account.dart';
 import '../../transaction/transaction.dart';
@@ -13,15 +15,16 @@ import '../../util/ada_types.dart';
 class WalletUpdate {
   final Coin balance;
   final List<RawTransaction> transactions;
-  //TODO should return AbstractAddresses
-  final List<ShelleyAddress> addresses;
+  final List<AbstractAddress> addresses;
   final Map<String, CurrencyAsset> assets;
+  // final List<UTxO> utxos;
   final List<StakeAccount> stakeAccounts;
   WalletUpdate({
     required this.balance,
     required this.transactions,
     required this.addresses,
     required this.assets,
+    // required this.utxos,
     required this.stakeAccounts,
   });
 }
