@@ -208,10 +208,18 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   // var solution = FlatMultiAsset(assets: {}, fee: coinZero);
   final Set<UTxO> availableUtxos =
       unspentInputsAvailable.fold(<UTxO>{}, (set, tx) => set..addAll(tx.utxos));
+  // final isNativeToken = availableUtxos.any((utxo) => utxo.isNativeToken);
+  if (logSelection) {
+    for (var utxo in availableUtxos) {
+      print("available: $utxo");
+    }
+  }
   //sort coin types by amount
   final sortedTargetEntryList = spendRequest.assets.entries.toList();
-  sortedTargetEntryList.sort((e1, e2) => e2.value.compareTo(e1.value));
-  // List<WalletTransaction> selectedTransactions = [];
+  //Force lovelace to the end because native tokens carry ADA which may be sufficient
+  sortedTargetEntryList.sort((e1, e2) =>
+      (e2.key == lovelaceHex ? coinZero : e2.value)
+          .compareTo(e1.key == lovelaceHex ? coinZero : e1.value));
   Set<UTxO> selectedUTxOs = {};
   for (MapEntry e in sortedTargetEntryList) {
     final assetId = e.key;
@@ -227,11 +235,8 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
         .quantityAssetId(assetId)
         .compareTo(a.output.quantityAssetId(assetId)));
     //sort transactions for specific coin type into descending order
-    // final List<WalletTransaction> sorted = List.from(unspentInputsAvailable);
-    // sorted.sort((a, b) => (b.currencies[e.key] ?? coinZero)
-    //     .compareTo(a.currencies[e.key] ?? coinZero));
-    //add transactions until coin type balance is acheived or we run out of UTxOs
     for (UTxO utxo in sortedCoinUtxos) {
+      //add transactions until coin type balance is acheived or we run out of UTxOs
       selectedUTxOs.add(utxo);
       if (selectedUTxOs.length > coinSelectionLimit) {
         return Err(CoinSelectionError(
@@ -250,6 +255,11 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
     }
   }
   if (spendRequest.funded(selectedUTxOs)) {
+    if (logSelection) {
+      for (var utxo in selectedUTxOs) {
+        print("selected : $utxo");
+      }
+    }
     //generate inputs:
     List<BcTransactionInput> inputs = selectedUTxOs
         .map((u) =>
@@ -274,8 +284,6 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
 //       results.add(BcTransactionInput(index: index, transactionId: tx.txId));
 //   }
 // }
-
-
 
 // Future<Result<CoinSelection, CoinSelectionError>> largestFirstOld({
 //   required List<WalletTransaction> unspentInputsAvailable,

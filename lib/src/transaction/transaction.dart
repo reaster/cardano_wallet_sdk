@@ -115,6 +115,12 @@ class UTxO {
       other is UTxO &&
           index == other.index &&
           transactionId == other.transactionId;
+  @override
+  String toString() => output.amounts.fold(
+      "UTxO(index:$index, txId:$transactionId: assets:",
+      (str, amount) => "$str ${amount.unit}: ${amount.quantity},");
+
+  bool get isNativeToken => output.amounts.any((ta) => ta.unit != lovelaceHex);
 }
 
 class WalletTransactionImpl implements WalletTransaction {

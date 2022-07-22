@@ -46,9 +46,8 @@ void main() {
         unspentInputsAvailable: wallet.unspentTransactions,
         spendRequest:
             FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 99 * ada}),
-        // outputsRequested: [BcMultiAsset.lovelace(99 * ada)],
-        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
+        logSelection: true,
       );
       expect(result.isOk(), isTrue);
       final coins = result.unwrap();
@@ -76,7 +75,7 @@ void main() {
       final result3 = await largestFirst(
         unspentInputsAvailable: wallet.unspentTransactions,
         spendRequest: FlatMultiAsset(fee: 200000, assets: {
-          lovelaceHex: 0 * ada,
+          lovelaceHex: 99 * ada,
           '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1,
         }),
         ownedAddresses: wallet.addresses.toSet(),
