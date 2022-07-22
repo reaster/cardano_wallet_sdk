@@ -14,8 +14,6 @@ enum Networks {
   final int protocolMagic;
 }
 
-
-
 //rust:
 // pub fn testnet() -> NetworkInfo {
 //     NetworkInfo {

@@ -152,7 +152,6 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
   bool get readOnly => false;
 }
 
-
 // Yorio Wallet interface for reference:
 
 // id: string;
