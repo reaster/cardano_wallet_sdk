@@ -1,7 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:logger/logger.dart';
+import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:collection/collection.dart';
 import '../../address/shelley_address.dart';
@@ -26,7 +26,7 @@ extension BcTransactionBodyLogic on BcTransactionBody {
     Coin fee = 0,
     Logger? logger,
   }) {
-    logger ??= Logger();
+    logger ??= Logger('BcTransactionBodyLogic');
     Map<AssetId, Coin> sums = {};
     for (final input in inputs) {
       RawTransaction? tx = cache.cachedTransaction(input.transactionId);
@@ -52,13 +52,13 @@ extension BcTransactionBodyLogic on BcTransactionBody {
         }
       }
     }
-    logger.i(" ====> sumCurrencyIO - should all be zero if balanced:");
+    logger.info(" ====> sumCurrencyIO - should all be zero if balanced:");
     for (final assetId in sums.keys) {
       if (assetId == lovelaceHex) {
-        logger.i(
+        logger.info(
             "   ==> lovelace: ${sums[assetId]} - fee($fee) = ${(sums[lovelaceHex] ?? coinZero) - fee}");
       } else {
-        logger.i("   ==> $assetId: ${sums[assetId]}");
+        logger.info("   ==> $assetId: ${sums[assetId]}");
       }
     }
     sums[lovelaceHex] = (sums[lovelaceHex] ?? coinZero) - fee;

@@ -2,11 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 import 'dart:convert';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('AssetTest');
   test('testTestcoinAsset', () {
     final testcoin = CurrencyAsset(
       policyId: '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',

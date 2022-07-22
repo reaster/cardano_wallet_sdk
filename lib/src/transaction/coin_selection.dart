@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:quiver/core.dart';
 import '../address/shelley_address.dart';
@@ -193,7 +194,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   int coinSelectionLimit = defaultCoinSelectionLimit,
   bool logSelection = false,
 }) async {
-  // final logger = Logger();
+  final logger = Logger('largestFirst');
   if (spendRequest.assets.isEmpty) {
     return Err(CoinSelectionError(
         reason: CoinSelectionErrorEnum.inputCountInsufficient,
@@ -209,7 +210,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   // final isNativeToken = availableUtxos.any((utxo) => utxo.isNativeToken);
   if (logSelection) {
     for (var utxo in availableUtxos) {
-      print("available: $utxo");
+      logger.info("available: $utxo");
     }
   }
   //sort coin types by amount
@@ -255,7 +256,7 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   if (spendRequest.funded(selectedUTxOs)) {
     if (logSelection) {
       for (var utxo in selectedUTxOs) {
-        print("selected : $utxo");
+        logger.info("selected : $utxo");
       }
     }
     //generate inputs:
@@ -331,21 +332,21 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
 //   int coinsSelected = 0;
 //   for (final tx in sortedInputs) {
 //     if (tx.status != TransactionStatus.unspent) {
-//       logger.i("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
+//       logger.info("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
 //     }
 //     // int index = 0;
 //     for (int index = 0; index < tx.outputs.length; index++) {
 //       final output = tx.outputs[index];
 //       //Coin coinAmount = tx.currencyAmount(assetId: hardCodedUnit);
 //       final contains = ownedAddresses.contains(output.address);
-//       logger.i(
+//       logger.info(
 //           "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
 //       if (contains) {
 //         for (final txAmount in output.amounts) {
 //           if (txAmount.quantity > 0 && txAmount.unit == hardCodedUnit) {
 //             selectedAmount += txAmount.quantity;
 //             if (logSelection) {
-//               logger.i(
+//               logger.info(
 //                   "selectedAmount += quantity: $selectedAmount += ${txAmount.quantity} -> tx: ${tx.txId} index: $index");
 //             }
 //             if (++coinsSelected > coinSelectionLimit) {

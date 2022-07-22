@@ -5,9 +5,15 @@ import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
 import '../wallet/mock_wallet_2.dart';
+import 'package:logging/logging.dart';
 
-const ada = 1000000;
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('TxBuilderMockTest');
+  const ada = 1000000;
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
       network: Networks.testnet,
@@ -52,17 +58,17 @@ void main() {
       expect(filteredTxs.length, equals(4));
       final unspentTxs = wallet.unspentTransactions;
       unspentTxs.forEach((tx) {
-        print("txId: ${tx.txId}:");
+        logger.info("txId: ${tx.txId}:");
         tx.utxos.forEach((utxo) {
           tx.outputs[utxo.index].amounts.forEach((a) {
-            print("tx.outputs[${utxo.index}].amounts: ${a}");
+            logger.info("tx.outputs[${utxo.index}].amounts: ${a}");
           });
-          print("utxo.output: ${tx.outputs[utxo.index]}");
+          logger.info("utxo.output: ${tx.outputs[utxo.index]}");
         });
       });
       expect(unspentTxs.length, equals(2));
       wallet.currencies.forEach((key, value) {
-        print("$key: $value");
+        logger.info("$key: $value");
       });
     });
     test('sendAda - 99 ADA - 1 UTxOs', () async {
@@ -99,7 +105,7 @@ void main() {
       Result<BcTransaction, String> result =
           await wallet.sendAda(toAddress: toAddress, lovelace: ada * 200);
       expect(result.isErr(), isTrue);
-      //print("Error: ${result.unwrapErr()}");
+      //logger.info("Error: ${result.unwrapErr()}");
     });
 
     test(
@@ -107,27 +113,30 @@ void main() {
       () async {
         //build multi-asset request of 5 ADD and 1 TEST token
         wallet.currencies.forEach((key, value) {
-          print("currency: $key -> $value");
+          logger.info("currency: $key -> $value");
         });
         final filteredTxs = wallet.filterTransactions(
             assetId:
                 '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7');
-        print("currency 6b8d..1aa7 tx count: ${filteredTxs.length}");
+        logger.info("currency 6b8d..1aa7 tx count: ${filteredTxs.length}");
         final Coin maxFeeGuess = 200000; //add fee to requested ADA amount
-        final multiAssetRequest = MultiAssetRequestBuilder(coin: ada * 5)
-            .nativeAsset(
-                policyId:
-                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
-                value: 1)
-            .build();
+        // final multiAssetRequest = MultiAssetRequestBuilder(coin: ada * 5)
+        //     .nativeAsset(
+        //         policyId:
+        //             '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
+        //         value: 1)
+        //     .build();
         //coin selection:
         final inputsResult = await largestFirst(
           unspentInputsAvailable: wallet.unspentTransactions,
-          outputsRequested: multiAssetRequest,
-          estimatedFee: maxFeeGuess,
+          spendRequest: FlatMultiAsset(fee: maxFeeGuess, assets: {
+            lovelaceHex: 5 * ada,
+            '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1,
+          }),
           ownedAddresses: wallet.addresses.toSet(),
         );
-        if (inputsResult.isErr()) print("error: ${inputsResult.unwrapErr()}");
+        if (inputsResult.isErr())
+          logger.severe("error: ${inputsResult.unwrapErr()}");
         expect(inputsResult.isOk(), isTrue);
 
         //mirror request in a ShelleyValue, less the fee:

@@ -3,6 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:logging/logging.dart';
 import 'package:cbor/cbor.dart';
 import 'dart:convert' as convertor;
 import 'package:test/test.dart';
@@ -17,6 +18,11 @@ import 'package:hex/hex.dart';
 /// tests and results taken from: https://github.com/bloxbean/cardano-client-lib. Thank you!
 ///
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('BcTxTest');
   group('Blockchain CBOR model -', () {
     test('serialize deserialize BcTransactionInput', () {
       final input1 = BcTransactionInput(
@@ -101,7 +107,7 @@ void main() {
       const txHex =
           '84a40082825820bd7b306c0d67e6fa339e71115d7e951fac8d614e4d8b98e3447804c817c8c5690182582033cbaa6ee8e00a8e0cfdc34bde635e90107d167cbf73e7bb8162887eb249d5b201018282583900d3a1d1a98b2a1ac5349e09242ddbeca7d831da17577d3bbe52b52361269a1cdb0100c324b16c5a555baca45af12098d0beb2abc20808a6171a002191c0825839005a86fcbd65e9deb94da1dd885acb6b8fe149ac9e693ab22e9fc4ccc73e61daf0df57f1cc6fdb15cea66150d63fa3db71c90f8f337960243b1a00417389021a0002a885031a03c9f913a100828258204564d60dd3422b0c35744013666a6ec636ee6343b1e769cef8b614861681d33258400db98ae843765bf535ec3f98daa40dd5da7926d7414d85850662d93bc613f8dbe726b89c2c31c44b10c3a77883d7a72b53500cfc358f7fbfdb6ffec87c318106825820424fb5734588732548fa0f9c8753b1cb527ad09e24d79a305ed5518ccd6299e658407e1134f278f973a771c10c7bd0f925f7811e9fadb9600835925d43791d582d9be6997b939509366e33af3eb760af249487d4858ed59da4a466176c786c57fe07f5f6';
       final tx = BcTransaction.fromHex(txHex);
-      print(tx.json);
+      logger.info(tx.json);
     });
     test('signPaymentTransactionMultiAccount', () {
       final List<BcTransactionInput> inputs = [
@@ -162,7 +168,7 @@ void main() {
             .split(' '),
         network: Networks.testnet,
       ).account();
-      print(
+      logger.info(
           "acct_xsk: ${Bech32Coder(hrp: 'xprv').encode(acct1.basePrivateKey())}");
       final acct2 = HdMaster.mnemonic(
         'mixture peasant wood unhappy usage hero great elder emotion picnic talent fantasy program clean patch wheel drip disorder bullet cushion bulk infant balance address'

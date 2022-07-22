@@ -149,7 +149,7 @@ void main() {
       final _stakeAddr = account.stakeAddress.toBech32();
       expect(stakeAddr, equals(_stakeAddr), reason: 'stake address');
       final enterprise = account.enterpriseAddress();
-      print("enterprise: ${enterprise.toBech32()}");
+      //print("enterprise: ${enterprise.toBech32()}");
       expect(enterprise.network, equals(Networks.testnet),
           reason: 'network encoded in header');
       expect(enterprise.addressType, equals(AddressType.enterprise),

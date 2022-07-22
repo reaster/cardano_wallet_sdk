@@ -2,9 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('Bech32ValidationTest');
   group('bech32 validation - ', () {
     test('valid', () {
       final result = validBech32(
@@ -19,7 +25,7 @@ void main() {
           hrpPrefixes: ['addr', 'addr_test'],
           dataPartRequiredLength: 32);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('return lower case alphas', () {
       final result = validBech32(
@@ -34,34 +40,34 @@ void main() {
           hrpPrefixes: ['addr_test', 'addr'],
           dataPartRequiredLength: 31);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('missing', () {
       final result =
           validBech32(bech32: '', hrpPrefixes: ['addr_test', 'addr']);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('invalid data char', () {
       final result = validBech32(
           bech32: 'addr1234567890abcdefghjklmnpqrstuvwxyz',
           hrpPrefixes: ['addr_test', 'addr']);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('invalid prefix', () {
       final result = validBech32(
           bech32: 'dude_test1234567890acdefghjklmnpqrstuvwxyz',
           hrpPrefixes: ['addr_test', 'addr']);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('missing 1 seperator', () {
       final result = validBech32(
           bech32: 'addr234567890acdefghjklmnpqrstuvwxyz',
           hrpPrefixes: ['addr_test', 'addr']);
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
   });
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // import 'package:dio/dio.dart';
-// import 'package:logger/logger.dart';
+// import 'package:logger/logging.dart';
 // import 'package:oxidized/oxidized.dart';
 // import 'package:coingecko_dart/coingecko_dart.dart';
 // import 'package:coingecko_dart/dataClasses/coins/Coin.dart';

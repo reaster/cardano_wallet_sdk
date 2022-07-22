@@ -1,26 +1,19 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-// import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
-import 'package:logger/logger.dart';
-
-import '../hd/hd_account.dart';
-import './model/bc_tx_ext.dart';
-// import 'package:cbor/cbor.dart';
-// import 'package:bip32_ed25519/api.dart';
+import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
-// import 'package:pinenacl/tweetnacl.dart';
-// import '../address/hd_wallet.dart';
+import '../hd/hd_account.dart';
 import '../address/shelley_address.dart';
 import '../asset/asset.dart';
 import '../blockchain/blockchain_adapter.dart';
-// import '../util/blake2bhash.dart';
 import '../util/ada_types.dart';
-import './transaction.dart';
 import '../wallet/wallet.dart';
 import './min_fee_function.dart';
+import './transaction.dart';
 import './model/bc_tx.dart';
 import './model/bc_tx_body_ext.dart';
+import './model/bc_tx_ext.dart';
 
 ///
 /// This builder manages the details of assembling a balanced transaction, including
@@ -34,10 +27,9 @@ import './model/bc_tx_body_ext.dart';
 /// Coin selection is not currently handled internally, see CoinSelectionAlgorithm.
 ///
 class TxBuilder {
-  final logger = Logger();
+  final logger = Logger('TxBuilder');
   BlockchainAdapter? _blockchainAdapter;
   Wallet? _wallet; //TODO prefer not to depend on high-level API
-  // Bip32KeyPair? _keyPair;
   List<BcTransactionInput> _inputs = [];
   List<BcTransactionOutput> _outputs = [];
   AbstractAddress? _toAddress;
@@ -116,7 +108,7 @@ class TxBuilder {
       AbstractAddress? utxo = _utxosFromTransaction(input, ownedAddresses);
       if (utxo != null) {
         if (utxo.addressType == AddressType.byron) {
-          logger.e("don't support spending Byron UTxOs: $utxo");
+          logger.severe("don't support spending Byron UTxOs: $utxo");
         } else {
           utxos.add(utxo as ShelleyAddress);
         }
@@ -148,7 +140,7 @@ class TxBuilder {
   /// An unused changeAddress should be supplied weather it's needed or not.
   /// Bip32KeyPair is required for signing the transaction and supplying the public key to the witness.
   /// The same instance of BlockchainAdapter must be supplied that read the blockchain balances as
-  /// it will contain the cached Utx0s needed to calculate the input amounts.
+  /// it will contain the cached UTxOs needed to calculate the input amounts.
   ///
   /// TODO handle edge case where selectd coins have to be changed based on fee adjustment.
   ///

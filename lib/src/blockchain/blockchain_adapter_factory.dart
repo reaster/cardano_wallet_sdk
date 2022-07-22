@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
 import 'package:blockfrost/blockfrost.dart';
+import 'package:logging/logging.dart';
 import '../network/network_id.dart';
 import './blockchain_adapter.dart';
 import './blockfrost/blockfrost_api_key_auth.dart';
@@ -21,7 +21,7 @@ class BlockchainAdapterFactory {
   Blockfrost? _blockfrost;
   BlockfrostBlockchainAdapter? _blockfrostAdapter;
 
-  final logger = Logger();
+  final logger = Logger('BlockchainAdapterFactory');
 
   BlockchainAdapterFactory(
       {required this.authInterceptor,
@@ -63,7 +63,7 @@ class BlockchainAdapterFactory {
       {required Networks network, required Interceptor authInterceptor}) {
     if (_blockfrost == null) {
       final url = BlockfrostBlockchainAdapter.urlFromNetwork(network);
-      logger.i("new Blockfrost($url)");
+      logger.info("new Blockfrost($url)");
       _blockfrost = Blockfrost(
         basePathOverride: url,
         interceptors: [authInterceptor],

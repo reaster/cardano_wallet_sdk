@@ -3,6 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 BcScriptAtLeast getMultisigScript() => BcScriptAtLeast(amount: 2, scripts: [
@@ -23,6 +24,11 @@ class MockPlutusScript extends BcPlutusScript {
 }
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('ShelleyAddressTest');
   group('CIP19 Test Vectors -', () {
     final dummyChainCode = csvToUint8List(
         '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0');
@@ -303,7 +309,7 @@ void main() {
       final scriptHash =
           '103,243,49,70,97,122,94,97,147,96,129,219,59,33,23,203,245,155,210,18,55,72,245,138,201,103,134,86';
       final script = BcPlutusScript(cborHex: '4e4d01000033222220051200120011');
-      print("plutus hash: ${script.scriptHash.join(',')}");
+      logger.info("plutus hash: ${script.scriptHash.join(',')}");
     });
 
     test('enterpriseScriptAddress', () {
@@ -311,7 +317,7 @@ void main() {
         script: getMultisigScript(),
         network: Networks.testnet,
       );
-      print(address.toBech32());
+      logger.info(address.toBech32());
       expect(
           address.toBech32(),
           equals(
@@ -323,8 +329,8 @@ void main() {
         script: getMultisigScript(),
         network: Networks.testnet,
       );
-      // print(address.bytes.join(','));
-      // print(address.toBech32());
+      // logger.info(address.bytes.join(','));
+      // logger.info(address.toBech32());
       expect(
           address.toBech32(),
           equals(
@@ -429,7 +435,7 @@ void main() {
           equals(
               'addr_test1vqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmnqtjtf68'),
           reason: 'TODO chek addr');
-      //print(e.toBech32());
+      //logger.info(e.toBech32());
     });
 
     test('enterpriseFromBech32VerifyKey', () {

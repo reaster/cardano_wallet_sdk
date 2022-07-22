@@ -6,8 +6,8 @@ import 'package:oxidized/oxidized.dart';
 import 'package:test/test.dart';
 import '../wallet/mock_wallet_2.dart';
 
-const ada = 1000000;
 void main() {
+  const ada = 1000000;
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
       network: Networks.testnet,

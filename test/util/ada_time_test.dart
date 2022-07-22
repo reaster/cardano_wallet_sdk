@@ -2,15 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('AdaTimeTest');
   group('AdaDateTime -', () {
     test('codec', () {
       final now = DateTime.utc(2017, 9, 7, 17, 30, 59);
       final timestamp = adaDateTime.decode(now);
       final now2 = adaDateTime.encode(timestamp);
-      print("$now -> secondsSinceEpoch: $timestamp -> $now2");
+      logger.info("$now -> secondsSinceEpoch: $timestamp -> $now2");
       expect(now, equals(now2));
     });
   });
@@ -22,7 +28,7 @@ void main() {
     //   final now1 = epochDateTime.encode(137);
     //   final epoch = epochDateTime.decode(now1);
     //   final now2 = epochDateTime.encode(epoch);
-    //   print("$now1 -> epochDateTime: -> $epoch");
+    //   logger.info("$now1 -> epochDateTime: -> $epoch");
     //   expect(now1, equals(now2));
     // });
     test('epoch to unix time milliseconds', () {

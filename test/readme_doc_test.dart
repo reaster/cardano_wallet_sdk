@@ -3,6 +3,7 @@
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:oxidized/oxidized.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'wallet/mock_wallet_2.dart';
 
@@ -10,6 +11,11 @@ import 'wallet/mock_wallet_2.dart';
 /// insure documented tests are actually working code.
 ///
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('ReadMe');
   const blockfrostKey = 'dummy-key';
   final mockAdapter = BlockfrostBlockchainAdapter(
       blockfrost: buildMockBlockfrostWallet2(),
@@ -25,8 +31,8 @@ void main() {
       final walletBuilder = WalletBuilder();
       Result<Wallet, String> result = walletBuilder.build();
       result.when(
-        ok: (wallet) => print("Success: ${wallet.walletName}"),
-        err: (message) => print("Error: $message"),
+        ok: (wallet) => logger.info("Success: ${wallet.walletName}"),
+        err: (message) => logger.info("Error: $message"),
       );
     });
   });
@@ -44,8 +50,8 @@ void main() {
       Result<ReadOnlyWallet, String> result =
           await walletBuilder.readOnlyBuildAndSync();
       result.when(
-        ok: (wallet) => print("${wallet.walletName}: ${wallet.balance}"),
-        err: (message) => print("Error: $message"),
+        ok: (wallet) => logger.info("${wallet.walletName}: ${wallet.balance}"),
+        err: (message) => logger.info("Error: $message"),
       );
     });
     test('Restore existing wallet using 24 word mnemonic', () async {
@@ -58,7 +64,7 @@ void main() {
       Result<Wallet, String> result = await walletBuilder.buildAndSync();
       if (result.isOk()) {
         var wallet = result.unwrap();
-        print("${wallet.walletName}: ${wallet.balance}");
+        logger.info("${wallet.walletName}: ${wallet.balance}");
       }
     }, skip: "TODO");
     test('Update existing wallet', () async {
@@ -72,14 +78,15 @@ void main() {
       Coin oldBalance = wallet.balance;
       var result2 = await wallet.update();
       result2.when(
-        ok: (_) => print("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
-        err: (message) => print("Error: $message"),
+        ok: (_) =>
+            logger.info("old:$oldBalance ADA, new: ${wallet.balance} ADA"),
+        err: (message) => logger.info("Error: $message"),
       );
     }, skip: "TODO");
     test('Create a new 24 word mnemonic', () {
       List<String> mnemonic =
           generateNewMnemonic(loadWordsFunction: loadEnglishMnemonicWords);
-      print("mnemonic: ${mnemonic.join(' ')}");
+      logger.info("mnemonic: ${mnemonic.join(' ')}");
     });
     test('Send ADA to Bob', () async {
       var bobsAddress = ShelleyAddress.fromBech32(
@@ -99,7 +106,7 @@ void main() {
         );
         if (result.isOk()) {
           final tx = result.unwrap();
-          print(
+          logger.info(
               "${formatter.format(adaAmount)} sent to Bob. Fee: ${tx.body.fee} lovelace");
         }
       }

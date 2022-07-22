@@ -34,7 +34,7 @@ Future<Result<T, String>> dioCall<T extends Object>(
     }
     return Ok(response.data!);
   } on DioError catch (dioError) {
-    //logger.i("DioError: ${dioError.message}");
+    //logger.info("DioError: ${dioError.message}");
     if (dioError.error is Exception) {
       if (onError != null) {
         onError(exception: dioError.error);
@@ -47,12 +47,12 @@ Future<Result<T, String>> dioCall<T extends Object>(
     return Err(
         translateErrorMessage(dioError: dioError, subject: errorSubject));
     // } on SocketException catch (e) {
-    //   logger.i("SocketException: ${e.message}");
+    //   logger.info("SocketException: ${e.message}");
     //   if (onError != null) {
     //     onError(exception: e);
     //   }
   } on Exception catch (e) {
-    //logger.i("Exception: ${e.toString()}");
+    //logger.info("Exception: ${e.toString()}");
     if (onError != null) {
       onError(exception: e);
     }

@@ -4,10 +4,16 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:pinenacl/key_derivation.dart';
+import 'package:logging/logging.dart';
 import 'package:hex/hex.dart';
 import 'package:test/test.dart';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('MnemonicTest');
   group('mnemonic -', () {
     test('entropy to seed', () {
       final testMnemonic1 =
@@ -109,8 +115,8 @@ void main() {
           entropyHex: testEntropy0,
           loadWordsFunction: loadEnglishMnemonicWords);
       //final bytes = mnemonicToSeed(mnemonic);
-      //print(bytes.join(','));
-      //print(mnemonic);
+      //logger.info(bytes.join(','));
+      //logger.info(mnemonic);
       expect(
           mnemonic,
           equals(
@@ -119,7 +125,7 @@ void main() {
     });
   });
 
-  group('generateNewMnemonic', () {
+  group('generateNewMnemonic -', () {
     const entropyPlusCs24Words = 256;
     test('can vary entropy length', () {
       final words = (generateNewMnemonic(
@@ -131,7 +137,7 @@ void main() {
       final words = (generateNewMnemonic(
           strength: entropyPlusCs24Words,
           loadWordsFunction: loadEnglishMnemonicWords));
-      print(words.join(','));
+      logger.info(words.join(','));
       expect(words.length, equals(24),
           reason: 'can vary generated entropy bit length');
     });

@@ -6,8 +6,8 @@ import 'package:dio/dio.dart';
 import 'dart:typed_data';
 import 'package:built_value/json_object.dart';
 import 'package:built_collection/built_collection.dart';
+import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
-import 'package:logger/logger.dart';
 import '../../address/shelley_address.dart';
 import '../../network/network_id.dart';
 import '../../stake/stake_account.dart';
@@ -40,7 +40,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   static String urlFromNetwork(Networks network) =>
       network == Networks.mainnet ? mainnetUrl : testnetUrl;
 
-  final logger = Logger();
+  final logger = Logger('BlockfrostBlockchainAdapter');
 
   @override
   final Networks network;
@@ -71,7 +71,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       request: () => blockfrost
           .getCardanoEpochsApi()
           .epochsNumberParametersGet(number: epochNumber),
-      onSuccess: (data) => logger.i(
+      onSuccess: (data) => logger.info(
           "blockfrost.getCardanoEpochsApi().epochsNumberParametersGet(number:$epochNumber) -> ${serializers.toJson(EpochParamContent.serializer, data)}"),
       errorSubject: 'latest EpochParamContent',
     );
@@ -88,7 +88,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   Future<Result<Block, String>> latestBlock() async {
     final blockResult = await dioCall<BlockContent>(
       request: () => blockfrost.getCardanoBlocksApi().blocksLatestGet(),
-      onSuccess: (data) => logger.i(
+      onSuccess: (data) => logger.info(
           "blockfrost.getCardanoBlocksApi().blocksLatestGet() -> ${serializers.toJson(BlockContent.serializer, data)}"),
       errorSubject: 'latest block',
     );
@@ -112,7 +112,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     final result = await dioCall<String>(
       request: () => blockfrost.getCardanoTransactionsApi().txSubmitPost(
           contentType: txContentType, headers: headers, data: cborTransaction),
-      onSuccess: (data) => logger.i(
+      onSuccess: (data) => logger.info(
           "blockfrost.getCardanoTransactionsApi().txSubmitPost(contentType: 'application/cbor'); -> $data"),
       errorSubject: 'submit cbor transaction: ',
     );
@@ -185,7 +185,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     Set<String> allAssetIds = transactionList
         .map((t) => t.assetIds)
         .fold(<String>{}, (result, entry) => result..addAll(entry));
-    //logger.i("policyIDs: ${policyIDs.join(',')}");
+    //logger.info("policyIDs: ${policyIDs.join(',')}");
     Map<String, CurrencyAsset> assets = {};
     for (var assetId in allAssetIds) {
       final asset = await _loadAsset(assetId: assetId);
@@ -229,12 +229,12 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   //   List<UTxO> results = [];
   //   for (final tx in transactions) {
   //     if (tx.status != TransactionStatus.unspent) {
-  //       logger.i("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
+  //       logger.info("SHOULDN'T SEE TransactionStatus.unspent HERE: ${tx.txId}");
   //     }
   //     for (int index = 0; index < tx.outputs.length; index++) {
   //       final output = tx.outputs[index];
   //       final contains = ownedAddresses.contains(output.address);
-  //       // logger.i(
+  //       // logger.info(
   //       //     "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
   //       if (contains) {
   //         final utxo =
@@ -322,7 +322,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
               epoch: map['epoch'],
               amount: int.tryParse(map['amount']) ?? 0,
               poolId: map['pool_id'] ?? ''));
-          logger.i(
+          logger.info(
               "amount: ${map['amount']}, epoch: ${map['epoch']}, pool_id: ${map['pool_id']}");
         }
       }
@@ -379,7 +379,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       if (address != null) {
         final shelley = parseAddress(address);
         addresses.add(shelley);
-        logger.i("address: $address, shelley: $shelley");
+        logger.info("address: $address, shelley: $shelley");
       }
     }
     return Ok(addresses);
@@ -456,7 +456,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         result.data!.isNotEmpty;
     final List<String> list =
         isData ? result.data!.map((tx) => tx).toList() : [];
-    logger.i(
+    logger.info(
         "blockfrost.getCardanoAddressesApi().addressesAddressTxsGet(address:$address) -> ${list.join(',')}");
     return list;
   }
@@ -470,7 +470,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     final txContentResult = await dioCall<TxContent>(
       request: () =>
           blockfrost.getCardanoTransactionsApi().txsHashGet(hash: txHash),
-      onSuccess: (data) => logger.i(
+      onSuccess: (data) => logger.info(
           "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, data)}"),
       errorSubject: 'transaction content',
     );
@@ -480,7 +480,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     // if (txContent.statusCode != 200 || txContent.data == null) {
     //   return Err("${txContent.statusCode}: ${txContent.statusMessage}");
     // }
-    // logger.i(
+    // logger.info(
     //     "blockfrost.getCardanoTransactionsApi().txsHashGet(hash:$txHash) -> ${serializers.toJson(TxContent.serializer, txContent.data!)}");
     final block = await _loadBlock(hashOrNumber: txContent.block);
     if (block.isErr()) {
@@ -489,7 +489,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     final txContentUtxoResult = await dioCall<TxContentUtxo>(
       request: () =>
           blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash: txHash),
-      onSuccess: (data) => logger.i(
+      onSuccess: (data) => logger.info(
           "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, data)}"),
       errorSubject: 'UTXO',
     );
@@ -501,7 +501,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     // if (txUtxo.statusCode != 200 || txUtxo.data == null) {
     //   return Err("${txUtxo.statusCode}: ${txUtxo.statusMessage}");
     // }
-    // logger.i(
+    // logger.info(
     //     "blockfrost.getCardanoTransactionsApi().txsHashUtxosGet(hash:$txHash) -> ${serializers.toJson(TxContentUtxo.serializer, txUtxo.data!)}");
     final time = block.unwrap().time;
     //final deposit = int.tryParse(txContent.data?.deposit ?? '0') ?? 0;
@@ -511,7 +511,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     List<TransactionInput> inputs = _buildIputs(addrInputs);
     final addrOutputs = txContentUtxoResult.unwrap().outputs;
     List<TransactionOutput> outputs = _buildOutputs(addrOutputs);
-    //logger.i("deposit: $deposit, fees: $fees, withdrawalCount: $withdrawalCount inputs: ${inputs.length}, outputs: ${outputs.length}");
+    //logger.info("deposit: $deposit, fees: $fees, withdrawalCount: $withdrawalCount inputs: ${inputs.length}, outputs: ${outputs.length}");
     //BuiltList<TxContentOutputAmount> amounts = txContent.data!.outputAmount;
     //Map<String, int> currencies = _currencyNets(inputs: inputs, outputs: outputs, addressSet: addressSet);
     //int lovelace = currencies[lovelaceHex] ?? 0;
@@ -545,7 +545,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
         return Err("${result.statusCode}: ${result.statusMessage}");
       }
       final Asset a = result.data!;
-      logger.i(
+      logger.info(
           "blockfrost.getCardanoAssetsApi().assetsAssetGet(asset: $assetId) -> ${serializers.toJson(Asset.serializer, a)}");
       final AssetMetadata? m = a.metadata;
       final metadata = m == null
@@ -567,7 +567,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
       _assetCache[assetId] = asset;
       return Ok(asset);
     } catch (e) {
-      logger.i("assetsAssetGet(asset:$assetId) -> ${e.toString()}");
+      logger.info("assetsAssetGet(asset:$assetId) -> ${e.toString()}");
       return Err(e.toString());
     }
   }
@@ -583,7 +583,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
   //       return Err("${result.statusCode}: ${result.statusMessage}");
   //     }
   //     _accountContentCache[stakeAddress] = result.data!;
-  //     logger.i(
+  //     logger.info(
   //         "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, result.data!)}");
   //     return Ok(result.data!);
   //   } on DioError catch (dioError) {
@@ -606,7 +606,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
           .accountsStakeAddressGet(stakeAddress: stakeAddress),
       onSuccess: (data) {
         _accountContentCache[stakeAddress] = data;
-        logger.i(
+        logger.info(
             "blockfrost.getCardanoAccountsApi().accountsStakeAddressGet(stakeAddress:) -> ${serializers.toJson(AccountContent.serializer, data)}");
       },
       errorSubject: 'address',
@@ -644,7 +644,7 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
     final isData = result.statusCode == 200 && result.data != null;
     if (isData) {
       final b = result.data!;
-      logger.i(
+      logger.info(
           "blockfrost.getCardanoBlocksApi().blocksHashOrNumberGet(hashOrNumber: $hashOrNumber) -> ${serializers.toJson(BlockContent.serializer, b)}");
       final block = Block(
           hash: b.hash,
@@ -688,6 +688,6 @@ class BlockfrostBlockchainAdapter implements BlockchainAdapter {
 //   final walletFactory = ShelleyWalletFactory(networkId: NetworkId.testnet, authInterceptor: MyApiKeyAuthInterceptor());
 //   final testnetWallet = await walletFactory.create(stakeAddress: wallet1);
 //   for (var addr in testnetWallet.addresses()) {
-//     logger.i(addr.toBech32());
+//     logger.info(addr.toBech32());
 //   }
 // }

@@ -1,7 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:logger/logger.dart';
+import 'package:logging/logging.dart';
 import 'package:quiver/core.dart';
 import 'package:collection/collection.dart';
 import '../address/shelley_address.dart';
@@ -257,7 +257,7 @@ extension TransactionScanner on RawTransaction {
     return result;
   }
 
-  static final _logger = Logger();
+  static final _logger = Logger('TransactionScanner');
 
   ///
   /// return a map of all currencies with their net quantity change for a given set of
@@ -274,7 +274,7 @@ extension TransactionScanner on RawTransaction {
         for (var amount in input.amounts) {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning - amount.quantity;
-          _logger.i(
+          _logger.info(
               "$time tx: ${txId.substring(0, 5)}.. innput: ${input.address.toString().substring(0, 15)}.. $beginning - ${amount.quantity} = ${result[amount.unit]}");
         }
       }
@@ -285,7 +285,7 @@ extension TransactionScanner on RawTransaction {
         for (var amount in output.amounts) {
           final Coin beginning = result[amount.unit] ?? coinZero;
           result[amount.unit] = beginning + amount.quantity;
-          _logger.i(
+          _logger.info(
               "$time tx: ${txId.substring(0, 5)}.. output: ${output.address.toString().substring(0, 15)}.. $beginning + ${amount.quantity} = ${result[amount.unit]}");
         }
       }
@@ -309,7 +309,7 @@ extension TransactionScanner on RawTransaction {
         result.add(output.address);
       }
     }
-    _logger.i(
+    _logger.info(
         "filterAddresses(input addresses: ${addressSet.length} -> filtered addresses: ${result.length})");
     return result;
   }
@@ -325,7 +325,7 @@ Set<UTxO> collectUTxOs(
       for (int index = 0; index < tx.outputs.length; index++) {
         final output = tx.outputs[index];
         final contains = ownedAddresses.contains(output.address);
-        // logger.i(
+        // logger.info(
         //     "contains:$contains, tx=${tx.txId.substring(0, 20)} index[$index]=${output.amounts.first.quantity}");
         if (contains) {
           final utxo =

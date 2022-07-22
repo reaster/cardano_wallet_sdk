@@ -2,13 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('AdaValidationTest');
   group('ada validation - ', () {
     test('valid', () {
       final result = validAda(ada: '1');
-      print(result.unwrap());
+      logger.info(result.unwrap());
       expect(result.unwrap(), '1.0');
       expect(validAda(ada: '01').isOk(), isTrue);
       expect(validAda(ada: '0123456789000').isOk(), isTrue);
@@ -26,7 +32,7 @@ void main() {
     });
     test('normalization', () {
       final result = validAda(ada: '1');
-      print(result.unwrap());
+      logger.info(result.unwrap());
       expect(result.unwrap(), '1.0');
       expect(validAda(ada: '01').unwrap(), '1.0');
       expect(validAda(ada: '0123456789000').unwrap(), '123456789000.0');
@@ -45,7 +51,7 @@ void main() {
     test('invalid precision length', () {
       final result = validAda(ada: '.1234567');
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
     });
     test('zero', () {
       expect(validAda(ada: '.').isErr(), isTrue);
@@ -55,7 +61,7 @@ void main() {
     test('invalid data char', () {
       final result = validAda(ada: 'a');
       expect(result.isErr(), isTrue);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(validAda(ada: '-.1').isErr(), isTrue);
     });
   });

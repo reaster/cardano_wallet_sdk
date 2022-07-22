@@ -2,9 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('MnemonicValidationTest');
   const String mnemonicBadChecksum =
       'ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt';
   const String mnemonicBadWord =
@@ -18,40 +24,40 @@ void main() {
           .join(' ');
       final result = validMnemonic(
           phrase: mnemonic, loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrap());
+      logger.info(result.unwrap());
       expect(result.isOk(), isTrue);
       //uppercase handling
       final upperMnemonic = mnemonic.toUpperCase();
       final result2 = validMnemonic(
           phrase: upperMnemonic, loadWordsFunction: loadEnglishMnemonicWords);
-      print(result2.unwrap());
+      logger.info(result2.unwrap());
       expect(result2.isOk(), isTrue);
     });
     test('mnemonic required', () {
       final result = validMnemonic(
           phrase: '', loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(result.isErr(), isTrue);
     });
     test('requiredNumberOfWords', () {
       final result = validMnemonic(
           phrase: 'ability able about above',
           loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(result.isErr(), isTrue);
       expect(result.unwrapErr().contains('24'), isTrue);
     });
     test('invalid character', () {
       final result = validMnemonic(
           phrase: 'ability,able', loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(result.isErr(), isTrue);
       expect(result.unwrapErr().contains('3'), isTrue);
     });
     test('bad mnemonic word', () {
       final result = validMnemonic(
           phrase: mnemonicBadWord, loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(result.isErr(), isTrue);
       expect(result.unwrapErr().contains('abbey'), isTrue);
       expect(
@@ -67,7 +73,7 @@ void main() {
       final result = validMnemonic(
           phrase: mnemonicBadChecksum,
           loadWordsFunction: loadEnglishMnemonicWords);
-      print(result.unwrapErr());
+      logger.info(result.unwrapErr());
       expect(result.isErr(), isTrue);
       expect(result.unwrapErr().contains('checksum'), isTrue);
     });

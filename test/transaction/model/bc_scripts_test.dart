@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:cbor/cbor.dart';
 import 'dart:convert' as convertor;
 import 'package:test/test.dart';
@@ -9,6 +10,11 @@ import 'package:hex/hex.dart';
 import 'dart:typed_data';
 
 void main() {
+  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  final logger = Logger('BcScriptsTest');
   group('Script -', () {
     BcScriptAtLeast multisigScript1() => BcScriptAtLeast(amount: 2, scripts: [
           BcScriptPubkey(
@@ -30,8 +36,8 @@ void main() {
           '103,243,49,70,97,122,94,97,147,96,129,219,59,33,23,203,245,155,210,18,55,72,245,138,201,103,134,86';
       final script = BcPlutusScript(cborHex: '4e4d01000033222220051200120011');
       final ser1 = script.serialize;
-      print("plutus hex: ${script.toHex}");
-      print("plutus ser1: ${ser1.join(',')}");
+      logger.info("plutus hex: ${script.toHex}");
+      logger.info("plutus ser1: ${ser1.join(',')}");
       expect(script.serialize,
           equals(parseInts('78,77,1,0,0,51,34,34,32,5,18,0,18,0,17')),
           reason: '14 bytes: 4e4d01000033222220051200120011');
@@ -43,7 +49,7 @@ void main() {
             '103,243,49,70,97,122,94,97,147,96,129,219,59,33,23,203,245,155,210,18,55,72,245,138,201,103,134,86')),
       );
 
-      print("plutus hash: ${script.scriptHash.join(',')}");
+      logger.info("plutus hash: ${script.scriptHash.join(',')}");
     });
 
     test('nativeScriptHash', () {

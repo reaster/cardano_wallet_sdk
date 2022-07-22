@@ -60,8 +60,6 @@ void main() {
         unspentInputsAvailable: wallet.unspentTransactions,
         spendRequest:
             FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 100 * ada}),
-        // outputsRequested: [BcMultiAsset.lovelace(100 * ada)],
-        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result2.isOk(), isTrue);
@@ -92,9 +90,7 @@ void main() {
         unspentInputsAvailable: wallet.unspentTransactions,
         spendRequest:
             FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 200 * ada}),
-        // outputsRequested: [BcMultiAsset.lovelace(200 * ada)],
         coinSelectionLimit: 4,
-        // estimatedFee: 200000,
         ownedAddresses: wallet.addresses.toSet(),
       );
       expect(result3.isErr(), isTrue);

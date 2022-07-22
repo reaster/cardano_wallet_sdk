@@ -1,7 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:logger/logger.dart';
+import 'package:logging/logging.dart';
 import '../util/ada_types.dart';
 // import './spec/shelley_spec.dart';
 import 'package:cbor/cbor.dart';
@@ -17,11 +17,11 @@ typedef MinFeeFunction = Coin Function(
 Coin simpleMinFee(
     {required BcTransaction transaction,
     LinearFee linearFee = defaultLinearFee}) {
-  final logger = Logger();
+  final logger = Logger('simpleMinFee');
   final len = cbor.encode(transaction.toCborList()).length;
   final result =
       (len + lenHackAddition) * linearFee.coefficient + linearFee.constant;
-  logger.i(
+  logger.info(
       "simpleMinFee = len($len+$lenHackAddition)*${linearFee.coefficient} + ${linearFee.constant} = $result");
   return result;
 }
