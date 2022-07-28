@@ -225,9 +225,11 @@ abstract class HdAddressSigner extends HdAddressGenerator {
   Bip32SigningKey basePrivateKey({int index = 0});
   Bip32SigningKey changePrivateKey({int index = 0});
   Bip32SigningKey get stakePrivateKey;
-  List<ShelleyUtxoKit> signableAddresses({
+  Map<ShelleyAddress, ShelleyUtxoKit> signableAddresses({
     required Set<ShelleyAddress> utxos,
     int startIndex = 0,
+    int beyondUsedOffset = defaultBeyondUsedOffset,
+    UsedAddressFunction usedCallback = alwaysUsed,
   });
 }
 
@@ -351,9 +353,11 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
       );
 
   @override
-  List<ShelleyUtxoKit> signableAddresses({
+  Map<ShelleyAddress, ShelleyUtxoKit> signableAddresses({
     required Set<ShelleyAddress> utxos,
     int startIndex = 0,
+    int beyondUsedOffset = defaultBeyondUsedOffset,
+    UsedAddressFunction usedCallback = alwaysUsed,
   }) =>
       _signableAddresses(
         utxos: utxos,
@@ -361,6 +365,8 @@ class HdAccount implements HdAddressSigner, HdLegacyReceiver {
         network: network,
         accountIndex: accountIndex,
         startIndex: startIndex,
+        beyondUsedOffset: beyondUsedOffset,
+        usedCallback: usedCallback,
       );
 
   @override
@@ -468,6 +474,13 @@ class InvalidAccountError extends Error {
   String toString() => message;
 }
 
+class HdIterationhError extends Error {
+  final String message;
+  HdIterationhError(this.message);
+  @override
+  String toString() => message;
+}
+
 /// Encapsulates a ShelleyAddress, it's BIP32 path and if it's
 /// been used in a existing transaction.
 class ShelleyReceiveKit {
@@ -537,7 +550,7 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
     if (isUsed) {
       cutoff = beyondUsedOffset + index + 1; //extend cache size
     }
-  } while (++index < cutoff && index < 31 ^ 2);
+  } while (++index < cutoff && index < HdSegment.maxDepth);
   return results;
 }
 
@@ -564,7 +577,7 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
 //     role
 //   ]);
 //   List<ShelleyReceiveKit> results = [];
-//   for (int index = startIndex; index < 31 ^ 2; index++) {
+//   for (int index = startIndex; index < HdSegment.maxDepth; index++) {
 //     var address = role == spendRole
 //         ? generator.baseAddress(index: index)
 //         : generator.changeAddress(index: index);
@@ -581,37 +594,58 @@ List<ShelleyReceiveKit> _unusedReceiveAddresses({
 // }
 
 /// Match addresses to their private keys so they can be signed/spent.
-/// Searches both internal and external chains.
-List<ShelleyUtxoKit> _signableAddresses({
+/// Searches both internal and external chains. Usses beyondUsedOffset
+/// to avoid heading into the tree depth abyss.
+/// TODO should support enterprise and other relevant address types
+Map<ShelleyAddress, ShelleyUtxoKit> _signableAddresses({
   required Set<ShelleyAddress> utxos,
   required HdAddressSigner generator,
   required Networks network,
   int accountIndex = 0,
   int startIndex = 0,
+  int beyondUsedOffset = defaultBeyondUsedOffset,
+  UsedAddressFunction usedCallback = alwaysUsed,
 }) {
   assert(accountIndex >= 0);
   assert(startIndex >= 0);
+
   // "m/1852'/1815'/$accountIndex'"
   final acctChain = HdDerivationChain.m(segments: [
     cip1852,
     cip1815,
     HdSegment(depth: accountIndex, harden: true),
   ]);
-  List<ShelleyUtxoKit> results = [];
-  for (int index = startIndex; index < 31 ^ 2; index++) {
-    for (HdSegment role in [spendRole, changeRole]) {
+  Map<ShelleyAddress, ShelleyUtxoKit> results = {};
+  for (HdSegment role in [spendRole, changeRole]) {
+    int cutoff = beyondUsedOffset;
+    for (int index = startIndex; index < cutoff; index++) {
+      if (results.length == utxos.length) break;
+      if (index > HdSegment.maxDepth) {
+        throw HdIterationhError(//very unlikely
+            "max depth of ${HdSegment.maxDepth} exceeded: $index");
+      }
       final address = role == spendRole
           ? generator.baseAddress(index: index)
           : generator.changeAddress(index: index);
       if (utxos.contains(address)) {
-        results.add(ShelleyUtxoKit(
+        results[address] = ShelleyUtxoKit(
           address: address,
           chain: acctChain.append2(role, HdSegment(depth: index)),
           signingKey: generator.basePrivateKey(index: index),
-        ));
+        );
       }
-      if (results.length == utxos.length) break;
+      final isUsed = usedCallback.call(address);
+      if (isUsed) {
+        cutoff = beyondUsedOffset + index + 1; //extend cache size
+      }
     }
+  }
+  if (results.length != utxos.length) {
+    //something is wrong, not seeing UTxO in owned addresses
+    final badUtxos =
+        utxos.where((addr) => !results.containsKey(addr)).join(', ');
+    throw HdIterationhError(//funky coding going on
+        "UTxOs are now owned by this wallet: $badUtxos");
   }
   return results;
 }

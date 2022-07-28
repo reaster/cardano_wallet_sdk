@@ -1,6 +1,7 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
 import '../hd/hd_account.dart';
@@ -14,6 +15,7 @@ import './transaction.dart';
 import './model/bc_tx.dart';
 import './model/bc_tx_body_ext.dart';
 import './model/bc_tx_ext.dart';
+import 'coin_selection.dart';
 
 ///
 /// This builder manages the details of assembling a balanced transaction, including
@@ -29,13 +31,16 @@ import './model/bc_tx_ext.dart';
 class TxBuilder {
   final logger = Logger('TxBuilder');
   BlockchainAdapter? _blockchainAdapter;
+  CoinSelectionAlgorithm _coinSelectionFunction = largestFirst;
   Wallet? _wallet; //TODO prefer not to depend on high-level API
   List<BcTransactionInput> _inputs = [];
+  FlatMultiAsset? _spendRequest;
   List<BcTransactionOutput> _outputs = [];
   AbstractAddress? _toAddress;
   ShelleyReceiveKit? _changeAddress;
-  BcValue _value = BcValue(coin: 0, multiAssets: []);
-  Coin _fee = defaultFee;
+  //calculated internally
+  Coin _fee = coinZero;
+  //fixes min fee if set
   Coin _minFee = coinZero;
   int _ttl = 0;
   List<int>? _metadataHash;
@@ -115,7 +120,7 @@ class TxBuilder {
       }
     }
     final utxoKitList = _wallet!.findSigningKeyForUtxos(utxos: utxos);
-    return {for (var k in utxoKitList) k.address: k};
+    return utxoKitList;
   }
 
   // BcTransactionWitnessSet signAndBuildWitnesses(
@@ -143,6 +148,7 @@ class TxBuilder {
   /// it will contain the cached UTxOs needed to calculate the input amounts.
   ///
   /// TODO handle edge case where selectd coins have to be changed based on fee adjustment.
+  /// TODO have a simpler builder that takes hard-coded outputs? this builder would call that one
   ///
   Future<Result<BcTransaction, String>> buildAndSign(
       {bool mustBalance = true}) async {
@@ -156,72 +162,145 @@ class TxBuilder {
       }
       _ttl = result.unwrap();
     }
-    if (_inputs.isEmpty) return Err("inputs are empty");
-    //convert value into spend output if not zero
-    if (_value.coin > coinZero && _toAddress != null) {
-      BcTransactionOutput spendOutput =
-          BcTransactionOutput(address: _toAddress!.toString(), value: _value);
-      _outputs.add(spendOutput);
+    //treat spendRequest.fee as minFee if set:
+    if (_minFee == 0 && _spendRequest != null && _spendRequest!.fee != 0) {
+      _minFee = _spendRequest!.fee;
     }
-    var body = _buildBody();
-    //adjust change to balance transaction
-    final balanceResult = body.balancedOutputsWithChange(
-        changeAddress: _changeAddress!.address,
-        cache: _blockchainAdapter!,
-        fee: _fee);
-    if (balanceResult.isErr()) return Err(balanceResult.unwrapErr());
-    _outputs = balanceResult.unwrap();
-    //build the complete signed transaction so we can calculate a more accurate fee
-    body = _buildBody();
-    Map<ShelleyAddress, ShelleyUtxoKit> utxoKeyPairs = _loadUtxosAndTheirKeys();
-    if (utxoKeyPairs.isEmpty) {
-      return Err("no UTxOs found in transaction");
+    //make sure existing spendRequest.fee is not zero
+    if (_spendRequest != null && _spendRequest!.fee == 0) {
+      _spendRequest = FlatMultiAsset(
+          assets: _spendRequest!.assets,
+          fee: _minFee > 0 ? _minFee : defaultFee);
     }
-    final signingKeys = utxoKeyPairs.values.map((p) => p.signingKey).toList();
-    var tx =
-        BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata)
-            .sign(signingKeys, fakeSignature: true);
-    // _witnessSet = _sign(
-    //     body: body,
-    //     keyPairSet: utxoKeyPairs.values.toSet(),
-    //     fakeSignature: true);
-    // var tx =
-    //     BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    _fee = calculateMinFee(tx: tx, minFee: _minFee);
-    //rebalance change to fit the new fee
-    final balanceResult2 = body.balancedOutputsWithChange(
-        changeAddress: _changeAddress!.address,
-        cache: _blockchainAdapter!,
-        fee: _fee);
-    if (balanceResult2.isErr()) return Err(balanceResult2.unwrapErr());
-    _outputs = balanceResult2.unwrap();
-    body = _buildBody();
-    //re-sign to capture changes
-    tx = BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata)
-        .sign(signingKeys, fakeSignature: false);
-    // _witnessSet = _sign(body: body, keyPairSet: utxoKeyPairs.values.toSet());
-    // tx =
-    //     BcTransaction(body: body, witnessSet: _witnessSet, metadata: _metadata);
-    if (mustBalance) {
-      final balancedResult =
-          tx.body.transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
-      if (balancedResult.isErr()) return Err(balancedResult.unwrapErr());
+    bool balanced = true;
+    do {
+      if (_spendRequest != null) {
+        final inputsResult = await _coinSelectionFunction(
+          spendRequest: _spendRequest!,
+          unspentInputsAvailable: _wallet!.unspentTransactions,
+          ownedAddresses: _wallet!.addresses.toSet(),
+        );
+        if (inputsResult.isOk()) {
+          _inputs = inputsResult.unwrap().inputs;
+        } else {
+          final coinSelErr = inputsResult.unwrapErr();
+          return Err(coinSelErr.message);
+        }
+      }
+      if (_inputs.isEmpty) {
+        return Err("inputs are empty");
+      }
+      //convert value into spend output if not zero
+      if (_toAddress != null && _outputs.isEmpty && _spendRequest != null) {
+        final outputResult = flatMultiAssetToOutput(
+            toAddress: _toAddress!, spendRequest: _spendRequest!);
+        if (outputResult.isErr()) {
+          return Err(outputResult.unwrapErr());
+        }
+        _outputs.add(outputResult.unwrap());
+      }
+      if (_outputs.isEmpty) {
+        return Err("no outputs specified");
+      }
+      var body = _buildBody();
+      //adjust change to balance transaction
+      final balanceResult = body.balancedOutputsWithChange(
+          changeAddress: _changeAddress!.address,
+          cache: _blockchainAdapter!,
+          fee: _fee);
+      if (balanceResult.isErr()) return Err(balanceResult.unwrapErr());
+      _outputs = balanceResult.unwrap();
+      //build the complete (fake) signed transaction so we can calculate a more accurate fee
+      body = _buildBody();
+      Map<AbstractAddress, ShelleyUtxoKit> utxoKeyPairs =
+          _loadUtxosAndTheirKeys();
+      if (utxoKeyPairs.isEmpty) {
+        return Err("no UTxOs found in transaction");
+      }
+      final signingKeys = utxoKeyPairs.values.map((p) => p.signingKey).toList();
+      var tx = BcTransaction(
+              body: body, witnessSet: _witnessSet, metadata: _metadata)
+          .sign(signingKeys, fakeSignature: true);
+      _fee = calculateMinFee(tx: tx, minFee: _minFee);
+      //rebalance change to fit the new fee
+      final balanceResult2 = body.balancedOutputsWithChange(
+          changeAddress: _changeAddress!.address,
+          cache: _blockchainAdapter!,
+          fee: _fee);
+      if (balanceResult2.isErr()) return Err(balanceResult2.unwrapErr());
+      _outputs = balanceResult2.unwrap();
+      body = _buildBody();
+      //re-sign to capture changes
+      tx = BcTransaction(
+              body: body, witnessSet: _witnessSet, metadata: _metadata)
+          .sign(signingKeys, fakeSignature: false);
+      if (mustBalance) {
+        final balancedResult = tx.body
+            .transactionIsBalanced(cache: _blockchainAdapter!, fee: _fee);
+        if (balancedResult.isErr()) return Err(balancedResult.unwrapErr());
+      }
+      //now, double check our UTxOs still cover the new fee
+      if (_spendRequest != null) {
+        _spendRequest =
+            FlatMultiAsset(assets: _spendRequest!.assets, fee: _fee);
+
+        final inputsResult = await _coinSelectionFunction(
+          spendRequest: _spendRequest!,
+          unspentInputsAvailable: _wallet!.unspentTransactions,
+          ownedAddresses: _wallet!.addresses.toSet(),
+        );
+        if (inputsResult.isOk()) {
+          final inputs2 = inputsResult.unwrap().inputs;
+          balanced = const ListEquality().equals(_inputs, inputs2);
+        } else {
+          final coinSelErr = inputsResult.unwrapErr();
+          return Err(coinSelErr.message);
+        }
+      }
+      if (balanced) {
+        return Ok(tx);
+      }
+    } while (!balanced);
+    return Err("should never land here");
+  }
+
+  Result<BcTransactionOutput, String> flatMultiAssetToOutput(
+      {required AbstractAddress toAddress,
+      required FlatMultiAsset spendRequest}) {
+    Coin coin = spendRequest.assets[lovelaceHex] ?? coinZero;
+    final builder = MultiAssetBuilder(coin: coin);
+    for (final assetId in spendRequest.assets.keys) {
+      if (assetId == lovelaceHex) continue;
+      CurrencyAsset? asset = _blockchainAdapter!.cachedCurrencyAsset(assetId);
+      if (asset != null) {
+        builder.nativeAsset(
+            policyId: asset.policyId,
+            hexName: asset.assetName,
+            value: spendRequest.assets[assetId] ?? coinZero);
+      } else {
+        return Err("no asset found in BlockchainAdapter for assetId: $assetId");
+      }
     }
-    return Ok(tx);
+    return Ok(BcTransactionOutput(
+        address: toAddress.toString(), value: builder.build()));
   }
 
   Result<bool, String> _checkContraints() {
     if (_blockchainAdapter == null) {
       return Err("'blockchainAdapter' property must be set");
     }
-    if (_inputs.isEmpty) return Err("'inputs' property must be set");
-    if (_outputs.isEmpty && (_value.coin == 0 || _toAddress == null)) {
+    if (_outputs.isEmpty && _spendRequest == null && _toAddress == null) {
       return Err(
-          "when 'outputs' is empty, 'toAddress' and 'value' properties must be set");
+          "when 'outputs' is not set, 'spendRequest' and 'toAddress' properties must be set");
     }
-    // if (_keyPair == null) {
-    //   return Err("'kit' (BcAddressKit) property must be set");
-    // }
+    if (_spendRequest != null) {
+      if (_minFee != 0 &&
+          _spendRequest!.fee != 0 &&
+          _minFee != _spendRequest!.fee) {
+        return Err(
+            "specified fees conflict minFee: $_minFee and spendRequest.fee: ${_spendRequest!.fee}. Specify only one.");
+      }
+    }
     if (_changeAddress == null) {
       return Err("'changeAddress' property must be set");
     }
@@ -285,7 +364,8 @@ class TxBuilder {
     // _keyPair = _wallet!.rootKeyPair;
   }
 
-  void value(BcValue value) => _value = value;
+  void spendRequest(FlatMultiAsset spendRequest) =>
+      _spendRequest = spendRequest;
 
   void changeAddress(ShelleyReceiveKit changeAddress) =>
       _changeAddress = changeAddress;
@@ -304,7 +384,10 @@ class TxBuilder {
   void validityStartInterval(int validityStartInterval) =>
       _validityStartInterval = validityStartInterval;
 
-  void fee(Coin fee) => _fee = fee;
+  //void fee(Coin fee) => _fee = fee;
+
+  void coinSelectionFunction(CoinSelectionAlgorithm coinSelectionFunction) =>
+      _coinSelectionFunction = coinSelectionFunction;
 
   void minFee(Coin minFee) => _minFee = minFee;
 
@@ -384,7 +467,7 @@ class MultiAssetBuilder {
   MultiAssetBuilder({required this.coin});
   BcValue build() => BcValue(coin: coin, multiAssets: _multiAssets);
   MultiAssetBuilder nativeAsset(
-      {required String policyId, String? hexName, required int value}) {
+      {required String policyId, String? hexName, required Coin value}) {
     final nativeAsset = BcMultiAsset(policyId: policyId, assets: [
       BcAsset(name: hexName ?? '', value: value),
     ]);

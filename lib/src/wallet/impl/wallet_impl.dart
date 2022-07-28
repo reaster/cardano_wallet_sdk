@@ -46,9 +46,9 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
 
   /// Find signing key for spend or change address.
   @override
-  List<ShelleyUtxoKit> findSigningKeyForUtxos(
+  Map<ShelleyAddress, ShelleyUtxoKit> findSigningKeyForUtxos(
           {required Set<ShelleyAddress> utxos}) =>
-      account.signableAddresses(utxos: utxos);
+      account.signableAddresses(utxos: utxos, usedCallback: isUsedAddress);
 
   @override
   ShelleyReceiveKit get firstUnusedChangeAddress =>
@@ -134,13 +134,14 @@ class WalletImpl extends ReadOnlyWalletImpl implements Wallet {
     //final pair = hdWallet.accountKeys();
     final builder = TxBuilder()
       ..inputs(inputsResult.unwrap().inputs)
-      ..value(BcValue(coin: lovelace, multiAssets: []))
+      ..spendRequest(FlatMultiAsset(fee: fee, assets: {lovelaceHex: lovelace}))
+      //..value(BcValue(coin: lovelace, multiAssets: []))
       ..toAddress(toAddress)
       ..wallet(this) //contains sign key & verify key
       ..blockchainAdapter(blockchainAdapter)
       ..changeAddress(firstUnusedChangeAddress)
-      ..ttl(ttl)
-      ..fee(fee);
+      ..ttl(ttl);
+    // ..fee(fee);
     final txResult = await builder.buildAndSign();
     if (txResult.isOk() && !txResult.unwrap().verify) {
       return Err('transaction validation failed');

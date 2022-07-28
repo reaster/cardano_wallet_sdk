@@ -8,7 +8,7 @@ import '../wallet/mock_wallet_2.dart';
 import 'package:logging/logging.dart';
 
 void main() {
-  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  //Logger.root.level = Level.WARNING; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) {
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
@@ -33,10 +33,11 @@ void main() {
     walletName: 'mock wallet',
   );
 
-  //Wallet UTxOs
+  //Wallet UTxO #1
+  //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100,000,000)
+  //Wallet UTxO #2
   //tx.outputs[1].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 99,228,617)
   //tx.outputs[1].amounts: TransactionAmount(unit: 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7 quantity: 1)
-  //tx.outputs[0].amounts: TransactionAmount(unit: 6c6f76656c616365 quantity: 100,000,000)
   //Total balance:
   //6c6f76656c616365(lovelace): 199,228,617
   // 6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7(test): 1
@@ -100,7 +101,7 @@ void main() {
       expect(balResult.isOk(), isTrue);
       expect(balResult.unwrap(), isTrue);
       expect(tx.body.fee, lessThan(2000000));
-    }, skip: "TODO");
+    });
     test('sendAda - 200 ADA - insufficient balance', () async {
       Result<BcTransaction, String> result =
           await wallet.sendAda(toAddress: toAddress, lovelace: ada * 200);
@@ -108,66 +109,74 @@ void main() {
       //logger.info("Error: ${result.unwrapErr()}");
     });
 
-    test(
-      'send multi-asset transaction using builder',
-      () async {
-        //build multi-asset request of 5 ADD and 1 TEST token
-        wallet.currencies.forEach((key, value) {
-          logger.info("currency: $key -> $value");
-        });
-        final filteredTxs = wallet.filterTransactions(
-            assetId:
-                '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7');
-        logger.info("currency 6b8d..1aa7 tx count: ${filteredTxs.length}");
-        final Coin maxFeeGuess = 200000; //add fee to requested ADA amount
-        // final multiAssetRequest = MultiAssetRequestBuilder(coin: ada * 5)
-        //     .nativeAsset(
-        //         policyId:
-        //             '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
-        //         value: 1)
-        //     .build();
-        //coin selection:
-        final inputsResult = await largestFirst(
-          unspentInputsAvailable: wallet.unspentTransactions,
-          spendRequest: FlatMultiAsset(fee: maxFeeGuess, assets: {
-            lovelaceHex: 5 * ada,
-            '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1,
-          }),
-          ownedAddresses: wallet.addresses.toSet(),
-        );
-        if (inputsResult.isErr())
-          logger.severe("error: ${inputsResult.unwrapErr()}");
-        expect(inputsResult.isOk(), isTrue);
-
-        //mirror request in a ShelleyValue, less the fee:
-        final shelleyValue = MultiAssetBuilder(coin: ada * 5)
-            .nativeAsset(
-                policyId:
-                    '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7',
-                value: 1)
-            .build();
-
-        //use TxBuilder to assemble BcTransaction:
-        final builder = TxBuilder()
-          ..inputs(inputsResult.unwrap().inputs)
-          ..value(shelleyValue)
-          ..fee(maxFeeGuess)
-          ..wallet(wallet)
-          ..blockchainAdapter(wallet.blockchainAdapter)
-          ..changeAddress(wallet.firstUnusedChangeAddress);
-        final BcTransaction tx = await builder.build();
-        expect(builder.isBalanced, isTrue);
-        expect(tx.body.inputs.length, 2,
-            reason: 'need an ADA tx and a TEST tx');
-        expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
-        expect(tx.verify, isTrue, reason: 'found private keys');
-
-        //submit transaction to blockchain:
-        final submitResult =
-            await wallet.blockchainAdapter.submitTransaction(tx.serialize);
-        expect(submitResult.isOk(), isTrue);
-      },
-      //skip:  'not supported yet, need to rewrite largestFirst CoinSelectionAlgorithm'
-    );
+    test('send multi-asset transaction using builder - 1 UTxO', () async {
+      final builder = TxBuilder()
+        ..spendRequest(FlatMultiAsset(assets: {
+          lovelaceHex: ada * 5,
+          '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1
+        }))
+        ..toAddress(toAddress)
+        ..wallet(wallet)
+        ..blockchainAdapter(wallet.blockchainAdapter)
+        ..changeAddress(wallet.firstUnusedChangeAddress);
+      final txResult = await builder.buildAndSign();
+      if (txResult.isErr()) print("ERROR: ${txResult.unwrap()}");
+      expect(txResult.isOk(), isTrue);
+      final tx = txResult.unwrap();
+      expect(builder.isBalanced, isTrue);
+      expect(tx.body.inputs.length, 1, reason: 'TEST UTxO has needed ADA');
+      expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
+      expect(tx.verify, isTrue, reason: 'found private keys');
+    });
+    test('send multi-asset transaction using builder - 2 UTxO', () async {
+      final builder = TxBuilder()
+        ..spendRequest(FlatMultiAsset(assets: {
+          lovelaceHex: ada * 199,
+          '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1
+        }))
+        ..toAddress(toAddress)
+        ..wallet(wallet)
+        ..blockchainAdapter(wallet.blockchainAdapter)
+        ..changeAddress(wallet.firstUnusedChangeAddress);
+      final txResult = await builder.buildAndSign();
+      if (txResult.isErr()) print("ERROR: ${txResult.unwrap()}");
+      expect(txResult.isOk(), isTrue);
+      final tx = txResult.unwrap();
+      expect(builder.isBalanced, isTrue);
+      expect(tx.body.inputs.length, 2, reason: 'TEST UTxO lacks needed ADA');
+      expect(tx.body.outputs.length, 2, reason: 'spend & change outputs');
+      expect(tx.verify, isTrue, reason: 'found private keys');
+    });
+    test('send multi-asset - insufficient balance', () async {
+      final builder = TxBuilder()
+        ..spendRequest(FlatMultiAsset(assets: {
+          lovelaceHex: ada * 200,
+          '6b8d07d69639e9413dd637a1a815a7323c69c86abbafb66dbfdb1aa7': 1
+        }))
+        ..toAddress(toAddress)
+        ..wallet(wallet)
+        ..blockchainAdapter(wallet.blockchainAdapter)
+        ..changeAddress(wallet.firstUnusedChangeAddress);
+      final txResult = await builder.buildAndSign();
+      if (txResult.isErr()) print("ERROR: ${txResult.unwrapErr()}");
+      expect(txResult.isOk(), isFalse);
+    });
+    test('2nd coin select iteration', () async {
+      //set fee too low for 1 UTxO tx, forcing 2nd coin selection call
+      final utxo0Ada = ada * 100;
+      final builder = TxBuilder()
+        ..spendRequest(FlatMultiAsset(fee: 100000, assets: {
+          lovelaceHex: utxo0Ada - 100000,
+        }))
+        ..toAddress(toAddress)
+        ..wallet(wallet)
+        ..blockchainAdapter(wallet.blockchainAdapter)
+        ..changeAddress(wallet.firstUnusedChangeAddress);
+      final txResult = await builder.buildAndSign();
+      if (txResult.isErr()) print("ERROR: ${txResult.unwrapErr()}");
+      expect(txResult.isOk(), isTrue);
+      expect(txResult.unwrap().body.inputs.length, 2,
+          reason: 'TEST UTxO lacks needed ADA');
+    });
   });
 }

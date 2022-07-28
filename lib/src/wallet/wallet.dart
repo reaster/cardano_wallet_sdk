@@ -38,7 +38,7 @@ abstract class Wallet extends ReadOnlyWallet {
   ShelleyReceiveKit get firstUnusedChangeAddress;
 
   /// Find signing key for spend or change address.
-  List<ShelleyUtxoKit> findSigningKeyForUtxos(
+  Map<ShelleyAddress, ShelleyUtxoKit> findSigningKeyForUtxos(
       {required Set<ShelleyAddress> utxos});
 
   /// Send ADA to another address.
