@@ -1,6 +1,7 @@
-// import 'dart:convert';
-import 'dart:typed_data';
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
 
+import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 
 List<int> hmacSha512({required List<int> key, required List<int> data}) {

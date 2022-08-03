@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'dart:typed_data';
 import 'package:cbor/cbor.dart';
 import 'package:hex/hex.dart';

@@ -1,3 +1,6 @@
+// Copyright 2021 Richard Easterling
+// SPDX-License-Identifier: Apache-2.0
+
 import 'dart:typed_data';
 
 /// Converts a `List<int>` to a [Uint8List].
