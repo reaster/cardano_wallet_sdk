@@ -4,17 +4,63 @@
 import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:logging/logging.dart';
 import 'package:cbor/cbor.dart';
-import 'dart:convert' as convertor;
 import 'package:test/test.dart';
 import 'package:hex/hex.dart';
 import 'dart:typed_data';
 
 void main() {
-  Logger.root.level = Level.WARNING; // defaults to Level.INFO
+  //Logger.root.level = Level.WARNING; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) {
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
   final logger = Logger('BcScriptsTest');
+  group('Redeemer -', () {
+    final fortyTwo = CborBigInt(BigInt.from(42));
+    final hello = CborBytes('hello'.codeUnits);
+    final list1 = CborList([fortyTwo, hello]);
+    final map1 = CborMap({fortyTwo: hello});
+
+    test('cbor', () {
+      final redeemer1 = BcRedeemer(
+        tag: BcRedeemerTag.spend,
+        index: BigInt.from(99),
+        data: BcPlutusData.fromCbor(map1),
+        exUnits: BcExUnits(BigInt.from(1024), BigInt.from(6)),
+      );
+      final cbor = redeemer1.cborValue;
+      logger.info(cbor);
+      final hex1 = redeemer1.toHex;
+      logger.info(hex1);
+    });
+    test('cbor2', () {
+      final redeemer1 = BcRedeemer(
+        tag: BcRedeemerTag.spend,
+        index: BigInt.from(0),
+        data: BcBigIntPlutusData(BigInt.from(2021)),
+        exUnits: BcExUnits(BigInt.from(1700), BigInt.from(476468)),
+      );
+      final cbor = redeemer1.cborValue;
+      logger.info(cbor);
+      final hex1 = redeemer1.toHex;
+      logger.info(hex1);
+      expect(hex1, equals('8400001907e5821906a41a00074534'));
+    });
+    /*
+    Expected: '84000019    07e582  1906a41a00074534'
+      Actual: '8400c240c24207e582c24206a4c243074534'
+
+    PlutusData plutusData = new BigIntPlutusData(new BigInteger("2021"));
+        Redeemer redeemer = Redeemer.builder()
+                .tag(RedeemerTag.Spend)
+                .data(plutusData)
+                .index(BigInteger.valueOf(0))
+                .exUnits(ExUnits.builder()
+                        .mem(BigInteger.valueOf(1700))
+                        .steps(BigInteger.valueOf(476468)).build())
+                .build();
+                */
+  });
+
   group('Script -', () {
     BcScriptAtLeast multisigScript1() => BcScriptAtLeast(amount: 2, scripts: [
           BcScriptPubkey(
