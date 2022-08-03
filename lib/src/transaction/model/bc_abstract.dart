@@ -36,3 +36,10 @@ abstract class BcAbstractCbor {
     return true;
   }
 }
+
+class CborError extends Error {
+  final String message;
+  CborError(this.message);
+  @override
+  String toString() => message;
+}

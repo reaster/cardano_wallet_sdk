@@ -31,6 +31,7 @@ export './src/stake/stake_pool_metadata.dart';
 export './src/stake/stake_pool.dart';
 export './src/transaction/model/bc_abstract.dart';
 export './src/transaction/model/bc_exception.dart';
+export './src/transaction/model/bc_plutus_data.dart';
 export './src/transaction/model/bc_pointer.dart';
 export './src/transaction/model/bc_scripts.dart';
 export './src/transaction/model/bc_tx_ext.dart';
