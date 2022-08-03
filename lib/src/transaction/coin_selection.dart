@@ -40,7 +40,6 @@ typedef CoinSelectionAlgorithm
   required FlatMultiAsset spendRequest,
   required Set<AbstractAddress> ownedAddresses,
   int coinSelectionLimit,
-  bool logSelection,
 });
 
 /// an single asset name and value under a MultiAsset policyId
@@ -288,7 +287,6 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
 //   required List<BcMultiAsset> outputsRequested,
 //   required Set<AbstractAddress> ownedAddresses,
 //   int coinSelectionLimit = defaultCoinSelectionLimit,
-//   bool logSelection = false,
 // }) async {
 //   final logger = Logger();
 //   if (outputsRequested.isEmpty) {

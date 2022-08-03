@@ -47,7 +47,6 @@ void main() {
         spendRequest:
             FlatMultiAsset(fee: 200000, assets: {lovelaceHex: 99 * ada}),
         ownedAddresses: wallet.addresses.toSet(),
-        logSelection: true,
       );
       expect(result.isOk(), isTrue);
       final coins = result.unwrap();
