@@ -192,7 +192,6 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   required Set<AbstractAddress> ownedAddresses,
   // required Coin estimatedFee,
   int coinSelectionLimit = defaultCoinSelectionLimit,
-  bool logSelection = false,
 }) async {
   final logger = Logger('largestFirst');
   if (spendRequest.assets.isEmpty) {
@@ -208,9 +207,9 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
   final Set<UTxO> availableUtxos =
       unspentInputsAvailable.fold(<UTxO>{}, (set, tx) => set..addAll(tx.utxos));
   // final isNativeToken = availableUtxos.any((utxo) => utxo.isNativeToken);
-  if (logSelection) {
+  if (logger.isLoggable(Level.FINE)) {
     for (var utxo in availableUtxos) {
-      logger.info("available: $utxo");
+      logger.fine("available: $utxo");
     }
   }
   //sort coin types by amount
@@ -254,9 +253,9 @@ Future<Result<CoinSelection, CoinSelectionError>> largestFirst({
     }
   }
   if (spendRequest.funded(selectedUTxOs)) {
-    if (logSelection) {
+    if (logger.isLoggable(Level.FINE)) {
       for (var utxo in selectedUTxOs) {
-        logger.info("selected : $utxo");
+        logger.fine("selected : $utxo");
       }
     }
     //generate inputs:

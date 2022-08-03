@@ -1,13 +1,13 @@
 // Copyright 2021 Richard Easterling
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:cardano_wallet_sdk/cardano_wallet_sdk.dart';
 import 'package:dio/dio.dart';
-import 'package:logger/logging.dart';
+import 'package:logging/logging.dart';
 import 'package:oxidized/oxidized.dart';
 import 'package:coingecko_dart/coingecko_dart.dart';
-import 'package:coingecko_dart/dataClasses/coins/Coin.dart';
+import 'package:coingecko_dart/dataClasses/coins/Coin.dart' as coins;
 import 'package:coingecko_dart/dataClasses/coins/PricedCoin.dart';
-import './price_service.dart';
 
 ///
 /// Coin Gecko service to get real-time exchange trading values.
@@ -32,7 +32,7 @@ class CoinGeckoApiFix extends CoinGeckoApi {
 }
 
 class CoingeckoPriceService extends PriceService {
-  final logger = Logger();
+  final logger = Logger('CoingeckoPriceService');
   static final Map<String, String> _defaultSymbolToId = {
     'btc': 'bitcoin',
     'eth': 'ethereum',
@@ -100,7 +100,8 @@ class CoingeckoPriceService extends PriceService {
 
   @override
   Future<Result<Map<String, String>, String>> list() async {
-    final CoinGeckoResult<List<Coin>> result = await coingecko.listCoins();
+    final CoinGeckoResult<List<coins.Coin>> result =
+        await coingecko.listCoins();
     if (result.isError) {
       return Err(result.errorMessage);
     } else {
@@ -118,7 +119,7 @@ class CoingeckoPriceService extends PriceService {
         _symbolToId = fullList;
         id = _symbolToId[symbol];
       }, err: (err) {
-        logger.e(err);
+        logger.severe(err);
       });
     }
     return id;
