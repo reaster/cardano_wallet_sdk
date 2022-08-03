@@ -16,7 +16,7 @@ void main() {
   });
   final logger = Logger('BcPlutusDataTest');
   group('PlutusData -', () {
-    final fortyTwo = CborBigInt(BigInt.from(42));
+    final fortyTwo = CborInt(BigInt.from(42));
     final hello = CborBytes('hello'.codeUnits);
     final list1 = CborList([fortyTwo, hello]);
     final map1 = CborMap({fortyTwo: hello});

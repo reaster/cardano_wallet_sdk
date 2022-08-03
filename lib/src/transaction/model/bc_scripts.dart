@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:bip32_ed25519/bip32_ed25519.dart';
 import 'package:cardano_wallet_sdk/src/crypto/key_util.dart';
 import 'package:hex/hex.dart';

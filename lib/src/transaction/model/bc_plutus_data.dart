@@ -23,7 +23,7 @@ abstract class BcPlutusData extends BcAbstractCbor {
       fromCbor(cbor.decode(bytes));
 
   static BcPlutusData fromCbor(CborValue item) {
-    if (item is CborBigInt) {
+    if (item is CborInt) {
       return BcBigIntPlutusData(item.toBigInt());
     } else if (item is CborBytes) {
       return BcBytesPlutusData(Uint8List.fromList(item.bytes));
